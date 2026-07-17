@@ -17,6 +17,12 @@ if %errorlevel% neq 0 (
 echo.
 echo Levantando servidores en el fondo (esto puede tardar la primera vez)...
 docker-compose up -d --build
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Hubo un problema al levantar la nube. Por favor lee el error de arriba.
+    pause
+    exit /b
+)
 
 echo.
 echo ==============================================

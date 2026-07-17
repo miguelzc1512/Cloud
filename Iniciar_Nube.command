@@ -15,10 +15,15 @@ fi
 
 echo "Levantando servidores en el fondo (esto puede tardar la primera vez)..."
 cd "$(dirname "$0")"
-docker-compose up -d --build
+if ! docker-compose up -d --build; then
+    echo ""
+    echo "[ERROR] Hubo un problema al levantar la nube. Por favor lee el error de arriba."
+    read -p "Presiona Enter para salir..."
+    exit 1
+fi
 
 echo ""
-echo "=============================================="
+echo ==============================================
 echo "  !LISTO! TU NUBE ESTA FUNCIONANDO"
 echo "=============================================="
 echo ""
