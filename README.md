@@ -77,10 +77,14 @@ Si deseas editar el código fuente y correr los servidores manualmente sin Docke
 ## 🔄 ¿Cómo instalar actualizaciones en el futuro?
 Si en el futuro hay nuevas versiones de este proyecto en GitHub, actualizar es completamente seguro y a prueba de tontos. Tus fotos y bases de datos **NO se borrarán** porque Docker las guarda en una bóveda segura fuera del código (en la carpeta `storage`).
 
-Para actualizar tu nube:
-1. Descarga el nuevo `.zip` de GitHub con el botón verde **"<> Code"**.
-2. Descomprime la carpeta y reemplaza tus archivos viejos por los nuevos (¡Asegúrate de **no borrar ni reemplazar** tu carpeta `storage`!).
-3. Haz doble clic nuevamente en el instalador (`Iniciar_Nube.bat` o `.command`). Docker reconstruirá solo lo que cambió de manera inteligente.
+Para actualizar tu nube de forma segura:
+1. Apaga tu nube actual (cierra la terminal o usa `docker-compose down`).
+2. Descarga el nuevo `.zip` de GitHub con el botón verde **"<> Code"** y descomprímelo.
+3. Copia TODO el contenido de esa nueva carpeta, EXCEPTO los siguientes archivos (que son tu información privada):
+   * ❌ No copies/reemplaces la carpeta `storage/` (aquí viven tus fotos y tu base de datos).
+   * ❌ No copies/reemplaces el archivo `frontend/.env` (aquí está tu API Key de mapas).
+4. Pega los archivos nuevos en tu carpeta de siempre (reemplazando los viejos).
+5. Haz doble clic nuevamente en el instalador (`Iniciar_Nube.bat` o `.command`). Docker detectará el nuevo código, lo actualizará automáticamente y encenderá tu nube.
 
 ---
 
