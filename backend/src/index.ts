@@ -77,13 +77,14 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS file_faces (
+    id TEXT PRIMARY KEY,
     fileId TEXT NOT NULL,
     personId TEXT NOT NULL,
+    descriptor TEXT,
     boxX REAL,
     boxY REAL,
     boxW REAL,
     boxH REAL,
-    PRIMARY KEY (fileId, personId),
     FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE,
     FOREIGN KEY (personId) REFERENCES people(id) ON DELETE CASCADE
   );
@@ -98,15 +99,19 @@ db.exec(`
 
 try {
   db.exec(`ALTER TABLE files ADD COLUMN uploadSource TEXT;`);
-} catch (e) {
-  // column already exists
-}
+} catch (e) {}
 
 try {
   db.exec(`ALTER TABLE files ADD COLUMN isFavorite INTEGER DEFAULT 0;`);
-} catch (e) {
-  // column already exists
-}
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE file_faces ADD COLUMN id TEXT;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE file_faces ADD COLUMN descriptor TEXT;`);
+} catch (e) {}
 
 // ─── Prepared Statements (compiled once, fast always) ──────────────────────
 export const stmts = {
