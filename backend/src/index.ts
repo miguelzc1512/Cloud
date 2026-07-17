@@ -21,7 +21,8 @@ if (!fs.existsSync(absoluteStoragePath)) {
 }
 
 // ─── SQLite Database Setup ─────────────────────────────────────────────────
-const dbPath = path.resolve(__dirname, '..', 'nube.db');
+const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '..', 'storage');
+const dbPath = path.resolve(STORAGE_PATH, 'nube.db');
 export const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrent read performance

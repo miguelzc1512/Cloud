@@ -17,7 +17,8 @@ const absoluteStoragePath = path.resolve(__dirname, '..', storagePath);
 const redisConnection = new IORedis({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
 
 // Configurar SQLite
-const dbPath = path.resolve(__dirname, '..', 'nube.db');
+const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '..', 'storage');
+const dbPath = path.resolve(STORAGE_PATH, 'nube.db');
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
