@@ -69,6 +69,25 @@ db.exec(`
     FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS people (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    coverFileId TEXT,
+    isHidden INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS file_faces (
+    fileId TEXT NOT NULL,
+    personId TEXT NOT NULL,
+    boxX REAL,
+    boxY REAL,
+    boxW REAL,
+    boxH REAL,
+    PRIMARY KEY (fileId, personId),
+    FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE,
+    FOREIGN KEY (personId) REFERENCES people(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS album_people (
     albumId TEXT NOT NULL,
     personId TEXT NOT NULL,
