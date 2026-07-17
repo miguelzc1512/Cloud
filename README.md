@@ -14,6 +14,12 @@ Si nunca has tocado código o programación en tu vida, ¡no te preocupes! Hemos
 
 Gracias a **Docker**, ya no necesitas instalar lenguajes de programación raros ni abrir 5 ventanas de terminal. Docker se encarga de crear un entorno seguro e instalar Node.js, Python, Redis y encender la Inteligencia artificial de forma invisible.
 
+### Paso 0: Descargar el Proyecto
+1. Ve a la parte superior de esta página en GitHub.
+2. Haz clic en el botón verde que dice **"<> Code"**.
+3. Selecciona **"Download ZIP"**.
+4. Descomprime (extrae) la carpeta que se descargó en tu computadora (por ejemplo, en tu Escritorio o Documentos).
+
 ### Paso 1: Instalar Docker
 Descarga e instala **Docker Desktop** (es gratis):
 * **Descarga para Mac o Windows:** [docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
