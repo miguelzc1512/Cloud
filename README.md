@@ -71,3 +71,26 @@ El sincronizador de escritorio es el programa instalable `.exe` o `.dmg` que la 
 
 ## 👨‍💻 Para Desarrolladores (Instalación Manual Antigua)
 Si deseas editar el código fuente y correr los servidores manualmente sin Docker, consulta el archivo [COMO_LEVANTAR_EL_PROYECTO.md](COMO_LEVANTAR_EL_PROYECTO.md) para ver la guía técnica de desarrollo.
+
+---
+
+## 🔄 ¿Cómo instalar actualizaciones en el futuro?
+Si en el futuro hay nuevas versiones de este proyecto en GitHub, actualizar es completamente seguro y a prueba de tontos. Tus fotos y bases de datos **NO se borrarán** porque Docker las guarda en una bóveda segura fuera del código (en la carpeta `storage`).
+
+Para actualizar tu nube:
+1. Descarga el nuevo `.zip` de GitHub con el botón verde **"<> Code"**.
+2. Descomprime la carpeta y reemplaza tus archivos viejos por los nuevos (¡Asegúrate de **no borrar ni reemplazar** tu carpeta `storage`!).
+3. Haz doble clic nuevamente en el instalador (`Iniciar_Nube.bat` o `.command`). Docker reconstruirá solo lo que cambió de manera inteligente.
+
+---
+
+## 🌍 ¿Cómo ver mi nube desde cualquier parte del mundo con mi propio dominio?
+Por defecto, tu nube solo es accesible desde tu propia casa (a través de tu WiFi). Sin embargo, conectar tu computadora a internet con tu propio dominio (ej. `minube.com`) es muy fácil y seguro hoy en día sin tener que tocar la configuración de tu módem.
+
+**La forma más fácil y segura (Cloudflare Tunnels):**
+No necesitas abrir puertos en tu módem ni exponer tu computadora a ataques. 
+1. Crea una cuenta gratuita en [Cloudflare Zero Trust](https://one.dash.cloudflare.com/).
+2. Ve a la sección de **Tunnels** y crea un túnel nuevo.
+3. Te pedirán que instales un pequeño programa gratuito en tu computadora que actúa como un "tubo privado" directo hacia Cloudflare.
+4. Una vez instalado, en Cloudflare dile que apunte tu dominio web al puerto de tu nube (en este caso, `localhost:80`).
+5. ¡Listo! Cualquier persona en el mundo podrá entrar a tu dominio y el tráfico viajará de forma encriptada directo a tu nube personal.
