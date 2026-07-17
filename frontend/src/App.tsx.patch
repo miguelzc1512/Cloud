@@ -1,0 +1,33 @@
+--- App.tsx.orig
++++ App.tsx
+@@ -386,30 +386,13 @@
+           )}
+ 
+           {activeTab === 'buscar' && (
+-                      >
+-                        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden">
+-                          {file.mimeType && file.mimeType.startsWith('image/') ? (
+-                            <ImageIcon className="w-6 h-6 text-blue-400" />
+-                          ) : (
+-                            <FileText className="w-6 h-6 text-slate-400" />
+-                          )}
+-                        </div>
+-                        <div className="min-w-0 flex-1">
+-                          <p className="text-sm font-medium text-slate-700 truncate mb-0.5">{file.originalName}</p>
+-                          <p className="text-xs text-slate-400">Match: {(file.score * 100).toFixed(1)}%</p>
+-                        </div>
+-                      </div>
+-                    ))}
+-                  </div>
+-                </div>
++            <div className="animate-fade-in h-full w-full">
++              {searchResults.length > 0 ? (
++                <PhotosView files={searchResults} />
++              ) : (
++                <div className="flex-1 flex flex-col items-center justify-center h-full text-slate-400 gap-4 opacity-70">
++                  <Search className="w-16 h-16 stroke-1" />
++                  <p>No se encontraron resultados para "{searchQuery}"</p>
++                </div>
+               )}
+             </div>
+           )}
