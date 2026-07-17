@@ -67,3 +67,22 @@ npm run dev
 - **T5:** `cd frontend && npm run dev`
 
 ¡Listo! Con estas 5 terminales activas, la plataforma estará funcionando al 100%.
+
+---
+
+### 📦 Extra: Cómo compilar el Sincronizador (Desktop App)
+Si descargas este proyecto en limpio y necesitas generar los instaladores para que aparezcan disponibles en la página web:
+
+1. Ve a la carpeta `desktop-client`:
+   ```bash
+   cd "Desktop/cloud personal/desktop-client"
+   ```
+2. Instala las dependencias si no lo has hecho:
+   ```bash
+   npm install
+   ```
+3. Compila el instalador:
+   ```bash
+   npm run build
+   ```
+*(Si corres esto en Mac, generará el `CloudSync-mac.dmg`. Si lo corres en Windows, generará el `CloudSync-win.exe`. Luego simplemente copia esos archivos a la carpeta `backend/public/downloads/` para que la página web los ofrezca).*
