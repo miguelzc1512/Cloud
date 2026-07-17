@@ -1,4 +1,5 @@
 import { useState, useCallback, memo, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil } from 'lucide-react';
 import TimelineScrollbar from './TimelineScrollbar';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -522,9 +523,9 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
     };
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-[100] flex cursor-default overflow-hidden"
+      className="fixed inset-0 z-[9999] flex cursor-default overflow-hidden"
       onMouseMove={handleMouseMove}
       onClick={handleMouseMove}
     >
@@ -743,6 +744,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
