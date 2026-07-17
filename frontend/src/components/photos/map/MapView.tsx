@@ -114,8 +114,8 @@ export default function MapView({ files, onDelete, onBulkDelete }: MapViewProps)
         onWheelCapture={() => setIsExpanded(false)}
         onTouchStartCapture={() => setIsExpanded(false)}
       >
-        {/* Aquí insertamos la API Key proporcionada y forzamos la v3.64 para revivir el mapa de calor */}
-        <APIProvider apiKey="AIzaSyDE2vYbCtQl2jYxJlRJzhaTvk6M13R_Cp0" version="3.64" libraries={['visualization']}>
+        {/* La API Key ahora se carga desde el archivo .env para protegerla */}
+        <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""} version="3.64" libraries={['visualization']}>
           <Map
             defaultCenter={center}
             defaultZoom={4}
