@@ -191,7 +191,7 @@ import { Queue, QueueEvents } from 'bullmq';
 import IORedis from 'ioredis';
 
 // Configurar Redis y Queue
-const redisConnection = new IORedis({ maxRetriesPerRequest: null });
+const redisConnection = new IORedis({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
 const imageQueue = new Queue('image-processing', { connection: redisConnection as any });
 const imageQueueEvents = new QueueEvents('image-processing', { connection: redisConnection as any });
 
@@ -695,7 +695,8 @@ app.post('/api/analyze-faces', async (req: Request, res: Response): Promise<void
     const file = stmts.getFileById.get(fileId) as any;
     if (!file) { res.status(404).json({ error: 'File not found' }); return; }
     const filePath = path.join(absoluteStoragePath, file.savedName);
-    const pythonRes = await fetch('http://localhost:8000/analyze', {
+    const pythonApiUrl = process.env.PYTHON_API_URL || 'http://localhost:8000';
+    const pythonRes = await fetch(`${pythonApiUrl}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imagePath: filePath })

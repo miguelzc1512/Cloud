@@ -91,9 +91,9 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
       try {
         setLoading(true);
         const [albumRes, filesRes, peopleRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/albums/${albumId}`),
-          fetch(`http://localhost:3001/api/albums/${albumId}/files`),
-          fetch(`http://localhost:3001/api/albums/${albumId}/people`)
+          fetch(`/api/albums/${albumId}`),
+          fetch(`/api/albums/${albumId}/files`),
+          fetch(`/api/albums/${albumId}/people`)
         ]);
 
         if (!albumRes.ok || !filesRes.ok || !peopleRes.ok) {
@@ -130,7 +130,7 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
             onBack={onBack} 
             onEditPeople={() => setIsPeopleModalOpen(true)}
             onUpdateName={async (newName: string) => {
-              const res = await fetch(`http://localhost:3001/api/albums/${albumId}`, {
+              const res = await fetch(`/api/albums/${albumId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
@@ -147,7 +147,7 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
 
   const handleRemoveFromAlbum = async (ids: string[], clearSelection: () => void) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/albums/${albumId}/files`, {
+      const res = await fetch(`/api/albums/${albumId}/files`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileIds: ids })
@@ -165,7 +165,7 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
   const handleMoveToTrash = async (ids: string[], clearSelection: () => void) => {
     try {
       await Promise.all(ids.map(id => 
-        fetch(`http://localhost:3001/api/files/${id}`, { method: 'DELETE' })
+        fetch(`/api/files/${id}`, { method: 'DELETE' })
       ));
       setFiles(prev => prev.filter(f => !ids.includes(f.id)));
     } catch (e) {
@@ -245,7 +245,7 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
         selectedIds={albumPeople}
         onSelectionChange={async (newSelection) => {
           try {
-            const res = await fetch(`http://localhost:3001/api/albums/${albumId}/people`, {
+            const res = await fetch(`/api/albums/${albumId}/people`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ personIds: Array.from(newSelection) })
@@ -253,7 +253,7 @@ const AlbumDetailView: React.FC<AlbumDetailViewProps> = ({ albumId, onBack, setC
             if (res.ok) {
               setAlbumPeople(newSelection);
               // Refetch files in case dynamic photos changed
-              const filesRes = await fetch(`http://localhost:3001/api/albums/${albumId}/files`);
+              const filesRes = await fetch(`/api/albums/${albumId}/files`);
               const filesData = await filesRes.json();
               setFiles(filesData);
             }

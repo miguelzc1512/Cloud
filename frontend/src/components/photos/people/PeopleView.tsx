@@ -61,8 +61,8 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const fetchData = async () => {
     try {
       const [peopleRes, statusRes] = await Promise.all([
-        fetch(`http://localhost:3001/api/people?t=${Date.now()}`),
-        fetch(`http://localhost:3001/api/people/status?t=${Date.now()}`)
+        fetch(`/api/people?t=${Date.now()}`),
+        fetch(`/api/people/status?t=${Date.now()}`)
       ]);
 
       if (peopleRes.ok) {
@@ -95,7 +95,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const fetchPersonPhotos = async (id: string, additionalIds: string[] = []) => {
     try {
       const query = additionalIds.length > 0 ? `?alsoWith=${additionalIds.join(',')}` : '';
-      const res = await fetch(`http://localhost:3001/api/people/${id}/photos${query}`);
+      const res = await fetch(`/api/people/${id}/photos${query}`);
       if (res.ok) {
         const data = await res.json();
         setPersonPhotos(data);
@@ -108,7 +108,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const fetchCoOccurringPeople = async (id: string, additionalIds: string[] = []) => {
     try {
       const query = additionalIds.length > 0 ? `?alsoWith=${additionalIds.join(',')}` : '';
-      const res = await fetch(`http://localhost:3001/api/people/${id}/co-occurring${query}`);
+      const res = await fetch(`/api/people/${id}/co-occurring${query}`);
       if (res.ok) {
         const data = await res.json();
         setCoOccurringPeople(data);
@@ -171,7 +171,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
     if (!selectedPerson || !editNameValue.trim()) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/people/${selectedPerson.id}`, {
+      const res = await fetch(`/api/people/${selectedPerson.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editNameValue.trim() })
@@ -190,7 +190,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
     if (selectedPersonIds.size < 2) return;
     const ids = Array.from(selectedPersonIds);
     try {
-      const res = await fetch('http://localhost:3001/api/people/merge', {
+      const res = await fetch('/api/people/merge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ personIds: ids })
@@ -227,7 +227,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
     setShowHideConfirm(false);
     const ids = Array.from(selectedPersonIds);
     try {
-      await Promise.all(ids.map(id => fetch(`http://localhost:3001/api/people/${id}/hide`, { method: 'POST' })));
+      await Promise.all(ids.map(id => fetch(`/api/people/${id}/hide`, { method: 'POST' })));
       setSelectedPersonIds(new Set());
       fetchData();
     } catch (error) {
@@ -293,7 +293,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 shrink-0">
               <img 
-                src={`http://localhost:3001/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}&t=${coverUpdateCounter}`} 
+                src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}&t=${coverUpdateCounter}`} 
                 alt={selectedPerson.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -343,7 +343,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const handleRemovePhotosFromPerson = async (selectedIds: string[], clearSelection: () => void) => {
     if (!selectedPerson) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/people/${selectedPerson.id}/remove-photos`, {
+      const res = await fetch(`/api/people/${selectedPerson.id}/remove-photos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileIds: selectedIds })
@@ -362,7 +362,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const handleSetCover = async (fileId: string, clearSelection: () => void) => {
     if (!selectedPerson) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/people/${selectedPerson.id}/cover`, {
+      const res = await fetch(`/api/people/${selectedPerson.id}/cover`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId })
@@ -454,7 +454,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
           >
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shrink-0 cursor-default shadow-sm">
             <img 
-              src={`http://localhost:3001/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}`}
+              src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}`}
               className="w-6 h-6 rounded-full object-cover bg-slate-200" 
               alt={selectedPerson.name}
             />
@@ -468,7 +468,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
               className="flex items-center gap-1.5 px-1 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
             >
               <img 
-                src={`http://localhost:3001/api/people/${p.id}/face?v=${p.coverFile}`}
+                src={`/api/people/${p.id}/face?v=${p.coverFile}`}
                 className="w-6 h-6 rounded-full object-cover bg-slate-200" 
                 alt={p.name}
               />
@@ -486,7 +486,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
               className="flex items-center gap-1.5 px-1 py-1 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
             >
               <img 
-                src={`http://localhost:3001/api/people/${p.id}/face?v=${p.coverFile}`}
+                src={`/api/people/${p.id}/face?v=${p.coverFile}`}
                 className="w-6 h-6 rounded-full object-cover bg-slate-200 opacity-90 group-hover:opacity-100" 
                 alt={p.name}
               />
@@ -519,7 +519,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
                       className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
                     >
                       <img 
-                        src={`http://localhost:3001/api/people/${p.id}/face?v=${p.coverFile}`}
+                        src={`/api/people/${p.id}/face?v=${p.coverFile}`}
                         className="w-8 h-8 rounded-full object-cover bg-slate-200 shrink-0" 
                         alt={p.name}
                       />
@@ -588,7 +588,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
                 <div className="relative">
                   <div className={`w-32 h-32 rounded-full overflow-hidden bg-slate-100 ring-4 transition-all duration-300 shadow-sm relative ${isSelected ? 'ring-blue-500 shadow-lg' : 'ring-transparent group-hover:ring-blue-500/30 group-hover:shadow-lg'}`}>
                     <ProgressiveImage
-                      src={`http://localhost:3001/api/people/${person.id}/face?v=${person.coverFile}&t=${coverUpdateCounter}`}
+                      src={`/api/people/${person.id}/face?v=${person.coverFile}&t=${coverUpdateCounter}`}
                       blurhash={person.coverBlurhash}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       alt={person.name}

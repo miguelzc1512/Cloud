@@ -48,7 +48,7 @@ export default function TrashView({ onRefresh, setHeaderActions }: TrashViewProp
 
   const fetchTrashFiles = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/trash');
+      const res = await fetch('/api/trash');
       if (res.ok) {
         const data = await res.json();
         setFiles(data);
@@ -84,7 +84,7 @@ export default function TrashView({ onRefresh, setHeaderActions }: TrashViewProp
     try {
       await Promise.all(
         ids.map(id => 
-          fetch(`http://localhost:3001/api/trash/${id}/restore`, { method: 'PUT' })
+          fetch(`/api/trash/${id}/restore`, { method: 'PUT' })
         )
       );
       clearSelection();
@@ -100,7 +100,7 @@ export default function TrashView({ onRefresh, setHeaderActions }: TrashViewProp
     try {
       await Promise.all(
         ids.map(id => 
-          fetch(`http://localhost:3001/api/trash/${id}`, { method: 'DELETE' })
+          fetch(`/api/trash/${id}`, { method: 'DELETE' })
         )
       );
       clearSelection();

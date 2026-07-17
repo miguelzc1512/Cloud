@@ -7,3 +7,6 @@ albums.json
 desktop-client/release/
 backend/public/downloads/
 *.dmg
+*.db
+*.db-shm
+*.db-wal

@@ -96,7 +96,7 @@ export default function CreateAlbumView({ files = [], onClose, onSubmit }: Creat
   
   // Thumbnails para fotos de la cuenta
   const cloudSelectedFiles = files.filter(f => selectedIds.has(f.id));
-  const cloudDeckThumbnails = cloudSelectedFiles.slice(0, 3).map(f => `http://localhost:3001/uploads/${f.savedName}`);
+  const cloudDeckThumbnails = cloudSelectedFiles.slice(0, 3).map(f => `/uploads/${f.savedName}`);
 
   const hasLocal = localFiles.length > 0;
   const hasCloud = selectedIds.size > 0;
@@ -108,7 +108,7 @@ export default function CreateAlbumView({ files = [], onClose, onSubmit }: Creat
   const peopleDeckThumbnails = peopleSelectedArray.slice(0, 3).map(id => {
     const person = peopleCache.find(p => p.id === id);
     const version = person?.coverFile ? `?v=${person.coverFile}` : '';
-    return `http://localhost:3001/api/people/${id}/face${version}`;
+    return `/api/people/${id}/face${version}`;
   });
 
   return (

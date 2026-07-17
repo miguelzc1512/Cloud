@@ -134,14 +134,14 @@ const PhotoItem = memo(({ file, isSelected, isSelectingMode, onToggle }: PhotoIt
       
       {file.mimeType?.startsWith('video/') ? (
         <video
-          src={`http://localhost:3001/uploads/${file.savedName}#t=0.1`}
+          src={`/uploads/${file.savedName}#t=0.1`}
           className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
           muted
           playsInline
         />
       ) : (
         <ProgressiveImage
-          src={`http://localhost:3001/uploads/${file.thumbnailName || file.savedName}`}
+          src={`/uploads/${file.thumbnailName || file.savedName}`}
           blurhash={file.blurhash}
           className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
           alt={file.originalName}
@@ -391,7 +391,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
     const newStatus = !currentStatus;
     setLocalFavorites(prev => ({ ...prev, [id]: newStatus }));
     try {
-      const res = await fetch(`http://localhost:3001/api/files/${id}/favorite`, { method: 'PUT' });
+      const res = await fetch(`/api/files/${id}/favorite`, { method: 'PUT' });
       if (!res.ok) throw new Error('Failed to toggle favorite');
     } catch (error) {
       console.error(error);
@@ -467,7 +467,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
 
   useEffect(() => {
     if (photo && isInfoPanelOpen) {
-      fetch(`http://localhost:3001/api/files/${photo.id}/people`)
+      fetch(`/api/files/${photo.id}/people`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) setDetectedPeople(data);
@@ -606,7 +606,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
 
       {photo.mimeType?.startsWith('video/') ? (
         <video
-          src={`http://localhost:3001/uploads/${photo.savedName}`}
+          src={`/uploads/${photo.savedName}`}
           controls
           autoPlay
           style={getStyle()}
@@ -616,8 +616,8 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
         <div style={getStyle()} onClick={(e) => e.stopPropagation()}>
             <ProgressiveImage
               key={photo.id}
-              src={`http://localhost:3001/uploads/${photo.mimeType?.startsWith('image/hei') ? `web-${photo.savedName}.webp` : photo.savedName}`}
-              thumbnailSrc={photo.thumbnailName ? `http://localhost:3001/uploads/${photo.thumbnailName}` : undefined}
+              src={`/uploads/${photo.mimeType?.startsWith('image/hei') ? `web-${photo.savedName}.webp` : photo.savedName}`}
+              thumbnailSrc={photo.thumbnailName ? `/uploads/${photo.thumbnailName}` : undefined}
               alt={photo.originalName}
               objectFit="contain"
             />
@@ -654,7 +654,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
                   >
                     <div className="w-14 h-14 rounded-full overflow-hidden border border-white/10 group-hover/person:border-white/40 transition-colors">
                       <img 
-                        src={`http://localhost:3001/api/people/${person.id}/face${person.coverFileId ? `?v=${person.coverFileId}` : ''}`} 
+                        src={`/api/people/${person.id}/face${person.coverFileId ? `?v=${person.coverFileId}` : ''}`} 
                         alt={person.name}
                         className="w-full h-full object-cover"
                       />

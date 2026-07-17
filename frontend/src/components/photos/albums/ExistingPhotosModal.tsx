@@ -185,14 +185,14 @@ export default function ExistingPhotosModal({ isOpen, onClose, files, selectedId
                         </button>
                         {photo.mimeType?.startsWith('video/') ? (
                           <video
-                            src={`http://localhost:3001/uploads/${photo.savedName}#t=0.1`}
+                            src={`/uploads/${photo.savedName}#t=0.1`}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             muted
                             playsInline
                           />
                         ) : (
                           <ProgressiveImage
-                            src={`http://localhost:3001/uploads/${photo.thumbnailName || photo.savedName}`}
+                            src={`/uploads/${photo.thumbnailName || photo.savedName}`}
                             blurhash={photo.blurhash}
                             className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
                             alt={photo.originalName}

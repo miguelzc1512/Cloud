@@ -26,7 +26,7 @@ export default function SelectPeopleModal({ isOpen, onClose, selectedIds, onSele
       setLocalSelection(new Set(selectedIds));
       if (people.length === 0) {
         setLoading(true);
-        fetch('http://localhost:3001/api/people')
+        fetch('/api/people')
           .then(res => res.json())
           .then(data => {
             setPeople(data);
@@ -107,7 +107,7 @@ export default function SelectPeopleModal({ isOpen, onClose, selectedIds, onSele
                   <div className="relative w-24 h-24">
                     <div className={`relative w-full h-full rounded-full overflow-hidden bg-slate-200 ring-4 transition-all duration-300 ${isSelected ? 'ring-blue-500 shadow-md' : 'ring-transparent'}`}>
                       <ProgressiveImage
-                        src={`http://localhost:3001/api/people/${person.id}/face?v=${person.coverFile}`}
+                        src={`/api/people/${person.id}/face?v=${person.coverFile}`}
                         blurhash={person.coverBlurhash}
                         className="w-full h-full object-cover"
                         alt={person.name}

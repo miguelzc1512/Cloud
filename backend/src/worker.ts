@@ -14,7 +14,7 @@ const storagePath = process.env.STORAGE_PATH || '../storage';
 const absoluteStoragePath = path.resolve(__dirname, '..', storagePath);
 
 // Configurar Redis
-const redisConnection = new IORedis({ maxRetriesPerRequest: null });
+const redisConnection = new IORedis({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
 
 // Configurar SQLite
 const dbPath = path.resolve(__dirname, '..', 'nube.db');

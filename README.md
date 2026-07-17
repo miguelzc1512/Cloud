@@ -6,134 +6,62 @@ El proyecto consta de dos partes principales:
 1. **La plataforma web (Visor):** Donde puedes entrar desde tu navegador para ver tus fotos, organizarlas, buscar por rostros usando Inteligencia Artificial, y verlas en un mapa.
 2. **El cliente de escritorio (Sincronizador):** Una aplicación que instalas en tu computadora (Mac o Windows) para que suba y sincronice tus fotos automáticamente en segundo plano.
 
-Si nunca has tocado código o programación en tu vida, ¡no te preocupes! Esta guía está escrita paso a paso para que puedas instalar y arrancar todo desde cero.
+Si nunca has tocado código o programación en tu vida, ¡no te preocupes! Hemos creado un instalador de "Un Clic" mágico llamado Docker que hará todo el trabajo pesado por ti.
 
 ---
 
-## 🛠️ Requisitos Previos
+## 🚀 Cómo encender tu Nube (Modo Automático Recomendado)
 
-Antes de descargar el proyecto, necesitas instalar algunos programas básicos en tu computadora. Son gratuitos y fáciles de instalar:
+Gracias a **Docker**, ya no necesitas instalar lenguajes de programación raros ni abrir 5 ventanas de terminal. Docker se encarga de crear un entorno seguro e instalar Node.js, Python, Redis y encender la Inteligencia artificial de forma invisible.
 
-1. **Node.js**: Es el motor que hace funcionar la página web y el servidor principal.
-   * Descárgalo de [nodejs.org](https://nodejs.org/) (elige la versión "LTS") e instálalo como cualquier otro programa.
-2. **Python**: Es el motor que usa nuestra Inteligencia Artificial para reconocer rostros y analizar fotos.
-   * Descárgalo de [python.org](https://www.python.org/downloads/) e instálalo. *(Nota para Windows: Durante la instalación, asegúrate de marcar la casilla que dice "Add Python to PATH")*.
-3. **Redis**: Es una pequeña base de datos en memoria que nos ayuda a procesar las fotos en "segundo plano" (para no saturar tu computadora mientras subes fotos).
-   * **En Mac:** Puedes instalarlo abriendo tu terminal y escribiendo `brew install redis` (requiere tener Homebrew instalado).
-   * **En Windows:** Puedes usar [Memurai](https://www.memurai.com/) (una alternativa gratuita a Redis para Windows) o instalarlo a través de WSL (Windows Subsystem for Linux).
-4. **Git**: Para poder descargar este código fácilmente. Descárgalo de [git-scm.com](https://git-scm.com/).
+### Paso 1: Instalar Docker
+Descarga e instala **Docker Desktop** (es gratis):
+* **Descarga para Mac o Windows:** [docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+* Instálalo como cualquier otro programa y ábrelo. *(Déjalo abierto en segundo plano, verás un icono de una ballena en tu barra de tareas)*.
 
----
+### Paso 2: Configurar tu API Key de Google Maps
+Tu nube usa Google Maps para mostrarte dónde tomaste tus fotos.
+1. Ve a la carpeta `frontend` dentro del proyecto.
+2. Verás un archivo llamado `.env.example`.
+3. Haz una copia de ese archivo, renómbralo a `.env` y ábrelo con un bloc de notas.
+4. Pega tu propia clave de Google Maps así: `VITE_GOOGLE_MAPS_API_KEY=tu_clave_aqui`.
 
-## 🚀 1. Instalación del Proyecto
+### Paso 3: ¡Encender la Nube!
+Ve a la carpeta principal del proyecto (donde está este README) y haz doble clic en el archivo instalador correspondiente a tu sistema:
 
-Abre tu "Terminal" (en Mac) o "Símbolo del sistema / CMD" (en Windows) y sigue estos pasos:
+* 🪟 **Si usas Windows:** Haz doble clic en `Iniciar_Nube.bat`
+* 🍎 **Si usas Mac:** Haz doble clic en `Iniciar_Nube.command`
 
-### Paso 1: Descargar el código
-```bash
-git clone https://github.com/miguelzc1512/Cloud.git
-cd Cloud
-```
+*Nota: La primera vez que lo abras, puede tardar varios minutos porque descargará la Inteligencia Artificial y preparará los servidores. Las siguientes veces será instantáneo.*
 
-### Paso 2: Instalar las dependencias del Servidor (Backend)
-```bash
-cd backend
-npm install
-cd ..
-```
+¡Listo! Cuando la terminal te diga que todo está listo, abre tu navegador y visita:
+👉 **[http://localhost](http://localhost)**
 
-### Paso 3: Instalar las dependencias de la Web (Frontend)
-```bash
-cd frontend
-npm install
-cd ..
-```
-
-### Paso 4: Instalar las dependencias del Sincronizador (Desktop)
-```bash
-cd desktop-client
-npm install
-cd ..
-```
+Para apagar la nube, simplemente escribe `docker-compose down` en tu terminal o cierra la aplicación de Docker.
 
 ---
 
-## 🏃 2. Cómo Encender tu Nube (Paso a Paso)
+## 🖥️ Cómo compilar el Sincronizador de Escritorio (Desktop Client)
 
-Tu nube privada está compuesta por **5 piezas** que trabajan juntas. Para encenderla, necesitas abrir **5 ventanas diferentes de terminal** y ejecutar un comando distinto en cada una. ¡No cierres ninguna ventana mientras quieras usar tu nube!
+El sincronizador de escritorio es el programa instalable `.exe` o `.dmg` que la gente descarga desde la página web (el botón "Descargar" en el menú). Para generar este archivo:
 
-### Terminal 1: Iniciar Redis (El motor de tareas)
-En una terminal nueva, simplemente escribe:
-```bash
-redis-server
-```
-
-### Terminal 2: Iniciar la Inteligencia Artificial (Python)
-Abre otra terminal, entra a la carpeta del proyecto y ejecuta la IA:
-* **En Mac/Linux:**
-  ```bash
-  cd backend-ia
-  ./start.sh
-  ```
-* **En Windows:**
-  *(Nota: en Windows debes crear el entorno virtual y activarlo manualmente la primera vez).*
-  ```cmd
-  cd backend-ia
-  python -m venv venv
-  venv\Scripts\activate
-  pip install -r requirements.txt
-  uvicorn main:app --reload
-  ```
-
-### Terminal 3: Iniciar el Servidor Principal (El cerebro)
-Abre otra terminal:
-```bash
-cd backend
-npm run dev
-```
-
-### Terminal 4: Iniciar el Trabajador (Procesador de Fotos)
-Este proceso es el que genera las miniaturas y extrae la información de las fotos. Abre otra terminal:
-```bash
-cd backend
-npm run dev:worker
-```
-
-### Terminal 5: Iniciar la Página Web (La interfaz visual)
-Abre tu última terminal:
-```bash
-cd frontend
-npm run dev
-```
-
-¡Listo! Cuando la Terminal 5 termine de cargar, te dará un enlace (usualmente `http://localhost:5173/`). Ábrelo en tu navegador y verás tu nube privada funcionando.
-
----
-
-## 📦 3. Cómo Compilar la App de Escritorio (Opcional)
-
-Si entras a tu página web, verás botones para descargar el instalador de Mac o Windows. Para que esos botones funcionen, necesitas **generar los instaladores** y ponerlos en la carpeta correcta.
-
-Para generar los instaladores:
-1. Abre una terminal y ve a la carpeta del sincronizador:
+1. Necesitas instalar [Node.js](https://nodejs.org/) en tu computadora.
+2. Abre una terminal y navega hasta la carpeta `desktop-client`:
    ```bash
    cd desktop-client
    ```
-2. Ejecuta el comando para construir la app:
+3. Instala las dependencias:
+   ```bash
+   npm install
+   ```
+4. Crea el instalador final:
    ```bash
    npm run build
    ```
-3. Si estás en una Mac, este comando creará un archivo llamado `CloudSync-mac.dmg` en la subcarpeta `release`. Si estás en Windows, creará `CloudSync-win.exe`.
-4. Copia ese archivo generado y pégalo dentro de la carpeta: `backend/public/downloads/` (si no existe la carpeta `downloads`, créala).
-
-Al hacer esto, ¡cualquier persona que visite tu página web podrá dar clic al botón y descargar el instalador de tu nube automáticamente!
+5. El archivo listo (`CloudSync-win.exe` o `CloudSync-mac.dmg`) aparecerá dentro de la carpeta `desktop-client/release/`. 
+6. Debes copiar ese archivo y pegarlo dentro de la carpeta `backend/public/downloads/` de este proyecto para que la página web pueda entregarlo a tus usuarios.
 
 ---
 
-## 🛑 Notas Finales
-* **¿Dónde se guardan mis fotos?**
-  Las fotos se guardan físicamente en tu computadora, dentro de una carpeta llamada `storage` en la raíz del proyecto.
-* **Privacidad:**
-  Al no usar servicios de terceros, ninguna de tus fotos sale de tu computadora. Toda la Inteligencia Artificial (reconocimiento facial) funciona 100% de manera local y privada.
-
-¡Disfruta tu nueva nube personal! ☁️
+## 👨‍💻 Para Desarrolladores (Instalación Manual Antigua)
+Si deseas editar el código fuente y correr los servidores manualmente sin Docker, consulta el archivo [COMO_LEVANTAR_EL_PROYECTO.md](COMO_LEVANTAR_EL_PROYECTO.md) para ver la guía técnica de desarrollo.

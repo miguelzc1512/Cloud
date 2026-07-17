@@ -37,7 +37,7 @@ const AlbumCoverCarousel = ({ files }: { files: NonNullable<Album['coverFiles']>
           }`}
         >
           <ProgressiveImage
-            src={`http://localhost:3001/uploads/${file.thumbnailName || file.savedName}`}
+            src={`/uploads/${file.thumbnailName || file.savedName}`}
             blurhash={file.blurhash}
             alt="Album cover"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -69,7 +69,7 @@ const AlbumsView: React.FC<AlbumsViewProps> = ({ files = [], setCustomHeader }) 
     setOpenMenuId(null);
     if (!window.confirm('¿Estás seguro de eliminar este álbum?')) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/albums/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/albums/${id}`, { method: 'DELETE' });
       if (res.ok) fetchAlbums();
     } catch (err) {
       console.error(err);
@@ -91,7 +91,7 @@ const AlbumsView: React.FC<AlbumsViewProps> = ({ files = [], setCustomHeader }) 
     setAlbums(albums.map(a => a.id === id ? { ...a, name: editingName.trim() } : a));
     
     try {
-      const res = await fetch(`http://localhost:3001/api/albums/${id}`, {
+      const res = await fetch(`/api/albums/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editingName.trim() })
@@ -107,7 +107,7 @@ const AlbumsView: React.FC<AlbumsViewProps> = ({ files = [], setCustomHeader }) 
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:3001/api/albums');
+      const response = await fetch('/api/albums');
       if (!response.ok) {
         throw new Error('Failed to fetch albums');
       }
@@ -134,7 +134,7 @@ const AlbumsView: React.FC<AlbumsViewProps> = ({ files = [], setCustomHeader }) 
         const uploadPromises = localFiles.map(async (file) => {
           const formData = new FormData();
           formData.append('file', file);
-          const res = await fetch('http://localhost:3001/api/upload', {
+          const res = await fetch('/api/upload', {
             method: 'POST',
             body: formData
           });
@@ -146,7 +146,7 @@ const AlbumsView: React.FC<AlbumsViewProps> = ({ files = [], setCustomHeader }) 
 
       const allFileIds = [...existingIds, ...uploadedIds];
 
-      const res = await fetch('http://localhost:3001/api/albums', {
+      const res = await fetch('/api/albums', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description, fileIds: allFileIds, personIds })

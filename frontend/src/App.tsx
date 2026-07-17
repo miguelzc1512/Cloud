@@ -52,7 +52,7 @@ export default function App() {
 
   // ─── Server-Sent Events (SSE) ─────────────────────────────────────────────
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:3001/api/stream');
+    const eventSource = new EventSource('/api/stream');
 
     eventSource.addEventListener('upload_started', () => {
       setImportingCount(prev => prev + 1);
@@ -96,7 +96,7 @@ export default function App() {
   const fetchFiles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/files');
+      const res = await fetch('/api/files');
       if (res.ok) {
         const data = await res.json();
         setFiles(data);
@@ -119,7 +119,7 @@ export default function App() {
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
@@ -157,7 +157,7 @@ export default function App() {
       formData.append('lastModified', file.lastModified.toString());
 
       try {
-        const res = await fetch('http://localhost:3001/api/upload', {
+        const res = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
@@ -187,7 +187,7 @@ export default function App() {
 
   const handleDelete = useCallback(async (id: string, skipConfirm = false) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/files/${id}`, {
+      const res = await fetch(`/api/files/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -615,14 +615,14 @@ export default function App() {
                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 hover:border-slate-300 transition-colors flex flex-col items-center text-center">
                  <Apple className="w-10 h-10 text-slate-700 mb-3" />
                  <h3 className="font-semibold text-slate-800 mb-1">Para Mac</h3>
-                 <a href="http://localhost:3001/public/downloads/CloudSync-mac.dmg" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors">
+                 <a href="/public/downloads/CloudSync-mac.dmg" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors">
                    <Download className="w-4 h-4" /> Descargar
                  </a>
                </div>
                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 hover:border-slate-300 transition-colors flex flex-col items-center text-center">
                  <Monitor className="w-10 h-10 text-blue-500 mb-3" />
                  <h3 className="font-semibold text-slate-800 mb-1">Para Windows</h3>
-                 <a href="http://localhost:3001/public/downloads/CloudSync-win.exe" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors">
+                 <a href="/public/downloads/CloudSync-win.exe" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors">
                    <Download className="w-4 h-4" /> Descargar
                  </a>
                </div>

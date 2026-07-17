@@ -78,8 +78,8 @@ export default function DuplicatesView({ onBulkDelete, setHeaderActions }: Dupli
     setIsLoading(true);
     try {
       const [resExact, resSimilar] = await Promise.all([
-        fetch('http://localhost:3001/api/duplicates'),
-        fetch(`http://localhost:3001/api/similars?threshold=${currentThreshold}`)
+        fetch('/api/duplicates'),
+        fetch(`/api/similars?threshold=${currentThreshold}`)
       ]);
       if (resExact.ok) setExactGroups(await resExact.json());
       if (resSimilar.ok) setSimilarGroups(await resSimilar.json());
@@ -317,7 +317,7 @@ export default function DuplicatesView({ onBulkDelete, setHeaderActions }: Dupli
                       {isSelected && <div className="absolute inset-0 bg-blue-500/10 z-10 pointer-events-none" />}
 
                       <ProgressiveImage 
-                        src={`http://localhost:3001/uploads/${file.thumbnailName || file.savedName}`} 
+                        src={`/uploads/${file.thumbnailName || file.savedName}`} 
                         blurhash={file.blurhash}
                         alt="Duplicate"
                         className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
