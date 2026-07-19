@@ -352,6 +352,12 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> => {
   let { directoryPath } = req.body;
   
+  // Clean up quotes if user accidentally pasted them
+  if (directoryPath) {
+    directoryPath = directoryPath.replace(/^["']|["']$/g, '').trim();
+    directoryPath = path.resolve(directoryPath);
+  }
+
   if (directoryPath.startsWith('~')) {
     const os = require('os');
     directoryPath = path.join(os.homedir(), directoryPath.slice(1));
@@ -359,9 +365,15 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
   console.log('[Scan] Requested path:', directoryPath);
 
-  if (!directoryPath || !fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
-    console.error('[Scan] Invalid directory:', directoryPath);
-    res.status(400).json({ error: 'Directorio inválido o no encontrado: ' + directoryPath });
+  try {
+    if (!directoryPath || !fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
+      console.error('[Scan] Invalid directory:', directoryPath);
+      res.status(400).json({ error: 'Directorio inválido o no encontrado: ' + directoryPath });
+      return;
+    }
+  } catch (err: any) {
+    console.error('[Scan] Error reading directory stat:', err);
+    res.status(400).json({ error: 'Error de permisos o lectura al acceder al directorio: ' + directoryPath + ' - ' + err.message });
     return;
   }
 
