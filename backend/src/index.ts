@@ -350,9 +350,18 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 
 // POST /api/scan-local
 app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> => {
-  const { directoryPath } = req.body;
+  let { directoryPath } = req.body;
+  
+  if (directoryPath.startsWith('~')) {
+    const os = require('os');
+    directoryPath = path.join(os.homedir(), directoryPath.slice(1));
+  }
+
+  console.log('[Scan] Requested path:', directoryPath);
+
   if (!directoryPath || !fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
-    res.status(400).json({ error: 'Invalid directory path' });
+    console.error('[Scan] Invalid directory:', directoryPath);
+    res.status(400).json({ error: 'Directorio inválido o no encontrado: ' + directoryPath });
     return;
   }
 
