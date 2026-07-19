@@ -37,7 +37,7 @@ const AlbumCoverCarousel = ({ files }: { files: NonNullable<Album['coverFiles']>
           }`}
         >
           <ProgressiveImage
-            src={`/uploads/${file.thumbnailName || file.savedName}`}
+            src={`/api/media/${file.id}/thumbnail`}
             blurhash={file.blurhash}
             alt="Album cover"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

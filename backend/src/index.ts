@@ -102,6 +102,10 @@ try {
 } catch (e) {}
 
 try {
+  db.exec(`ALTER TABLE files ADD COLUMN absolutePath TEXT;`);
+} catch (e) {}
+
+try {
   db.exec(`ALTER TABLE files ADD COLUMN isFavorite INTEGER DEFAULT 0;`);
 } catch (e) {}
 
@@ -116,20 +120,20 @@ try {
 // ─── Prepared Statements (compiled once, fast always) ──────────────────────
 export const stmts = {
   insertFile: db.prepare(`
-    INSERT INTO files (id, originalName, savedName, mimeType, size, status, createdAt, isDeleted, uploadSource)
-    VALUES (@id, @originalName, @savedName, @mimeType, @size, 'PROCESSING', @createdAt, 0, @uploadSource)
+    INSERT INTO files (id, originalName, savedName, mimeType, size, status, createdAt, isDeleted, uploadSource, absolutePath)
+    VALUES (@id, @originalName, @savedName, @mimeType, @size, 'PROCESSING', @createdAt, 0, @uploadSource, @absolutePath)
   `),
   getFiles: db.prepare(`
-    SELECT id, originalName, savedName, thumbnailName, blurhash, width, height, status, mimeType, size, createdAt, takenAt, latitude, longitude, uploadSource, isFavorite
+    SELECT id, originalName, savedName, thumbnailName, blurhash, width, height, status, mimeType, size, createdAt, takenAt, latitude, longitude, uploadSource, isFavorite, absolutePath
     FROM files WHERE isDeleted = 0 ORDER BY COALESCE(takenAt, createdAt) DESC
   `),
   getFilesWithEmbedding: db.prepare(`
-    SELECT id, originalName, savedName, thumbnailName, blurhash, mimeType, size, createdAt, takenAt, latitude, longitude, embedding, uploadSource
+    SELECT id, originalName, savedName, thumbnailName, blurhash, mimeType, size, createdAt, takenAt, latitude, longitude, embedding, uploadSource, absolutePath
     FROM files WHERE isDeleted = 0 AND embedding IS NOT NULL
   `),
   softDelete: db.prepare(`UPDATE files SET isDeleted = 1, deletedAt = ? WHERE id = ? AND isDeleted = 0`),
   getTrash: db.prepare(`
-    SELECT id, originalName, savedName, thumbnailName, blurhash, mimeType, size, createdAt, takenAt, latitude, longitude, isDeleted, deletedAt, uploadSource, isFavorite
+    SELECT id, originalName, savedName, thumbnailName, blurhash, mimeType, size, createdAt, takenAt, latitude, longitude, isDeleted, deletedAt, uploadSource, isFavorite, absolutePath
     FROM files WHERE isDeleted = 1 ORDER BY COALESCE(takenAt, createdAt) DESC
   `),
   restore: db.prepare(`UPDATE files SET isDeleted = 0, deletedAt = NULL WHERE id = ? AND isDeleted = 1`),
@@ -236,6 +240,51 @@ imageQueueEvents.on('completed', ({ jobId, returnvalue }) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────
 
+// GET /api/media/:id/:type
+app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
+  const { id, type } = req.params;
+  try {
+    const file = stmts.getFileById.get(id) as any;
+    if (!file) { res.status(404).json({ error: 'File not found' }); return; }
+
+    if (type === 'original') {
+      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).json({ error: 'Original file missing on disk' });
+      }
+    } else if (type === 'thumbnail') {
+      const thumbName = file.thumbnailName || file.savedName;
+      const thumbPath = path.join(absoluteStoragePath, thumbName);
+      if (fs.existsSync(thumbPath)) {
+        res.sendFile(thumbPath);
+      } else if (file.absolutePath && fs.existsSync(file.absolutePath)) {
+        res.sendFile(file.absolutePath); // Fallback to original if thumb is missing
+      } else {
+        res.sendFile(path.join(absoluteStoragePath, file.savedName)); // Fallback to savedName
+      }
+    } else if (type === 'web') {
+      if (file.mimeType?.startsWith('video/')) {
+        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${file.savedName}.webm`);
+        if (fs.existsSync(webPath)) { res.sendFile(webPath); return; }
+      } else if (file.mimeType?.startsWith('image/heic') || file.mimeType?.startsWith('image/heif')) {
+        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${file.savedName}.webp`);
+        if (fs.existsSync(webPath)) { res.sendFile(webPath); return; }
+      }
+      // Fallback to original
+      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      if (fs.existsSync(filePath)) res.sendFile(filePath);
+      else res.status(404).json({ error: 'Web file missing' });
+    } else {
+      res.status(400).json({ error: 'Invalid type' });
+    }
+  } catch (error) {
+    console.error('Media endpoint error:', error);
+    res.status(500).json({ error: 'Failed to serve media' });
+  }
+});
+
 // GET /api/stream (SSE)
 app.get('/api/stream', (req: Request, res: Response) => {
   res.writeHead(200, {
@@ -268,7 +317,8 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       mimeType: req.file.mimetype,
       size: req.file.size,
       createdAt: new Date().toISOString(),
-      uploadSource
+      uploadSource,
+      absolutePath: null
     };
 
     // 1. Guardar registro inicial en la DB rápido
@@ -282,7 +332,8 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       fileId: fileMeta.id,
       savedName: fileMeta.savedName,
       originalName: fileMeta.originalName,
-      mimeType: fileMeta.mimeType
+      mimeType: fileMeta.mimeType,
+      absolutePath: null
     });
 
     res.status(202).json({
@@ -294,6 +345,83 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+// POST /api/scan-local
+app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> => {
+  const { directoryPath } = req.body;
+  if (!directoryPath || !fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
+    res.status(400).json({ error: 'Invalid directory path' });
+    return;
+  }
+
+  try {
+    const walkSync = (dir: string, filelist: string[] = []) => {
+      fs.readdirSync(dir).forEach(file => {
+        const filepath = path.join(dir, file);
+        if (fs.statSync(filepath).isDirectory()) {
+          filelist = walkSync(filepath, filelist);
+        } else {
+          filelist.push(filepath);
+        }
+      });
+      return filelist;
+    };
+
+    const files = walkSync(directoryPath);
+    let queued = 0;
+
+    for (const filePath of files) {
+      const ext = path.extname(filePath).toLowerCase();
+      // Only process common media extensions
+      if (!['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext)) {
+        continue;
+      }
+
+      const stat = fs.statSync(filePath);
+      const originalName = path.basename(filePath);
+      
+      // Determine MIME type simply based on extension
+      let mimeType = 'application/octet-stream';
+      if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+      else if (ext === '.png') mimeType = 'image/png';
+      else if (ext === '.webp') mimeType = 'image/webp';
+      else if (ext === '.heic') mimeType = 'image/heic';
+      else if (ext === '.mp4') mimeType = 'video/mp4';
+      else if (ext === '.mov') mimeType = 'video/quicktime';
+      else if (ext === '.webm') mimeType = 'video/webm';
+
+      const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+      const fileMeta = {
+        id: fileId,
+        originalName: originalName,
+        savedName: fileId + ext,
+        mimeType,
+        size: stat.size,
+        createdAt: new Date().toISOString(),
+        uploadSource: 'Directorio Local',
+        absolutePath: filePath
+      };
+
+      stmts.insertFile.run(fileMeta);
+      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+
+      await imageQueue.add('process-image', {
+        fileId: fileMeta.id,
+        savedName: fileMeta.savedName,
+        originalName: fileMeta.originalName,
+        mimeType: fileMeta.mimeType,
+        absolutePath: filePath
+      });
+      
+      queued++;
+    }
+
+    res.json({ success: true, filesQueued: queued, message: `Queued ${queued} files for indexing` });
+  } catch (error) {
+    console.error('Scan error:', error);
+    res.status(500).json({ error: 'Failed to scan directory' });
   }
 });
 

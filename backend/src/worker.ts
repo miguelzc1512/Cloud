@@ -56,11 +56,12 @@ const updateFileStmt = db.prepare(`
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 
 const worker = new Worker('image-processing', async job => {
-  const { fileId, savedName, originalName, mimeType } = job.data;
+  const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
   console.log(`[Worker] Empezando a procesar ${originalName} (${fileId})`);
 
   try {
-    let filePath = path.join(absoluteStoragePath, savedName);
+    const start = Date.now();
+    let filePath = absolutePath || path.join(absoluteStoragePath, savedName);
     let tempJpegPath: string | null = null;
     
     // Convertir HEIC a JPG usando sips nativo de macOS para evitar crashes de libheif

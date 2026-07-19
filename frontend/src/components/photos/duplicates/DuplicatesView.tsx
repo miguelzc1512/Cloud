@@ -317,7 +317,7 @@ export default function DuplicatesView({ onBulkDelete, setHeaderActions }: Dupli
                       {isSelected && <div className="absolute inset-0 bg-blue-500/10 z-10 pointer-events-none" />}
 
                       <ProgressiveImage 
-                        src={`/uploads/${file.thumbnailName || file.savedName}`} 
+                        src={`/api/media/${file.id}/thumbnail`} 
                         blurhash={file.blurhash}
                         alt="Duplicate"
                         className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}

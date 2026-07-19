@@ -41,6 +41,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [importingCount, setImportingCount] = useState(0);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [scanPath, setScanPath] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -200,6 +202,31 @@ export default function App() {
     }
   }, [fetchFiles]);
 
+  const handleScanLocal = async () => {
+    if (!scanPath.trim()) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/scan-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ directoryPath: scanPath.trim() })
+      });
+      if (res.ok) {
+        setIsScanModalOpen(false);
+        setScanPath('');
+        // Notifications are handled by SSE anyway
+      } else {
+        const error = await res.json();
+        alert('Error: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Scan error:', error);
+      alert('Error de conexión.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleBulkDelete = useCallback(async (ids: string[]) => {
     setIsLoading(true);
     // Execute all deletes in parallel
@@ -337,7 +364,7 @@ export default function App() {
             </div>
           </nav>
 
-          <div className="mt-8 flex">
+          <div className="mt-8 flex flex-col gap-2">
             <label
               className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap ${['buscar', 'trash'].includes(activeTab) || isUploading
                 ? 'bg-slate-100 text-slate-400 pointer-events-none opacity-50'
@@ -362,6 +389,16 @@ export default function App() {
                 </>
               )}
             </label>
+            <button
+              onClick={() => setIsScanModalOpen(true)}
+              className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap bg-indigo-50 text-indigo-600 hover:bg-indigo-100`}
+              title="Indexar Carpeta del Servidor"
+            >
+              <Monitor className="w-5 h-5 shrink-0" />
+              <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
+                Indexar Carpeta
+              </span>
+            </button>
           </div>
         </div>
       </aside>
@@ -626,6 +663,42 @@ export default function App() {
                    <Download className="w-4 h-4" /> Descargar
                  </a>
                </div>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* Modal Escaneo de Carpeta Local */}
+      {isScanModalOpen && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200" onClick={() => setIsScanModalOpen(false)}>
+           <div className="bg-white rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col items-center" onClick={e => e.stopPropagation()}>
+             <button onClick={() => setIsScanModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+               <XCircle className="w-6 h-6" />
+             </button>
+             <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+               <Monitor className="w-8 h-8 text-indigo-600" />
+             </div>
+             <h2 className="text-2xl font-bold text-slate-800 text-center mb-3">Indexar Carpeta del Servidor</h2>
+             <p className="text-slate-500 text-center mb-6 text-sm">
+               Ingresa la ruta absoluta de una carpeta que ya esté en el disco duro de este servidor.
+               CloudSync solo la leerá y generará miniaturas sin duplicar los archivos.
+             </p>
+             <div className="w-full flex flex-col gap-4">
+               <input 
+                 type="text" 
+                 placeholder="Ej: /Volumenes/FotosFamiliares" 
+                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                 value={scanPath}
+                 onChange={e => setScanPath(e.target.value)}
+                 onKeyDown={e => e.key === 'Enter' && handleScanLocal()}
+               />
+               <button 
+                 onClick={handleScanLocal}
+                 disabled={!scanPath.trim() || isLoading}
+                 className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-medium transition-colors"
+               >
+                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Escanear e Indexar'}
+               </button>
              </div>
            </div>
         </div>

@@ -96,7 +96,7 @@ export default function CreateAlbumView({ files = [], onClose, onSubmit }: Creat
   
   // Thumbnails para fotos de la cuenta
   const cloudSelectedFiles = files.filter(f => selectedIds.has(f.id));
-  const cloudDeckThumbnails = cloudSelectedFiles.slice(0, 3).map(f => `/uploads/${f.savedName}`);
+  const cloudDeckThumbnails = cloudSelectedFiles.slice(0, 3).map(f => `/api/media/${f.id}/thumbnail`);
 
   const hasLocal = localFiles.length > 0;
   const hasCloud = selectedIds.size > 0;

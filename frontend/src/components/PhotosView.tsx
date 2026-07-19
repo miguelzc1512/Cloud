@@ -135,14 +135,14 @@ const PhotoItem = memo(({ file, isSelected, isSelectingMode, onToggle }: PhotoIt
       
       {file.mimeType?.startsWith('video/') ? (
         <video
-          src={`/uploads/${file.savedName}#t=0.1`}
+          src={`/api/media/${file.id}/web#t=0.1`}
           className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
           muted
           playsInline
         />
       ) : (
         <ProgressiveImage
-          src={`/uploads/${file.thumbnailName || file.savedName}`}
+          src={`/api/media/${file.id}/thumbnail`}
           blurhash={file.blurhash}
           className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
           alt={file.originalName}
@@ -607,18 +607,18 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
 
       {photo.mimeType?.startsWith('video/') ? (
         <video
-          src={`/uploads/${photo.savedName}`}
+          src={`/api/media/${photo.id}/original`}
           controls
           autoPlay
           style={getStyle()}
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <div style={getStyle()} onClick={(e) => e.stopPropagation()}>
+        <div className="relative w-full h-full flex items-center justify-center" style={getStyle()} onClick={(e) => e.stopPropagation()}>
             <ProgressiveImage
               key={photo.id}
-              src={`/uploads/${photo.mimeType?.startsWith('image/hei') ? `web-${photo.savedName}.webp` : photo.savedName}`}
-              thumbnailSrc={photo.thumbnailName ? `/uploads/${photo.thumbnailName}` : undefined}
+              src={`/api/media/${photo.id}/web`}
+              thumbnailSrc={photo.thumbnailName ? `/api/media/${photo.id}/thumbnail` : undefined}
               alt={photo.originalName}
               objectFit="contain"
             />

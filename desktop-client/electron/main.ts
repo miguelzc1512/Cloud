@@ -1,5 +1,5 @@
+import * as path from "node:path";
 import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } from 'electron';
-import * as path from 'path';
 import * as fs from 'fs';
 import chokidar from 'chokidar';
 import axios from 'axios';
