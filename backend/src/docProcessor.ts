@@ -24,6 +24,20 @@ const worker = new Worker('doc-processing', async job => {
     UPDATE docs SET status = 'READY' WHERE id = ?
   `).run(id);
 
+  // Send SSE to let desktop client know it's done
+  const body = JSON.stringify({ fileId: id, step: 'upload_done', label: 'Upload Completo', originalName: doc.originalName || doc.name });
+  const options = {
+    hostname: '127.0.0.1',
+    port: Number(process.env.PORT || 3001),
+    path: '/api/worker-event',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+  };
+  const req = require('http').request(options);
+  req.on('error', () => {});
+  req.write(body);
+  req.end();
+
   console.log(`[Doc Worker] Finished doc: ${id}`);
   return { success: true };
 }, { connection: redisConnection as any });

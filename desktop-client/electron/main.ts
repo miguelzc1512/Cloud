@@ -101,7 +101,7 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
     console.log(`Indexing ${filePath}...`);
     // Notificar inicio
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 50 });
+      win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 50, contentType });
     });
 
     await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath, contentType });
@@ -111,7 +111,7 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
     
     // Notificar finalización
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { file: filePath, status: 'synced', progress: 100 });
+      win.webContents.send('sync-status', { file: filePath, status: 'synced', progress: 100, contentType });
     });
     console.log(`Indexed successfully: ${filePath}`);
   } catch (error: any) {
@@ -120,7 +120,7 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath) });
+      win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath), contentType });
     });
   }
 }
@@ -137,7 +137,7 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
 
     // Notificar inicio de subida
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 0 });
+      win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 0, contentType });
     });
 
     const response = await axios.post(`${config.serverUrl}/api/upload`, formData, {
@@ -145,7 +145,7 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
       onUploadProgress: (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
         BrowserWindow.getAllWindows().forEach(win => {
-          win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: percentCompleted });
+          win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: percentCompleted, contentType });
         });
       }
     });
@@ -155,7 +155,7 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
     
     // Notificar finalización
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { file: filePath, status: 'synced', progress: 100 });
+      win.webContents.send('sync-status', { file: filePath, status: 'synced', progress: 100, contentType });
     });
     console.log(`Uploaded successfully: ${filePath}`);
   } catch (error: any) {
@@ -164,7 +164,7 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath) });
+      win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath), contentType });
     });
   }
 }

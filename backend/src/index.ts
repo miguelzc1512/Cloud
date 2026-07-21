@@ -537,7 +537,7 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       stmts.insertFile.run(fileMeta);
 
       // Notificar al frontend que empezó la importación
-      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, contentType });
 
       // 2. Encolar trabajo de procesamiento asíncrono
       try {
@@ -590,7 +590,7 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
         return;
       }
       
-      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, contentType });
       res.status(202).json({
         ...fileMeta,
         status: 'PROCESSING',
@@ -755,7 +755,7 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     let queued = 0;
 
     // Avisar al cliente cuántos archivos hay en total para la barra de progreso
-    broadcastSSE('scan_start', { total, directoryPath });
+    broadcastSSE('scan_start', { total, directoryPath, contentType });
 
     for (const filePath of supportedFiles) {
       const ext = path.extname(filePath).toLowerCase();
@@ -789,7 +789,7 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         };
 
         stmts.insertFile.run(fileMeta);
-        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total });
+        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total, contentType });
 
         try {
           await imageQueue.add('generate-thumbnail', {
@@ -831,10 +831,10 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       }
       
       queued++;
-      broadcastSSE('scan_progress', { queued, total });
+      broadcastSSE('scan_progress', { queued, total, contentType });
     }
 
-    broadcastSSE('scan_done', { total, queued });
+    broadcastSSE('scan_done', { total, queued, contentType });
     res.json({ success: true, filesQueued: queued, total, message: `Queued ${queued} files for indexing` });
   } catch (error) {
     console.error('Scan error:', error);
@@ -900,7 +900,7 @@ app.post('/api/index-file', async (req: Request, res: Response): Promise<void> =
       };
 
       stmts.insertFile.run(fileMeta);
-      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, contentType });
 
       await imageQueue.add('generate-thumbnail', {
         fileId: fileMeta.id,

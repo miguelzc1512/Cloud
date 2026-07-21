@@ -32,21 +32,33 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
 
 export default function App() {
   const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
-  const [syncStatus, setSyncStatus] = useState<{ file: string, status: 'synced' | 'error' | 'syncing' | 'paused', progress?: number } | null>(null);
-  const [lastSyncTime, setLastSyncTime] = useState<string>('Buscando últimas actualizaciones...');
+  const [activeTab, setActiveTab] = useState<'gallery' | 'drive'>('gallery');
+
+  const [galleryProgress, setGalleryProgress] = useState<ProgressState | null>(null);
+  const [galleryLogs, setGalleryLogs] = useState<LogEntry[]>([]);
+  const [gallerySyncStatus, setGallerySyncStatus] = useState<{ file: string, status: 'synced' | 'error' | 'syncing' | 'paused', progress?: number } | null>(null);
+
+  const [driveProgress, setDriveProgress] = useState<ProgressState | null>(null);
+  const [driveLogs, setDriveLogs] = useState<LogEntry[]>([]);
+  const [driveSyncStatus, setDriveSyncStatus] = useState<{ file: string, status: 'synced' | 'error' | 'syncing' | 'paused', progress?: number } | null>(null);
+
   const [isPaused, setIsPaused] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
-  const [progress, setProgress] = useState<ProgressState | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Buscando últimas actualizaciones...');
+
   const [folderToUnlink, setFolderToUnlink] = useState<string | null>(null);
   const [folderTypeDialog, setFolderTypeDialog] = useState<{ mode: 'index' | 'sync', path: string } | null>(null);
 
-  const addLog = (type: LogEntry['type'], message: string) => {
-    setLogs(prev => {
-      const newLogs = [...prev, { id: Math.random().toString(36).substring(7), time: new Date(), type, message }];
-      return newLogs.slice(-25);
-    });
+  const addLog = (type: LogEntry['type'], message: string, contentType: 'gallery' | 'drive' = 'gallery') => {
+    const log = { id: Math.random().toString(36).substring(7), time: new Date(), type, message };
+    if (contentType === 'drive') {
+      setDriveLogs(prev => [...prev, log].slice(-25));
+    } else {
+      setGalleryLogs(prev => [...prev, log].slice(-25));
+    }
   };
+
+
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -61,19 +73,22 @@ export default function App() {
     // Escuchar eventos SSE reenviados desde el main process vía IPC
     const unsubscribeSSE = (window as any).electronAPI.onSSEEvent((_: any, payload: { event: string; data: any }) => {
       const { event, data } = payload;
+      const isDrive = data.contentType === 'drive';
+      const setProg = isDrive ? setDriveProgress : setGalleryProgress;
+      
       if (event === 'scan_start') {
-        setProgress({ total: data.total, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: '', stepInfo: null, isBatch: true });
-        addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`);
+        setProg({ total: data.total, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: '', stepInfo: null, isBatch: true } as any);
+        addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`, data.contentType);
       } else if (event === 'scan_progress') {
-        if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`);
+        if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`, data.contentType);
       } else if (event === 'upload_started') {
-        setProgress(prev => prev
+        setProg((prev: any) => prev
           ? { ...prev, total: prev.isBatch ? Math.max(prev.total, data.total || prev.total) : Math.max(prev.total, data.total || prev.total + 1), currentFile: data.originalName }
           : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null, isBatch: false }
         );
-        addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
+        addLog('info', `Copiando: ${data.originalName || 'archivo'}`, data.contentType);
       } else if (event === 'worker_step') {
-        setProgress(prev => {
+        setProg((prev: any) => {
           let base = prev;
           if (!base) {
             base = { total: 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null };
@@ -84,16 +99,16 @@ export default function App() {
             nextState.thumbCompleted = Math.min(base.thumbCompleted + 1, base.total);
           } else if (data.step === 'embedding_done') {
             nextState.embedCompleted = Math.min(base.embedCompleted + 1, base.total);
-          } else if (data.step === 'done') {
+          } else if (data.step === 'done' || data.step === 'upload_done') {
             nextState.facesCompleted = Math.min(base.facesCompleted + 1, base.total);
           }
           return nextState;
         });
 
-        if (data.step === 'done') {
-          addLog('success', `Concluido con éxito: ${data.originalName || 'Archivo procesado'}`);
+        if (data.step === 'done' || data.step === 'upload_done') {
+          addLog('success', `Concluido con éxito: ${data.originalName || 'Archivo procesado'}`, data.contentType);
           setTimeout(() => {
-            setProgress(prev => {
+            setProg((prev: any) => {
               if (!prev) return null;
               if (prev.facesCompleted >= prev.total) {
                 const now = new Date();
@@ -109,10 +124,10 @@ export default function App() {
         } else if (data.step === 'thumbnail_done' || data.step === 'embedding_done') {
           // Silent internal updates for counts
         } else {
-          addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`);
+          addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`, data.contentType);
         }
       } else if (event === 'scan_done') {
-        addLog('success', `Carpetas analizadas. ${data.total || 0} archivos en cola para IA...`);
+        addLog('success', `Carpetas analizadas. ${data.total || 0} archivos en cola...`, data.contentType);
       }
     });
 
@@ -122,19 +137,27 @@ export default function App() {
         setIsPaused(data.status === 'paused');
         setPendingFiles(data.pendingFiles || []);
         if (data.status === 'paused') {
-          setSyncStatus(null);
-          addLog('warning', 'Sincronización pausada.');
+          setGallerySyncStatus(null);
+          setDriveSyncStatus(null);
+          addLog('warning', 'Sincronización pausada.', 'gallery');
+          addLog('warning', 'Sincronización pausada.', 'drive');
         }
       } else {
-        setSyncStatus(data);
+        const isDrive = data.contentType === 'drive';
+        if (isDrive) setDriveSyncStatus(data);
+        else setGallerySyncStatus(data);
+        
         if (data.status === 'error') {
-          addLog('error', `Error sincronizando: ${data.file || 'archivo'}`);
+          addLog('error', `Error sincronizando: ${data.file || 'archivo'}`, data.contentType);
         }
         if (data.status === 'synced' || data.status === 'error') {
           const now = new Date();
           setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
           clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => setSyncStatus(null), 4000);
+          timeoutId = setTimeout(() => {
+            if (isDrive) setDriveSyncStatus(null);
+            else setGallerySyncStatus(null);
+          }, 4000);
         } else {
           clearTimeout(timeoutId);
         }
@@ -188,6 +211,9 @@ export default function App() {
     }
   };
 
+  const progress = activeTab === 'gallery' ? galleryProgress : driveProgress;
+  const logs = activeTab === 'gallery' ? galleryLogs : driveLogs;
+  const syncStatus = activeTab === 'gallery' ? gallerySyncStatus : driveSyncStatus;
   const isProcessing = progress !== null || (syncStatus && syncStatus.status === 'syncing');
 
   if (!config) return <div className="h-screen w-screen flex items-center justify-center text-slate-500 bg-[#f8fafc]">Cargando...</div>;
@@ -222,11 +248,27 @@ export default function App() {
       <aside className="w-64 flex flex-col px-6 pt-6 pb-4 relative z-10 shrink-0 border-r border-slate-100/80">
         
         {/* Logo under traffic lights aligned left */}
-        <div className="flex items-center gap-3 mb-8 px-1 non-draggable">
+        <div className="flex items-center gap-3 mb-6 px-1 non-draggable">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
             <Cloud className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-medium text-slate-800 tracking-tight">Cloud Sync</span>
+        </div>
+
+        {/* Tab Toggle */}
+        <div className="flex bg-slate-100/80 rounded-xl p-1 mb-6 non-draggable">
+          <button 
+            onClick={() => setActiveTab('gallery')}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'gallery' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+          >
+            <Image className="w-3.5 h-3.5" /> Fotos
+          </button>
+          <button 
+            onClick={() => setActiveTab('drive')}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'drive' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+          >
+            <Folder className="w-3.5 h-3.5" /> Documentos
+          </button>
         </div>
 
         <div className="flex flex-col gap-2 mb-6 non-draggable">
@@ -255,14 +297,13 @@ export default function App() {
               <p className="text-xs text-slate-400">Sin carpetas</p>
             </div>
           ) : (
-            <>
-              {config.linkedFolders.filter(f => f.contentType !== 'drive').length > 0 && (
+              {config.linkedFolders.filter(f => f.contentType === (activeTab === 'gallery' ? undefined : 'drive') || (activeTab === 'gallery' && f.contentType !== 'drive')).length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Galería</p>
-                  {config.linkedFolders.filter(f => f.contentType !== 'drive').map(folderObj => (
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Carpetas de {activeTab === 'gallery' ? 'Fotos' : 'Documentos'}</p>
+                  {config.linkedFolders.filter(f => f.contentType === (activeTab === 'gallery' ? undefined : 'drive') || (activeTab === 'gallery' && f.contentType !== 'drive')).map(folderObj => (
                     <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
                       <div className="flex items-center gap-2 overflow-hidden mb-1">
-                        <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+                        <Folder className={`w-4 h-4 shrink-0 ${activeTab === 'gallery' ? 'text-blue-500' : 'text-slate-500'}`} />
                         <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
                       </div>
                       <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
@@ -279,30 +320,6 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {config.linkedFolders.filter(f => f.contentType === 'drive').length > 0 && (
-                <div className="space-y-2 mt-4">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Documentos / Archivos</p>
-                  {config.linkedFolders.filter(f => f.contentType === 'drive').map(folderObj => (
-                    <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
-                      <div className="flex items-center gap-2 overflow-hidden mb-1">
-                        <Folder className="w-4 h-4 text-slate-500 shrink-0" />
-                        <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
-                      </div>
-                      <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                        {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
-                      </span>
-                      <button 
-                        onClick={() => confirmUnlink(folderObj.path)}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
-                        title="Desvincular"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
           )}
         </div>
 
@@ -371,53 +388,59 @@ export default function App() {
                     Progreso General
                   </span>
                   <span className="text-xs text-slate-400 font-medium">
-                    {Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))}%
+                    {activeTab === 'gallery' 
+                      ? Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))
+                      : Math.round(((progress.facesCompleted) * 100) / progress.total)}%
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))}%` }}
+                    style={{ width: `${activeTab === 'gallery' 
+                      ? Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))
+                      : Math.round(((progress.facesCompleted) * 100) / progress.total)}%` }}
                   />
                 </div>
               </div>
               
-              {/* Fases individuales */}
-              <div className="grid grid-cols-3 gap-4 mt-2 bg-slate-50 border border-slate-100 p-3 rounded-xl">
-                {/* Fase 1: Miniaturas */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Image className="w-3.5 h-3.5 text-indigo-500" />
-                    <span className="text-[10px] font-medium text-slate-600 truncate">1. Miniaturas</span>
-                    <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted}/{progress.total}</span>
+              {/* Fases individuales solo para Galería */}
+              {activeTab === 'gallery' && (
+                <div className="grid grid-cols-3 gap-4 mt-2 bg-slate-50 border border-slate-100 p-3 rounded-xl">
+                  {/* Fase 1: Miniaturas */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Image className="w-3.5 h-3.5 text-indigo-500" />
+                      <span className="text-[10px] font-medium text-slate-600 truncate">1. Miniaturas</span>
+                      <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted}/{progress.total}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.thumbCompleted * 100) / progress.total)}%` }} />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.thumbCompleted * 100) / progress.total)}%` }} />
+                  {/* Fase 2: Embeddings */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Brain className="w-3.5 h-3.5 text-purple-500" />
+                      <span className="text-[10px] font-medium text-slate-600 truncate">2. Análisis IA</span>
+                      <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted}/{progress.total}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.embedCompleted * 100) / progress.total)}%` }} />
+                    </div>
+                  </div>
+                  {/* Fase 3: Rostros */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Users className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-[10px] font-medium text-slate-600 truncate">3. Rostros</span>
+                      <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted}/{progress.total}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.facesCompleted * 100) / progress.total)}%` }} />
+                    </div>
                   </div>
                 </div>
-                {/* Fase 2: Embeddings */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Brain className="w-3.5 h-3.5 text-purple-500" />
-                    <span className="text-[10px] font-medium text-slate-600 truncate">2. Análisis IA</span>
-                    <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted}/{progress.total}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.embedCompleted * 100) / progress.total)}%` }} />
-                  </div>
-                </div>
-                {/* Fase 3: Rostros */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Users className="w-3.5 h-3.5 text-emerald-500" />
-                    <span className="text-[10px] font-medium text-slate-600 truncate">3. Rostros</span>
-                    <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted}/{progress.total}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.facesCompleted * 100) / progress.total)}%` }} />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
