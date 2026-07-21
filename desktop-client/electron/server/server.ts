@@ -8,7 +8,27 @@ import exifr from 'exifr';
 import path from 'path';
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
+import os from 'os';
 dotenv.config();
+
+// --- Intercept console logs to send to UI ---
+const originalLog = console.log;
+const originalError = console.error;
+
+function broadcastLog(type: 'info' | 'error', ...args: any[]) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  process.emit('server-log', { type, text: msg, time: new Date().toISOString() });
+}
+
+console.log = (...args) => {
+  originalLog(...args);
+  broadcastLog('info', ...args);
+};
+
+console.error = (...args) => {
+  originalError(...args);
+  broadcastLog('error', ...args);
+};
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -20,50 +40,20 @@ if (!fs.existsSync(absoluteStoragePath)) {
   fs.mkdirSync(absoluteStoragePath, { recursive: true });
 }
 
-// ─── SQLite Database Setup ─────────────────────────────────────────────────
+// ─── SQLite Database Setup (Photos) ─────────────────────────────────────────────────
 const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '..', 'storage');
 const dbPath = path.resolve(STORAGE_PATH, 'nube.db');
 export const db = new Database(dbPath);
-
-// Enable WAL mode for better concurrent read performance
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// ─── SQLite Database Setup (Documents) ─────────────────────────────────────────────
+const docsDbPath = path.resolve(STORAGE_PATH, 'documents.db');
+export const docsDb = new Database(docsDbPath);
+docsDb.pragma('journal_mode = WAL');
+docsDb.pragma('foreign_keys = ON');
+
 // Create tables
-const docDbPath = path.resolve(STORAGE_PATH, 'documents.db');
-export const docDb = new Database(docDbPath);
-docDb.pragma('journal_mode = WAL');
-docDb.pragma('foreign_keys = ON');
-
-docDb.exec(`
-  CREATE TABLE IF NOT EXISTS doc_clusters (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    createdAt TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS docs (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    savedName TEXT NOT NULL UNIQUE,
-    extension TEXT NOT NULL,
-    mimeType TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    absolutePath TEXT,
-    clusterId TEXT,
-    status TEXT DEFAULT 'PROCESSING',
-    createdAt TEXT NOT NULL,
-    FOREIGN KEY (clusterId) REFERENCES doc_clusters(id) ON DELETE SET NULL
-  );
-`);
-
-try {
-  docDb.exec(`ALTER TABLE doc_clusters ADD COLUMN parentId TEXT REFERENCES doc_clusters(id) ON DELETE CASCADE`);
-} catch (e) {
-  // Column might already exist, ignore
-}
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY,
@@ -129,6 +119,41 @@ db.exec(`
     PRIMARY KEY (albumId, personId),
     FOREIGN KEY (albumId) REFERENCES albums(id) ON DELETE CASCADE
   );
+`);
+
+// Create tables for documents
+docsDb.exec(`
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    extension TEXT NOT NULL,
+    absolutePath TEXT NOT NULL UNIQUE,
+    hash TEXT,
+    size INTEGER NOT NULL,
+    status TEXT DEFAULT 'PENDING',
+    clusterId TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS doc_versions (
+    id TEXT PRIMARY KEY,
+    documentId TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (documentId) REFERENCES documents(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS doc_clusters (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    embedding TEXT
+  );
+
+  -- Virtual table for Full Text Search on document content/path
+  CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(id, name, absolutePath, content);
 `);
 
 try {
@@ -206,7 +231,7 @@ export const stmts = {
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(absoluteStoragePath));
-app.use('/public', express.static(path.resolve(__dirname, '..', 'public')));
+app.use(express.static(path.resolve(__dirname, '..', 'public', 'web')));
 
 const multerStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, absoluteStoragePath),
@@ -250,15 +275,64 @@ async function initModels() {
 }
 initModels();
 
-import { Queue, QueueEvents } from 'bullmq';
-import IORedis from 'ioredis';
+import { processImage } from './processor';
 
-// Configurar Redis y Queue
-const redisConnection = new IORedis({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
-const imageQueue = new Queue('image-processing', { connection: redisConnection as any });
-const imageQueueEvents = new QueueEvents('image-processing', { connection: redisConnection as any });
+// ─── Power Mode ───────────────────────────────────────────────────────────
+export let currentPowerMode: 'eco' | 'max' = 'eco';
 
-const docQueue = new Queue('doc-processing', { connection: redisConnection as any });
+export function updatePowerMode(mode: 'eco' | 'max') {
+  currentPowerMode = mode;
+  console.log(`[Worker] Power Mode set to ${mode}`);
+  imageQueue.process(); // Trigger processing in case it was waiting
+}
+
+// ─── Simple In-Memory Queue ────────────────────────────────────────────────
+class AsyncQueue {
+  public queue: any[] = [];
+  public activeWorkers = 0;
+  
+  public get length() {
+    return this.queue.length;
+  }
+  
+  public currentJob: any = null;
+
+  async add(name: string, data: any) {
+    this.queue.push(data);
+    this.process();
+  }
+
+  public process() {
+    const limit = currentPowerMode === 'max' ? 8 : 1;
+    if (this.activeWorkers >= limit || this.queue.length === 0) return;
+    
+    while (this.activeWorkers < limit && this.queue.length > 0) {
+      this.activeWorkers++;
+      this.runWorker();
+    }
+  }
+
+  private async runWorker() {
+    if (this.queue.length === 0) {
+      this.activeWorkers--;
+      return;
+    }
+    const jobData = this.queue.shift();
+    this.currentJob = jobData;
+    try {
+      await processImage(jobData);
+      broadcastSSE('photo_ready', { jobId: jobData.fileId });
+    } catch (e) {
+      console.error('Error in queue processing:', e);
+    }
+    this.activeWorkers--;
+    this.process();
+  }
+}
+
+const imageQueue = new AsyncQueue();
+
+export { absoluteStoragePath, broadcastSSE };
 
 // ─── Server-Sent Events (SSE) ─────────────────────────────────────────────
 const sseClients = new Set<Response>();
@@ -269,10 +343,6 @@ function broadcastSSE(event: string, data: any) {
     client.write(`data: ${JSON.stringify(data)}\n\n`);
   });
 }
-
-imageQueueEvents.on('completed', ({ jobId, returnvalue }) => {
-  broadcastSSE('photo_ready', { jobId });
-});
 
 // ─── Routes ───────────────────────────────────────────────────────────────
 
@@ -333,48 +403,10 @@ app.get('/api/stream', (req: Request, res: Response) => {
   req.on('close', () => sseClients.delete(res));
 });
 
-// Función para crear/buscar la estructura de carpetas en una transacción
-const resolveFoldersTransaction = docDb.transaction((relativePath: string, targetFolderId: string | null) => {
-  if (!relativePath) return targetFolderId;
-  const parts = relativePath.split('/');
-  if (parts.length <= 1) return targetFolderId;
-  
-  const folderNames = parts.slice(0, parts.length - 1);
-  let currentParentId = targetFolderId;
-  
-  const getFolderNull = docDb.prepare(`SELECT id FROM doc_clusters WHERE name = ? AND parentId IS NULL`);
-  const getFolderNotNull = docDb.prepare(`SELECT id FROM doc_clusters WHERE name = ? AND parentId = ?`);
-  const createFolder = docDb.prepare(`INSERT INTO doc_clusters (id, name, parentId, createdAt) VALUES (?, ?, ?, ?)`);
-
-  for (const folderName of folderNames) {
-    let row = currentParentId === null 
-      ? getFolderNull.get(folderName) as any
-      : getFolderNotNull.get(folderName, currentParentId) as any;
-      
-    if (row) {
-      currentParentId = row.id;
-    } else {
-      const newId = 'f-' + Date.now().toString() + Math.random().toString(36).slice(2, 6);
-      createFolder.run(newId, folderName, currentParentId, new Date().toISOString());
-      currentParentId = newId;
-    }
-  }
-  return currentParentId;
-});
-
 // POST /api/upload
 app.post('/api/upload', upload.single('file'), async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
-
-    const relativePath = req.body.relativePath || null;
-    const targetFolderId = req.body.targetFolderId === 'null' ? null : (req.body.targetFolderId || null);
-    const sourceTab = req.body.sourceTab || null;
-
-    let finalClusterId = targetFolderId;
-    if (relativePath) {
-      finalClusterId = resolveFoldersTransaction(relativePath, targetFolderId);
-    }
 
     let uploadSource = 'Navegador Web';
     const ua = req.headers['user-agent'] || '';
@@ -395,149 +427,109 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       absolutePath: null
     };
 
-    const isMedia = req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/');
+    // 1. Guardar registro inicial en la DB rápido
+    stmts.insertFile.run(fileMeta);
 
-    if (isMedia) {
-      // 1. Guardar registro inicial en la DB rápida
-      stmts.insertFile.run(fileMeta);
+    // Notificar al frontend que empezó la importación
+    broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
 
-      // Notificar al frontend que empezó la importación
-      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+    // 2. Encolar trabajo de procesamiento asíncrono
+    await imageQueue.add('process-image', {
+      fileId: fileMeta.id,
+      savedName: fileMeta.savedName,
+      originalName: fileMeta.originalName,
+      mimeType: fileMeta.mimeType,
+      absolutePath: null
+    });
 
-      // 2. Encolar trabajo de procesamiento asíncrono
-      await imageQueue.add('process-image', {
-        fileId: fileMeta.id,
-        savedName: fileMeta.savedName,
-        originalName: fileMeta.originalName,
-        mimeType: fileMeta.mimeType,
-        absolutePath: null
-      });
+    res.status(202).json({
+      ...fileMeta,
+      status: 'PROCESSING',
+      message: 'Upload accepted, processing in background'
+    });
 
-      // Si se subió desde la pestaña de Archivos o como parte de una carpeta mixta, guardarlo en Documentos también
-      if (sourceTab === 'archivos' || relativePath || targetFolderId) {
-        const ext = path.extname(req.file.originalname).substring(1) || 'file';
-        docDb.prepare(`
-          INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'READY')
-        `).run(fileMeta.id + '-doc', fileMeta.originalName, fileMeta.savedName, ext, fileMeta.mimeType, fileMeta.size, null, finalClusterId, fileMeta.createdAt);
-      }
-
-      res.status(202).json({
-        ...fileMeta,
-        status: 'PROCESSING',
-        message: 'Upload accepted, processing media in background'
-      });
-    } else {
-      // Procesar documento
-      const ext = path.extname(req.file.originalname).substring(1) || 'file';
-      docDb.prepare(`
-        INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
-      `).run(fileMeta.id, fileMeta.originalName, fileMeta.savedName, ext, fileMeta.mimeType, fileMeta.size, null, finalClusterId, fileMeta.createdAt);
-
-      await docQueue.add('process-doc', { id: fileMeta.id }, { jobId: fileMeta.id });
-      
-      broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
-      res.status(202).json({
-        ...fileMeta,
-        status: 'PROCESSING',
-        message: 'Document accepted, clustering in background'
-      });
-    }
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Failed to upload file' });
   }
 });
 
-// GET /api/documents
-app.get('/api/documents', (_req: Request, res: Response) => {
+// POST /api/index-file
+app.post('/api/index-file', async (req: Request, res: Response): Promise<void> => {
   try {
-    const docs = docDb.prepare(`SELECT * FROM docs ORDER BY createdAt DESC`).all();
-    res.json(docs);
-  } catch (e) {
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-// GET /api/documents/clusters (Renombrado conceptualmente a carpetas)
-app.get('/api/documents/clusters', (_req: Request, res: Response) => {
-  try {
-    const clusters = docDb.prepare(`SELECT * FROM doc_clusters ORDER BY createdAt DESC`).all();
-    res.json(clusters);
-  } catch (e) {
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-// POST /api/documents/folders
-app.post('/api/documents/folders', (req: Request, res: Response) => {
-  try {
-    const { name, parentId } = req.body;
-    const id = 'f-' + Date.now().toString();
-    docDb.prepare(`
-      INSERT INTO doc_clusters (id, name, description, createdAt, parentId)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, name, 'Carpeta', new Date().toISOString(), parentId || null);
-    res.json({ id, name, parentId });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to create folder' });
-  }
-});
-
-// PUT /api/documents/folders/:id
-app.put('/api/documents/folders/:id', (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    docDb.prepare(`UPDATE doc_clusters SET name = ? WHERE id = ?`).run(name, req.params.id);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to rename folder' });
-  }
-});
-
-// DELETE /api/documents/folders/:id
-app.delete('/api/documents/folders/:id', (req: Request, res: Response) => {
-  try {
-    // SQLite will cascade delete documents if FOREIGN KEY ON DELETE CASCADE is set.
-    // Wait, the docDb schema sets ON DELETE SET NULL for documents. 
-    // We should manually delete documents inside it or let them fall to root.
-    // Let's let them fall to root (SET NULL).
-    docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(req.params.id);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to delete folder' });
-  }
-});
-
-// PUT /api/documents/:id/move
-app.put('/api/documents/:id/move', (req: Request, res: Response) => {
-  try {
-    const { folderId } = req.body; // clusterId
-    docDb.prepare(`UPDATE docs SET clusterId = ? WHERE id = ?`).run(folderId || null, req.params.id);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to move document' });
-  }
-});
-
-// DELETE /api/documents/:id
-app.delete('/api/documents/:id', (req: Request, res: Response) => {
-  try {
-    const doc = docDb.prepare(`SELECT * FROM docs WHERE id = ?`).get(req.params.id) as any;
-    if (doc) {
-      docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(req.params.id);
-      try {
-        if (doc.savedName) fs.unlinkSync(path.join(absoluteStoragePath, doc.savedName));
-      } catch (err) {
-        console.error('Failed to delete file from disk', err);
-      }
+    const { absolutePath } = req.body;
+    if (!absolutePath || !fs.existsSync(absolutePath)) {
+      res.status(400).json({ error: 'Ruta inválida o archivo no encontrado' });
+      return;
     }
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to delete document' });
+
+    const stat = fs.statSync(absolutePath);
+    if (stat.isDirectory()) {
+      res.status(400).json({ error: 'La ruta proporcionada es un directorio' });
+      return;
+    }
+
+    const ext = path.extname(absolutePath).toLowerCase();
+    const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.mp4', '.mov', '.avi'].includes(ext);
+    
+    if (!isMedia) {
+      res.status(400).json({ error: 'No es un archivo multimedia válido' });
+      return;
+    }
+
+    // Verificar si ya existe en la BD por absolutePath
+    const existing = db.prepare('SELECT id FROM files WHERE absolutePath = ? LIMIT 1').get(absolutePath) as any;
+    if (existing) {
+      res.status(200).json({ message: 'El archivo ya está indexado', id: existing.id });
+      return;
+    }
+
+    const fileMeta = {
+      id: Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7),
+      originalName: path.basename(absolutePath),
+      savedName: Date.now().toString() + ext,
+      mimeType: getMimeType(absolutePath),
+      size: stat.size,
+      createdAt: new Date().toISOString(),
+      uploadSource: 'Indexado Local',
+      absolutePath: absolutePath
+    };
+
+    stmts.insertFile.run(fileMeta);
+    broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+
+    await imageQueue.add('process-image', {
+      fileId: fileMeta.id,
+      savedName: fileMeta.savedName,
+      originalName: fileMeta.originalName,
+      mimeType: fileMeta.mimeType,
+      absolutePath: absolutePath
+    });
+
+    res.status(202).json({
+      ...fileMeta,
+      status: 'PROCESSING',
+      message: 'File indexed and processing in background'
+    });
+  } catch (error) {
+    console.error('Index file error:', error);
+    res.status(500).json({ error: 'Failed to index file' });
   }
 });
+
+function getMimeType(filePath: string) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.jpg': case '.jpeg': return 'image/jpeg';
+    case '.png': return 'image/png';
+    case '.webp': return 'image/webp';
+    case '.mp4': return 'video/mp4';
+    case '.mov': return 'video/quicktime';
+    case '.heic': return 'image/heic';
+    case '.avi': return 'video/x-msvideo';
+    default: return 'application/octet-stream';
+  }
+}
 
 // POST /api/scan-local
 app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> => {
@@ -605,6 +597,9 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       else if (ext === '.webm') mimeType = 'video/webm';
 
       const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+      const existing = db.prepare('SELECT id FROM files WHERE absolutePath = ? LIMIT 1').get(filePath) as any;
+      if (existing) continue;
+
       const fileMeta = {
         id: fileId,
         originalName: originalName,
@@ -1378,10 +1373,185 @@ const cleanupTrash = () => {
   }
 };
 
+// Fallback for React Router (Web UI)
+app.use((req: Request, res: Response, next: express.NextFunction) => {
+  if (req.method !== 'GET') return next();
+  if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
+    res.status(404).json({ error: 'Endpoint not found' });
+  } else {
+    res.sendFile(path.resolve(__dirname, '..', 'public', 'web', 'index.html'));
+  }
+});
+
 // Run on startup and every hour
 cleanupTrash();
 setInterval(cleanupTrash, 60 * 60 * 1000);
 
+// --- Stats Polling for UI ---
+setInterval(() => {
+  try {
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const cpus = os.cpus();
+    
+    // Simplistic CPU load estimate (not perfect, but gives an idea)
+    let cpuLoad = 0;
+    if (cpus && cpus.length > 0) {
+      let totalIdle = 0;
+      let totalTick = 0;
+      for (const cpu of cpus) {
+        for (const type in cpu.times) {
+          totalTick += cpu.times[type as keyof typeof cpu.times];
+        }
+        totalIdle += cpu.times.idle;
+      }
+      cpuLoad = 100 - ~~(100 * totalIdle / totalTick);
+    }
+    
+    // Disk Space (rough estimate using fs.statfsSync if available)
+    let diskFree = 0;
+    let diskTotal = 0;
+    try {
+      if ((fs as any).statfsSync) {
+        const stat = (fs as any).statfsSync(STORAGE_PATH);
+        diskTotal = stat.blocks * stat.bsize;
+        diskFree = stat.bfree * stat.bsize;
+      }
+    } catch(e){}
+
+    // Get local IPs
+    const nets = os.networkInterfaces();
+    const ips: string[] = [];
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        // Skip over non-IPv4 and internal (i.e. 127.0.0.1)
+        if (net.family === 'IPv4' && !net.internal) {
+          ips.push(net.address);
+        }
+      }
+    }
+
+    process.emit('server-stats', {
+      ram: { used: usedMem, total: totalMem },
+      cpu: cpuLoad,
+      disk: { free: diskFree, total: diskTotal },
+      queue: { length: imageQueue.length, currentJob: imageQueue.currentJob?.originalName || null },
+      ips: ips
+    });
+  } catch (e) {}
+}, 2000);
+
+// ─── Queue Reset (Destrabe de fotos atoradas) ─────────────────────────────
+app.post('/api/queue/reset', async (_req: Request, res: Response) => {
+  try {
+    // 1. Clear the in-memory queue and reset worker count
+    const clearedCount = imageQueue.queue.length;
+    imageQueue.queue = [];
+    imageQueue.activeWorkers = 0;
+    imageQueue.currentJob = null;
+
+    // 2. Find ALL unfinished photos: stuck in PROCESSING or waiting in PENDING
+    const stuckFiles = db.prepare(
+      `SELECT * FROM files WHERE status = 'PROCESSING' OR status = 'PENDING'`
+    ).all() as any[];
+
+    // Reset PROCESSING back to PENDING so they get requeued cleanly
+    db.prepare(`UPDATE files SET status = 'PENDING' WHERE status = 'PROCESSING'`).run();
+
+    // 3. Re-add all unfinished files to the queue
+    for (const file of stuckFiles) {
+      const absolutePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      await imageQueue.add('process-image', {
+        fileId: file.id,
+        savedName: file.savedName,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        absolutePath,
+      });
+    }
+
+    console.log(`[Queue Reset] Cleared ${clearedCount} in-memory jobs. Re-queued ${stuckFiles.length} unfinished files.`);
+    res.json({ ok: true, cleared: clearedCount, requeued: stuckFiles.length });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+// ─── API Endpoints para Documentos (Grafo / Red Neuronal) ───────────────────
+
+app.get('/api/documents', (req, res) => {
+  try {
+    const docs = docsDb.prepare(`SELECT id, name, extension, absolutePath, size, status, clusterId, updatedAt FROM documents ORDER BY updatedAt DESC`).all();
+    res.json(docs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+app.get('/api/documents/clusters', (req, res) => {
+  try {
+    const clusters = docsDb.prepare(`SELECT id, name FROM doc_clusters`).all();
+    res.json(clusters);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch clusters' });
+  }
+});
+
+// Import doc processor
+import { processDocument } from './docProcessor';
+// Add to queue or just a dummy endpoint for now to test indexing
+app.post('/api/documents/scan', async (req, res) => {
+  try {
+    const { absolutePath } = req.body;
+    if (!absolutePath || !fs.existsSync(absolutePath)) {
+      res.status(400).json({ error: 'Ruta inválida' });
+      return;
+    }
+    const stat = fs.statSync(absolutePath);
+    const originalName = path.basename(absolutePath);
+    const extension = path.extname(absolutePath).toLowerCase();
+    
+    // Asynchronous processing
+    processDocument({ absolutePath, originalName, extension, size: stat.size }).catch(console.error);
+    
+    res.json({ message: 'Procesamiento en segundo plano iniciado' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to scan document' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port} — SQLite DB: ${dbPath}`);
+
+  // ─── Startup Recovery: requeue any unfinished files from previous session ──
+  setTimeout(async () => {
+    try {
+      const unfinished = db.prepare(
+        `SELECT * FROM files WHERE status = 'PROCESSING' OR status = 'PENDING'`
+      ).all() as any[];
+
+      if (unfinished.length > 0) {
+        console.log(`[Startup Recovery] Found ${unfinished.length} unfinished files — re-queuing...`);
+        db.prepare(`UPDATE files SET status = 'PENDING' WHERE status = 'PROCESSING'`).run();
+        for (const file of unfinished) {
+          const absolutePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+          await imageQueue.add('process-image', {
+            fileId: file.id,
+            savedName: file.savedName,
+            originalName: file.originalName,
+            mimeType: file.mimeType,
+            absolutePath,
+          });
+        }
+        console.log(`[Startup Recovery] Re-queued ${unfinished.length} files successfully.`);
+      }
+    } catch (e) {
+      console.error('[Startup Recovery] Error:', e);
+    }
+  }, 3000); // Wait 3s for AI models to load first
 });

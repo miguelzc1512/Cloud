@@ -6,20 +6,40 @@ import axios from 'axios';
 import FormData from 'form-data';
 const isDev = process.env.NODE_ENV !== 'production';
 
+// Iniciar servidor backend unificado internamente
+process.env.STORAGE_PATH = path.join(app.getPath('userData'), 'cloud-storage');
+if (!fs.existsSync(process.env.STORAGE_PATH)) {
+  fs.mkdirSync(process.env.STORAGE_PATH, { recursive: true });
+}
+require('./server/server');
+
 // Configuraciones locales
 const configPath = path.join(app.getPath('userData'), 'sync-config.json');
 const statePath = path.join(app.getPath('userData'), 'sync-state.json');
 
 let config = {
   serverUrl: 'http://localhost:3001',
-  linkedFolders: [] as string[]
+  linkedFolders: [] as Array<{ path: string, mode: 'index' | 'sync' }>,
+  powerMode: 'eco' as 'eco' | 'max'
 };
 
 let uploadedState: Record<string, boolean> = {};
 
 // Cargar estado inicial
 if (fs.existsSync(configPath)) {
-  try { config = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (e) {}
+  try {
+    const loaded = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (loaded.serverUrl) config.serverUrl = loaded.serverUrl;
+    if (Array.isArray(loaded.linkedFolders)) {
+      config.linkedFolders = loaded.linkedFolders.map((f: any) => {
+        if (typeof f === 'string') return { path: f, mode: 'index' as const };
+        return f;
+      });
+    }
+    if (loaded.powerMode === 'eco' || loaded.powerMode === 'max') {
+      config.powerMode = loaded.powerMode;
+    }
+  } catch (e) {}
 }
 if (fs.existsSync(statePath)) {
   try { uploadedState = JSON.parse(fs.readFileSync(statePath, 'utf8')); } catch (e) {}
@@ -40,11 +60,11 @@ function notifySyncStatus() {
   });
 }
 
-function startWatching(folderPath: string) {
-  if (watchers[folderPath]) return;
+function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
+  if (watchers[folder.path]) return;
 
-  console.log(`Starting to watch: ${folderPath}`);
-  const watcher = chokidar.watch(folderPath, {
+  console.log(`Starting to watch: ${folder.path} [${folder.mode}]`);
+  const watcher = chokidar.watch(folder.path, {
     ignored: /(^|[\/\\])\../, // ignorar archivos ocultos
     persistent: true,
     ignoreInitial: false
@@ -62,20 +82,49 @@ function startWatching(folderPath: string) {
           notifySyncStatus();
         }
       } else {
-        await uploadFile(filePath);
+        if (folder.mode === 'sync') {
+          await uploadFile(filePath);
+        } else {
+          await indexFile(filePath);
+        }
       }
     }
   });
 
-  watchers[folderPath] = watcher;
+  watchers[folder.path] = watcher;
 }
 
-// ... rest of the file stays same until IPC handlers ...
 function stopWatching(folderPath: string) {
   if (watchers[folderPath]) {
     watchers[folderPath].close();
     delete watchers[folderPath];
     console.log(`Stopped watching: ${folderPath}`);
+  }
+}
+
+async function indexFile(filePath: string) {
+  try {
+    console.log(`Indexing ${filePath}...`);
+    // Notificar inicio
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 50 });
+    });
+
+    await axios.post(`http://localhost:3001/api/index-file`, { absolutePath: filePath });
+
+    uploadedState[filePath] = true;
+    saveState();
+    
+    // Notificar finalización
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sync-status', { file: filePath, status: 'synced', progress: 100 });
+    });
+    console.log(`Indexed successfully: ${filePath}`);
+  } catch (error: any) {
+    console.error(`Failed to index ${filePath}:`, error.message);
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath) });
+    });
   }
 }
 
@@ -126,10 +175,34 @@ let tray: Tray | null = null;
 let isQuitting = false;
 
 function createWindow() {
+  const splash = new BrowserWindow({
+    width: 400,
+    height: 400,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    splash.loadURL(process.env.VITE_DEV_SERVER_URL + 'splash.html');
+  } else {
+    splash.loadFile(path.join(__dirname, '../dist/splash.html'));
+  }
+
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 600,
-    titleBarStyle: 'hiddenInset',
+    show: false, // Oculto inicialmente mientras carga
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    titleBarOverlay: process.platform !== 'darwin' ? {
+      color: '#f8fafc',
+      symbolColor: '#475569',
+      height: 40
+    } : false,
     backgroundColor: '#f3f4f6', // Gris claro estilo Google Drive
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -144,6 +217,14 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
+  mainWindow.once('ready-to-show', () => {
+    // Dar un par de segundos extra para que el servidor de node levante los modelos pesados
+    setTimeout(() => {
+      if (!splash.isDestroyed()) splash.destroy();
+      mainWindow.show();
+    }, 3000);
+  });
+
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -157,7 +238,9 @@ function createWindow() {
 app.whenReady().then(() => {
   const mainWindow = createWindow();
 
-  tray = new Tray(nativeImage.createEmpty());
+  const trayIconPath = path.join(__dirname, '..', 'public', 'tray.png');
+  const trayIcon = nativeImage.createFromPath(trayIconPath);
+  tray = new Tray(trayIcon);
   tray.setTitle('\u2601\uFE0E'); // Cloud symbol text-presentation (minimalist)
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Mostrar Cloud Sync', click: () => { mainWindow.show(); } },
@@ -190,7 +273,17 @@ app.on('window-all-closed', () => {
 });
 
 // IPC Handlers
+const { updatePowerMode } = require('./server/server');
+// Initialize with loaded config
+setTimeout(() => updatePowerMode(config.powerMode), 1000);
+
 ipcMain.handle('get-config', () => config);
+
+ipcMain.handle('set-power-mode', (event, mode: 'eco' | 'max') => {
+  config.powerMode = mode;
+  saveConfig();
+  updatePowerMode(mode);
+});
 
 ipcMain.handle('set-server-url', (event, url) => {
   config.serverUrl = url;
@@ -240,18 +333,78 @@ ipcMain.handle('pick-folder', async () => {
   return null;
 });
 
-ipcMain.handle('link-folder', (event, folderPath) => {
-  if (!config.linkedFolders.includes(folderPath)) {
-    config.linkedFolders.push(folderPath);
+ipcMain.handle('link-folder', (event, { path: folderPath, mode }) => {
+  if (!config.linkedFolders.find(f => f.path === folderPath)) {
+    const folder = { path: folderPath, mode: mode as 'index' | 'sync' };
+    config.linkedFolders.push(folder);
     saveConfig();
-    startWatching(folderPath);
+    startWatching(folder);
+    
+    // Si es index, corremos scan-local una vez para asegurar todo el árbol
+    if (mode === 'index') {
+      axios.post('http://localhost:3001/api/scan-local', { directoryPath: folderPath }).catch(console.error);
+    }
   }
   return config;
 });
 
 ipcMain.handle('unlink-folder', (event, folderPath) => {
-  config.linkedFolders = config.linkedFolders.filter(f => f !== folderPath);
+  config.linkedFolders = config.linkedFolders.filter(f => f.path !== folderPath);
   saveConfig();
   stopWatching(folderPath);
   return config;
+});
+
+// --- Nuevas funciones de Panel de Control ---
+
+ipcMain.handle('get-auto-start', () => {
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+ipcMain.handle('set-auto-start', (event, enable) => {
+  app.setLoginItemSettings({ openAtLogin: enable });
+  return enable;
+});
+
+ipcMain.handle('backup-db', async () => {
+  const result = await dialog.showSaveDialog({
+    title: 'Respaldar Base de Datos',
+    defaultPath: 'nube_backup.db',
+    filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+  });
+  if (!result.canceled && result.filePath) {
+    const dbPath = path.join(process.env.STORAGE_PATH!, 'nube.db');
+    if (fs.existsSync(dbPath)) {
+      fs.copyFileSync(dbPath, result.filePath);
+      return true;
+    }
+  }
+  return false;
+});
+
+ipcMain.handle('open-storage', () => {
+  const { shell } = require('electron');
+  const target = path.join(process.env.STORAGE_PATH!, 'thumbnails');
+  if (fs.existsSync(target)) {
+    shell.showItemInFolder(target);
+  } else {
+    shell.showItemInFolder(process.env.STORAGE_PATH!);
+  }
+});
+
+ipcMain.handle('open-url', (event, url) => {
+  require('electron').shell.openExternal(url);
+});
+
+// Re-transmitir eventos del servidor (internos) a la UI
+process.on('server-stats', (stats) => {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('server-stats', stats);
+  });
+});
+
+process.on('server-log', (log) => {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('server-log', log);
+  });
 });

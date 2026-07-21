@@ -1,5 +1,4 @@
-import { Worker } from 'bullmq';
-import IORedis from 'ioredis';
+import { db, absoluteStoragePath, broadcastSSE } from "./server";
 import sharp from 'sharp';
 import exifr from 'exifr';
 import { encode } from 'blurhash';
@@ -8,20 +7,10 @@ import Database from 'better-sqlite3';
 import { pipeline, env } from '@huggingface/transformers';
 import { detectFacesInImage } from './faceUtils';
 import crypto from 'crypto';
-import './docProcessor';
 
 // Configurar paths
 const storagePath = process.env.STORAGE_PATH || '../storage';
 const absoluteStoragePath = path.resolve(__dirname, '..', storagePath);
-
-// Configurar Redis
-const redisConnection = new IORedis({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
-
-// Configurar SQLite
-const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '..', 'storage');
-const dbPath = path.resolve(STORAGE_PATH, 'nube.db');
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
 
 // ─── AI Models (Singleton for the worker) ─────────────────────────────
 let visionPipeline: any = null;
@@ -39,25 +28,49 @@ async function initModels() {
 }
 initModels();
 
+// ─── Cache in-memory for face descriptors ──────────────────────────
+let faceCache: { personId: string; descriptor: number[] }[] | null = null;
+
+function getFaceCache() {
+  if (!faceCache) {
+    console.log('[Worker] Loading face descriptor cache into memory...');
+    const existingFaces = db.prepare(`SELECT personId, descriptor FROM file_faces`).all() as any[];
+    faceCache = existingFaces.map(ef => ({
+      personId: ef.personId,
+      descriptor: JSON.parse(ef.descriptor)
+    }));
+  }
+  return faceCache;
+}
+
 // ─── Queries preparadas para actualizar base de datos ───────────────────
-const updateFileStmt = db.prepare(`
-  UPDATE files SET
-    thumbnailName = @thumbnailName,
-    blurhash = @blurhash,
-    width = @width,
-    height = @height,
-    embedding = @embedding,
-    takenAt = COALESCE(@takenAt, takenAt),
-    latitude = COALESCE(@latitude, latitude),
-    longitude = COALESCE(@longitude, longitude),
-    status = 'READY'
-  WHERE id = @id
-`);
+let updateFileStmt: any;
+let updateFacesStmt: any;
 
-const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
+function getStmts() {
+  if (!updateFileStmt) {
+    updateFileStmt = db.prepare(`
+      UPDATE files 
+      SET status = ?, 
+          thumbnailName = ?,
+          width = ?, 
+          height = ?, 
+          blurhash = ?, 
+          embedding = ?, 
+          takenAt = ?, 
+          latitude = ?, 
+          longitude = ?
+      WHERE id = ?
+    `);
+  }
+  if (!updateFacesStmt) {
+    updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
+  }
+  return { updateFileStmt, updateFacesStmt };
+}
 
-const worker = new Worker('image-processing', async job => {
-  const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
+export async function processImage(jobData: any) {
+  const { fileId, savedName, originalName, mimeType, absolutePath } = jobData;
   console.log(`[Worker] Empezando a procesar ${originalName} (${fileId})`);
 
   try {
@@ -79,10 +92,8 @@ const worker = new Worker('image-processing', async job => {
 
     // Solo procesamos imágenes
     if (!mimeType.startsWith('image/')) {
-       updateFileStmt.run({
-           id: fileId, thumbnailName: null, blurhash: null, width: null, height: null, 
-           embedding: null, takenAt: null, latitude: null, longitude: null
-       });
+       const { updateFileStmt } = getStmts();
+       updateFileStmt.run('READY', null, null, null, null, null, null, null, null, fileId);
        return;
     }
 
@@ -139,7 +150,8 @@ const worker = new Worker('image-processing', async job => {
     let embeddingStr = null;
     if (visionPipeline) {
       try {
-         const output = await visionPipeline(filePath);
+         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('CLIP Timeout')), 60000));
+         const output = await Promise.race([visionPipeline(filePath), timeoutPromise]) as any;
          embeddingStr = JSON.stringify(Array.from(output.data));
       } catch (e) {
          console.error('[Worker] Falló embedding para', originalName);
@@ -147,17 +159,19 @@ const worker = new Worker('image-processing', async job => {
     }
 
     // E) Guardar todo en SQLite
-    updateFileStmt.run({
-      id: fileId,
+    const { updateFileStmt } = getStmts();
+    updateFileStmt.run(
+      'READY',
       thumbnailName,
-      blurhash: blurhashStr,
-      width: metadata.width,
-      height: metadata.height,
-      embedding: embeddingStr,
+      metadata.width,
+      metadata.height,
+      blurhashStr,
+      embeddingStr,
       takenAt,
       latitude,
-      longitude
-    });
+      longitude,
+      fileId
+    );
 
     // F) Extraer rostros enviando al modelo local de node.js
     try {
@@ -170,15 +184,14 @@ const worker = new Worker('image-processing', async job => {
           const descriptorStr = JSON.stringify(face.descriptor);
           
           // Buscar si el rostro ya pertenece a alguien (Euclidean distance < 0.6)
-          const existingFaces = db.prepare(`SELECT id, personId, descriptor FROM file_faces`).all() as any[];
+          const cache = getFaceCache();
           let matchedPersonId = null;
           let minDistance = 0.5; // Sweet spot for face-api.js to balance false positives and false negatives
 
-          for (const ef of existingFaces) {
-            const efDescriptor = JSON.parse(ef.descriptor);
+          for (const ef of cache) {
             let distance = 0;
             for (let i = 0; i < 128; i++) {
-              distance += Math.pow(face.descriptor[i] - efDescriptor[i], 2);
+              distance += Math.pow(face.descriptor[i] - ef.descriptor[i], 2);
             }
             distance = Math.sqrt(distance);
             
@@ -205,12 +218,19 @@ const worker = new Worker('image-processing', async job => {
             crypto.randomUUID(), fileId, matchedPersonId, descriptorStr, 
             face.box.x, face.box.y, face.box.width, face.box.height
           );
+          
+          // Actualizar cache con la nueva cara
+          cache.push({
+            personId: matchedPersonId,
+            descriptor: Array.from(face.descriptor)
+          });
         }
         
         // Guardar por retrocompatibilidad en 'faces' column
+        const { updateFacesStmt } = getStmts();
         updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log(`[Worker] Local face API falló para ${originalName}:`, e);
     }
 
@@ -223,11 +243,4 @@ const worker = new Worker('image-processing', async job => {
     console.error(`[Worker] Error crítico procesando ${originalName}`, error);
     db.prepare(`UPDATE files SET status = 'ERROR' WHERE id = ?`).run(fileId);
   }
-
-}, { connection: redisConnection as any });
-
-worker.on('failed', (job, err) => {
-  console.error(`[Worker] Job ${job?.id} falló con ${err.message}`);
-});
-
-console.log('[Worker] Escuchando tareas...');
+}

@@ -32,7 +32,7 @@ export default function App() {
   const [previousTab, setPreviousTab] = useState('fotos');
   const [isFotosSubmenuOpen, setIsFotosSubmenuOpen] = useState(true);
   const [customHeader, setCustomHeader] = useState<React.ReactNode | null>(null);
-  const [headerActions, setHeaderActions] = useState<React.ReactNode>(null);
+  const [sidebarActions, setSidebarActions] = useState<React.ReactNode>(null);
   
   const [files, setFiles] = useState<FileData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -41,8 +41,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [importingCount, setImportingCount] = useState(0);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
-  const [scanPath, setScanPath] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -92,7 +90,7 @@ export default function App() {
   // Reset custom header and actions when tab changes
   useEffect(() => {
     setCustomHeader(null);
-    setHeaderActions(null);
+    setSidebarActions(null);
   }, [activeTab]);
 
   const fetchFiles = useCallback(async () => {
@@ -145,7 +143,7 @@ export default function App() {
     }
   };
 
-  const uploadMultipleFiles = async (filesToUpload: FileList | File[]) => {
+  const uploadMultipleFiles = async (filesToUpload: FileList | File[], targetFolderId: string | null = null) => {
     setIsUploading(true);
     const filesArray = Array.from(filesToUpload);
     const total = filesArray.length;
@@ -157,6 +155,13 @@ export default function App() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('lastModified', file.lastModified.toString());
+      formData.append('sourceTab', activeTab);
+      if (targetFolderId) {
+        formData.append('targetFolderId', targetFolderId);
+      }
+      if (file.webkitRelativePath) {
+        formData.append('relativePath', file.webkitRelativePath);
+      }
 
       try {
         const res = await fetch('/api/upload', {
@@ -202,31 +207,6 @@ export default function App() {
     }
   }, [fetchFiles]);
 
-  const handleScanLocal = async () => {
-    if (!scanPath.trim()) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/scan-local', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ directoryPath: scanPath.trim() })
-      });
-      if (res.ok) {
-        setIsScanModalOpen(false);
-        setScanPath('');
-        // Notifications are handled by SSE anyway
-      } else {
-        const error = await res.json();
-        alert('Error: ' + error.error);
-      }
-    } catch (error) {
-      console.error('Scan error:', error);
-      alert('Error de conexión.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleBulkDelete = useCallback(async (ids: string[]) => {
     setIsLoading(true);
     // Execute all deletes in parallel
@@ -234,7 +214,7 @@ export default function App() {
     await fetchFiles();
   }, [fetchFiles, handleDelete]);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetFolderId: string | null = null) => {
     e.preventDefault();
     e.stopPropagation();
     setIsGlobalDragging(false);
@@ -248,7 +228,7 @@ export default function App() {
         }
       } else {
         // En archivos u otras secciones, permitir todo
-        uploadMultipleFiles(droppedFiles);
+        uploadMultipleFiles(droppedFiles, targetFolderId);
       }
     }
   };
@@ -364,41 +344,35 @@ export default function App() {
             </div>
           </nav>
 
-          <div className="mt-8 flex flex-col gap-2">
-            <label
-              className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap ${['buscar', 'trash'].includes(activeTab) || isUploading
-                ? 'bg-slate-100 text-slate-400 pointer-events-none opacity-50'
-                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md'
-                }`}
-            >
-              <input
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFileChange}
-                accept={['fotos', 'albums', 'people', 'map'].includes(activeTab) ? 'image/*,video/*' : undefined}
-              />
-              {isUploading ? (
-                <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
-              ) : (
-                <>
-                  <Plus className="w-5 h-5 shrink-0" />
-                  <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
-                    Añadir {['fotos', 'albums', 'people', 'map', 'duplicates'].includes(activeTab) ? 'Fotos' : 'Archivos'}
-                  </span>
-                </>
-              )}
-            </label>
-            <button
-              onClick={() => setIsScanModalOpen(true)}
-              className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap bg-indigo-50 text-indigo-600 hover:bg-indigo-100`}
-              title="Indexar Carpeta del Servidor"
-            >
-              <Monitor className="w-5 h-5 shrink-0" />
-              <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
-                Indexar Carpeta
-              </span>
-            </button>
+          <div className="mt-8 flex flex-col gap-2 mb-4">
+            {sidebarActions && activeTab === 'archivos' ? (
+              sidebarActions
+            ) : (
+              <label
+                className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap ${['buscar', 'trash'].includes(activeTab) || isUploading
+                  ? 'bg-slate-100 text-slate-400 pointer-events-none opacity-50'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md'
+                  }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept={['fotos', 'albums', 'people', 'map'].includes(activeTab) ? 'image/*,video/*' : undefined}
+                />
+                {isUploading ? (
+                  <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 shrink-0" />
+                    <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
+                      Añadir Fotos
+                    </span>
+                  </>
+                )}
+              </label>
+            )}
           </div>
         </div>
       </aside>
@@ -452,67 +426,71 @@ export default function App() {
             )}
           </div>
           
-          <div className="flex-1 max-w-2xl mx-4 relative group z-50" ref={searchDropdownRef}>
-            <div className={`relative flex items-center overflow-hidden px-4 py-2.5 transition-all duration-200 ${showSearchDropdown ? 'bg-white rounded-t-2xl border border-b-0 border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05),0_4px_6px_-1px_rgba(0,0,0,0.05)]' : 'bg-slate-100 hover:bg-slate-200/50 rounded-full border border-transparent'}`}>
-              <Search className={`w-5 h-5 shrink-0 transition-colors ${showSearchDropdown ? 'text-blue-500' : 'text-slate-400'}`} />
-              <input
-                type="text"
-                placeholder="Busca en tus fotos y álbumes"
-                className="w-full bg-transparent border-none outline-none px-3 text-[15px] text-slate-800 placeholder-slate-500 font-medium"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setShowSearchDropdown(true)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setShowSearchDropdown(false);
-                    if (activeTab !== 'buscar') {
-                      setPreviousTab(activeTab);
-                      setActiveTab('buscar');
-                    }
-                    handleSearch(searchQuery);
-                  }
-                }}
-              />
-              {isSearching && <Loader2 className="w-4 h-4 text-blue-500 animate-spin mr-1" />}
-            </div>
-            
-            {showSearchDropdown && (
-              <div className="absolute left-0 right-0 top-full bg-white rounded-b-2xl border border-t-0 border-slate-200 shadow-xl overflow-hidden flex flex-col py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                {currentSuggestions.map((cat) => (
-                  <button 
-                    key={cat}
-                    onClick={() => {
-                      setSearchQuery(cat);
+          {activeTab !== 'archivos' ? (
+            <div className="flex-1 max-w-2xl mx-4 relative group z-50" ref={searchDropdownRef}>
+              <div className={`relative flex items-center overflow-hidden px-4 py-2.5 transition-all duration-200 ${showSearchDropdown ? 'bg-white rounded-t-2xl border border-b-0 border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05),0_4px_6px_-1px_rgba(0,0,0,0.05)]' : 'bg-slate-100 hover:bg-slate-200/50 rounded-full border border-transparent'}`}>
+                <Search className={`w-5 h-5 shrink-0 transition-colors ${showSearchDropdown ? 'text-blue-500' : 'text-slate-400'}`} />
+                <input
+                  type="text"
+                  placeholder="Busca en tus fotos y álbumes"
+                  className="w-full bg-transparent border-none outline-none px-3 text-[15px] text-slate-800 placeholder-slate-500 font-medium"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSearchDropdown(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
                       setShowSearchDropdown(false);
                       if (activeTab !== 'buscar') {
                         setPreviousTab(activeTab);
                         setActiveTab('buscar');
                       }
-                      handleSearch(cat);
-                    }}
-                    className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors text-left w-full group/item"
-                  >
-                    <Search className="w-5 h-5 text-slate-400 group-hover/item:text-slate-600" />
-                    <span className="text-slate-700 font-medium">{cat}</span>
-                  </button>
-                ))}
-                
-                <div className="h-px bg-slate-100 my-2 mx-5"></div>
-                
-                <button className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors text-left w-full group/item">
-                  <Star className="w-5 h-5 text-slate-400 group-hover/item:text-yellow-500" />
-                  <span className="text-slate-700 font-medium">Favoritos</span>
-                </button>
-                
-                <div className="mt-4 mb-2 px-5 text-center">
-                  <div className="h-px bg-slate-100 w-full mb-3"></div>
-                  <button className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" onClick={() => { setShowSearchDropdown(false); setActiveTab('people'); }}>
-                    Ver todas las personas <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+                      handleSearch(searchQuery);
+                    }
+                  }}
+                />
+                {isSearching && <Loader2 className="w-4 h-4 text-blue-500 animate-spin mr-1" />}
               </div>
-            )}
-          </div>
+              
+              {showSearchDropdown && (
+                <div className="absolute left-0 right-0 top-full bg-white rounded-b-2xl border border-t-0 border-slate-200 shadow-xl overflow-hidden flex flex-col py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {currentSuggestions.map((cat) => (
+                    <button 
+                      key={cat}
+                      onClick={() => {
+                        setSearchQuery(cat);
+                        setShowSearchDropdown(false);
+                        if (activeTab !== 'buscar') {
+                          setPreviousTab(activeTab);
+                          setActiveTab('buscar');
+                        }
+                        handleSearch(cat);
+                      }}
+                      className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors text-left w-full group/item"
+                    >
+                      <Search className="w-5 h-5 text-slate-400 group-hover/item:text-slate-600" />
+                      <span className="text-slate-700 font-medium">{cat}</span>
+                    </button>
+                  ))}
+                  
+                  <div className="h-px bg-slate-100 my-2 mx-5"></div>
+                  
+                  <button className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors text-left w-full group/item">
+                    <Star className="w-5 h-5 text-slate-400 group-hover/item:text-yellow-500" />
+                    <span className="text-slate-700 font-medium">Favoritos</span>
+                  </button>
+                  
+                  <div className="mt-4 mb-2 px-5 text-center">
+                    <div className="h-px bg-slate-100 w-full mb-3"></div>
+                    <button className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors" onClick={() => { setShowSearchDropdown(false); setActiveTab('people'); }}>
+                      Ver todas las personas <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 max-w-2xl mx-4" />
+          )}
 
           <div className="flex items-center gap-4 w-1/3 justify-end">
             {importingCount > 0 && (
@@ -526,22 +504,19 @@ export default function App() {
                 <MonitorDown className="w-5 h-5" />
               </button>
             )}
-            {headerActions}
           </div>
         </header>
-
-        <div id="main-scroll-container" className="flex-1 overflow-y-auto p-10">
-
-
+        <div id="main-scroll-container" className={`flex-1 overflow-y-auto ${activeTab === 'archivos' ? 'p-0 overflow-hidden' : 'p-10'}`}>
           {activeTab === 'archivos' && (
             <FilesView
               files={files}
               isLoading={isLoading}
               isUploading={isUploading}
+              onUpload={uploadMultipleFiles}
               handleDrop={handleDrop}
               handleDragOver={handleDragOver}
-              handleFileChange={handleFileChange}
-              fileInputRef={fileInputRef}
+              onDelete={handleDelete}
+              setSidebarActions={setSidebarActions}
             />
           )}
 
@@ -668,41 +643,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Escaneo de Carpeta Local */}
-      {isScanModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200" onClick={() => setIsScanModalOpen(false)}>
-           <div className="bg-white rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col items-center" onClick={e => e.stopPropagation()}>
-             <button onClick={() => setIsScanModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-               <XCircle className="w-6 h-6" />
-             </button>
-             <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-               <Monitor className="w-8 h-8 text-indigo-600" />
-             </div>
-             <h2 className="text-2xl font-bold text-slate-800 text-center mb-3">Indexar Carpeta del Servidor</h2>
-             <p className="text-slate-500 text-center mb-6 text-sm">
-               Ingresa la ruta absoluta de una carpeta que ya esté en el disco duro de este servidor.
-               CloudSync solo la leerá y generará miniaturas sin duplicar los archivos.
-             </p>
-             <div className="w-full flex flex-col gap-4">
-               <input 
-                 type="text" 
-                 placeholder="Ej: /Volumenes/FotosFamiliares" 
-                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                 value={scanPath}
-                 onChange={e => setScanPath(e.target.value)}
-                 onKeyDown={e => e.key === 'Enter' && handleScanLocal()}
-               />
-               <button 
-                 onClick={handleScanLocal}
-                 disabled={!scanPath.trim() || isLoading}
-                 className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-medium transition-colors"
-               >
-                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Escanear e Indexar'}
-               </button>
-             </div>
-           </div>
-        </div>
-      )}
     </div>
   );
 }

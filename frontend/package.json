@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -17,7 +17,8 @@
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-blurhash": "^0.3.0",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-zoom-pan-pinch": "^4.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",

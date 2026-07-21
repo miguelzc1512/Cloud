@@ -14,12 +14,15 @@
     "productName": "Cloud Sync",
     "mac": {
       "target": "dmg",
-      "icon": "build/icon.icns",
+      "icon": "build/icon.png",
       "artifactName": "CloudSync-mac.${ext}"
     },
     "win": {
-      "target": ["nsis", "portable"],
-      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png",
       "artifactName": "CloudSync-win.${ext}"
     },
     "directories": {
@@ -27,12 +30,29 @@
     }
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
+    "better-sqlite3": "^12.11.1",
+    "blurhash": "^2.0.5",
+    "cors": "^2.8.6",
+    "d3-force": "^3.0.0",
+    "dotenv": "^17.4.2",
+    "exifr": "^7.1.3",
+    "express": "^5.2.1",
     "lucide-react": "^1.24.0",
+    "multer": "^2.2.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-force-graph-2d": "^1.29.1",
+    "react-qr-code": "^2.2.0",
+    "sharp": "^0.34.5",
+    "translate": "^3.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
+    "@types/d3-force": "^3.0.10",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

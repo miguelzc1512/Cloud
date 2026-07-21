@@ -1,6 +1,7 @@
 import { useState, useCallback, memo, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil } from 'lucide-react';
+import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil, ChevronLeft, ChevronRight, ZoomOut, Maximize } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import TimelineScrollbar from './TimelineScrollbar';
 import { ProgressiveImage } from './ProgressiveImage';
 
@@ -22,6 +23,7 @@ type FileData = {
   latitude?: number;
   longitude?: number;
   uploadSource?: string;
+  isFavorite?: number | boolean;
 };
 
 type PhotosViewProps = {
@@ -410,6 +412,24 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handlePrev = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!viewerState.photoData) return;
+    const currentIndex = files.findIndex(f => f.id === viewerState.photoData?.id);
+    if (currentIndex > 0) {
+      viewerState.open(files[currentIndex - 1]);
+    }
+  }, [files]);
+
+  const handleNext = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!viewerState.photoData) return;
+    const currentIndex = files.findIndex(f => f.id === viewerState.photoData?.id);
+    if (currentIndex !== -1 && currentIndex < files.length - 1) {
+      viewerState.open(files[currentIndex + 1]);
+    }
+  }, [files]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!viewerState.photoData) return;
@@ -419,26 +439,13 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
         return;
       }
 
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const currentIndex = files.findIndex(f => f.id === viewerState.photoData?.id);
-        if (currentIndex === -1) return;
-
-        let nextIndex = currentIndex;
-        if (e.key === 'ArrowLeft') {
-          nextIndex = currentIndex > 0 ? currentIndex - 1 : currentIndex;
-        } else if (e.key === 'ArrowRight') {
-          nextIndex = currentIndex < files.length - 1 ? currentIndex + 1 : currentIndex;
-        }
-
-        if (nextIndex !== currentIndex) {
-          viewerState.open(files[nextIndex]);
-        }
-      }
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [files]);
+  }, [handlePrev, handleNext, viewerState.photoData]);
 
   useEffect(() => {
     return viewerState.subscribe(() => {
@@ -614,16 +621,62 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <div className="relative w-full h-full flex items-center justify-center" style={getStyle()} onClick={(e) => e.stopPropagation()}>
-            <ProgressiveImage
-              key={photo.id}
-              src={`/api/media/${photo.id}/web`}
-              thumbnailSrc={photo.thumbnailName ? `/api/media/${photo.id}/thumbnail` : undefined}
-              alt={photo.originalName}
-              objectFit="contain"
-            />
+        <div className="relative w-full h-full flex items-center justify-center" style={getStyle()} onClick={(e) => { e.stopPropagation(); viewerState.close(); }}>
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.5}
+            maxScale={5}
+            centerOnInit
+            wheel={{ step: 0.1 }}
+          >
+            {({ zoomIn, zoomOut, resetTransform }) => (
+              <>
+                <div 
+                  className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#2a2b2e]/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-[105] transition-all duration-350 ${isToolbarVisible && !isInfoPanelOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button onClick={() => zoomOut()} className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors" title="Alejar">
+                    <ZoomOut className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => resetTransform()} className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors mx-1" title="Restablecer zoom">
+                    <Maximize className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => zoomIn()} className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors" title="Acercar">
+                    <ZoomIn className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
+                  <div className="w-full h-full flex items-center justify-center" onClick={(e) => { e.stopPropagation(); }}>
+                    <ProgressiveImage
+                      key={photo.id}
+                      src={`/api/media/${photo.id}/web`}
+                      thumbnailSrc={photo.thumbnailName ? `/api/media/${photo.id}/thumbnail` : undefined}
+                      alt={photo.originalName}
+                      objectFit="contain"
+                    />
+                  </div>
+                </TransformComponent>
+              </>
+            )}
+          </TransformWrapper>
         </div>
       )}
+
+      {/* Navigation Arrows */}
+      <button 
+        onClick={handlePrev}
+        className={`absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/20 hover:bg-black/50 text-white rounded-full transition-all duration-300 z-[105] ${isToolbarVisible && !isInfoPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      >
+        <ChevronLeft className="w-8 h-8" />
+      </button>
+
+      <button 
+        onClick={handleNext}
+        className={`absolute top-1/2 -translate-y-1/2 p-3 bg-black/20 hover:bg-black/50 text-white rounded-full transition-all duration-300 z-[105] ${isInfoPanelOpen ? 'right-[380px]' : 'right-4'} ${isToolbarVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      >
+        <ChevronRight className="w-8 h-8" />
+      </button>
 
       {/* Side Info Panel */}
       <div 

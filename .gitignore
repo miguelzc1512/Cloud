@@ -10,3 +10,8 @@ backend/public/downloads/
 *.db
 *.db-shm
 *.db-wal
+
+*.exe
+ejecutables/
+asar-out/
+dump.rdb
