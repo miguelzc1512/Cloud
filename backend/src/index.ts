@@ -424,9 +424,9 @@ app.get('/api/stream', (req: Request, res: Response) => {
 
 // POST /api/worker-event (recibe eventos del Worker para reenviarlos a los clientes SSE)
 app.post('/api/worker-event', (req: Request, res: Response) => {
-  const { fileId, step, label } = req.body;
+  const { fileId, step, label, originalName } = req.body;
   if (fileId && step) {
-    broadcastSSE('worker_step', { fileId, step, label });
+    broadcastSSE('worker_step', { fileId, step, label, originalName });
   }
   res.json({ ok: true });
 });
