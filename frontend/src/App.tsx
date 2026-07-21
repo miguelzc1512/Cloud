@@ -207,7 +207,17 @@ export default function App() {
     const selectedFiles = event.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
 
-    await uploadMultipleFiles(selectedFiles);
+    if (['fotos', 'albums', 'people', 'map', 'duplicates'].includes(activeTab)) {
+      const mediaFiles = Array.from(selectedFiles).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+      if (mediaFiles.length !== selectedFiles.length) {
+        alert("Solo puedes subir fotos y videos en esta sección. Para otros archivos, usa la sección de Documentos.");
+      }
+      if (mediaFiles.length > 0) {
+        await uploadMultipleFiles(mediaFiles);
+      }
+    } else {
+      await uploadMultipleFiles(selectedFiles);
+    }
 
     // Reset input
     if (fileInputRef.current) {
@@ -297,6 +307,9 @@ export default function App() {
       if (['fotos', 'albums', 'people', 'map', 'duplicates'].includes(activeTab)) {
         // En secciones de fotos, solo permitir imágenes y videos
         const mediaFiles = Array.from(droppedFiles).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+        if (mediaFiles.length !== droppedFiles.length) {
+          alert("Solo puedes subir fotos y videos en esta sección. Para otros archivos, usa la sección de Documentos.");
+        }
         if (mediaFiles.length > 0) {
           uploadMultipleFiles(mediaFiles);
         }
