@@ -95,6 +95,11 @@ export default function App() {
                 setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
                 return null;
               }
+              
+              // Solo limpiar stepInfo si la UI no ha avanzado ya al siguiente archivo
+              if (data.originalName && prev.currentFile !== data.originalName) {
+                return { ...prev, current: nextCurrent };
+              }
               return { ...prev, current: nextCurrent, stepInfo: null };
             });
           }, 1500);
