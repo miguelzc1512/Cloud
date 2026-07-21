@@ -24,6 +24,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
   const [deletedFiles, setDeletedFiles] = useState<DocFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('date');
@@ -135,12 +136,39 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const toggleSelect = (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedIds(next);
+  const handleSelect = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const newSelection = new Set(selectedIds);
+    
+    if (e.shiftKey && lastSelectedId) {
+      const allItems = sortedFiles.map(d => d.id);
+      const startIdx = allItems.indexOf(lastSelectedId);
+      const endIdx = allItems.indexOf(id);
+      
+      if (startIdx !== -1 && endIdx !== -1) {
+        if (!e.metaKey && !e.ctrlKey) {
+          newSelection.clear();
+        }
+        const minIdx = Math.min(startIdx, endIdx);
+        const maxIdx = Math.max(startIdx, endIdx);
+        for (let i = minIdx; i <= maxIdx; i++) {
+          newSelection.add(allItems[i]);
+        }
+      }
+    } else if (e.metaKey || e.ctrlKey) {
+      if (newSelection.has(id)) {
+        newSelection.delete(id);
+      } else {
+        newSelection.add(id);
+      }
+      setLastSelectedId(id);
+    } else {
+      newSelection.clear();
+      newSelection.add(id);
+      setLastSelectedId(id);
+    }
+    
+    setSelectedIds(newSelection);
   };
   
   const daysLeft = (deletedAt: string) => {
@@ -302,17 +330,10 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
               {sortedFiles.map(file => (
                 <div 
                   key={file.id}
-                  onClick={() => toggleSelect(file.id)}
+                  onClick={(e) => handleSelect(e, file.id)}
                   className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="col-span-6 md:col-span-5 flex items-center gap-3 overflow-hidden">
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-50 group-hover:opacity-100 bg-white/80'}`}>
-                      {selectedIds.has(file.id) && (
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
                     <FileIcon filename={file.name} className="w-5 h-5 shrink-0" />
                     <span className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</span>
                   </div>
@@ -336,23 +357,12 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
             {sortedFiles.map(doc => (
               <div
                 key={doc.id}
-                onClick={() => toggleSelect(doc.id)}
+                onClick={(e) => handleSelect(e, doc.id)}
                 className={`flex flex-col rounded-2xl border cursor-pointer select-none overflow-hidden transition-all bg-white group relative ${selectedIds.has(doc.id) ? 'bg-blue-50/10 border-blue-500 ring-1 ring-blue-500' : 'border-slate-200 hover:bg-slate-50 hover:shadow-sm'}`}
               >
                 {/* 60 days badge */}
                 <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md z-20 shadow-sm pointer-events-none">
                   {daysLeft(doc.deletedAt)} días
-                </div>
-                
-                {/* Checkbox circular top-left */}
-                <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors z-20 ${
-                  selectedIds.has(doc.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-0 group-hover:opacity-100 bg-white/80'
-                }`}>
-                  {selectedIds.has(doc.id) && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
                 </div>
 
                 {/* Header */}
@@ -390,7 +400,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
                             </div>
                           )}
                           <img 
-                            src={`/uploads/${doc.thumbnailName}`} 
+                            src={`/uploads/thumbnails/${doc.thumbnailName}`} 
                             alt={`${doc.name} thumbnail`}
                             className="w-full h-full object-cover relative z-10"
                             loading="lazy"
