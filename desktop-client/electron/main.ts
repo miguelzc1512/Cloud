@@ -61,7 +61,7 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
   const watcher = chokidar.watch(folder.path, {
     ignored: /(^|[\/\\])\../, // ignorar archivos ocultos
     persistent: true,
-    ignoreInitial: false
+    ignoreInitial: true
   });
 
   watcher.on('add', async (filePath) => {

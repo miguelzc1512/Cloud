@@ -16601,7 +16601,7 @@ function startWatching(folder) {
 	const watcher = chokidar_default.watch(folder.path, {
 		ignored: /(^|[\/\\])\../,
 		persistent: true,
-		ignoreInitial: false
+		ignoreInitial: true
 	});
 	watcher.on("add", async (filePath) => {
 		const ext = node_path.extname(filePath).toLowerCase();
