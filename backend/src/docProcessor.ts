@@ -19,6 +19,40 @@ const worker = new Worker('doc-processing', async job => {
   const doc = docDb.prepare(`SELECT * FROM docs WHERE id = ?`).get(id) as any;
   if (!doc) return;
 
+  // Generate thumbnail using macOS QuickLook
+  try {
+    if (!doc.mimeType?.startsWith('image/')) {
+      const fs = require('fs');
+      const { exec } = require('child_process');
+      const util = require('util');
+      const execPromise = util.promisify(exec);
+      
+      const filePath = doc.absolutePath || path.join(STORAGE_PATH, doc.savedName);
+      const thumbnailDir = path.join(STORAGE_PATH, 'thumbnails');
+      
+      if (!fs.existsSync(thumbnailDir)) {
+        fs.mkdirSync(thumbnailDir, { recursive: true });
+      }
+
+      if (fs.existsSync(filePath)) {
+        console.log(`[Doc Worker] Generating thumbnail for: ${doc.name}`);
+        // Run qlmanage (creates file named: <basename>.png)
+        await execPromise(`qlmanage -t -s 800 -o "${thumbnailDir}" "${filePath}"`);
+        
+        const basename = path.basename(filePath);
+        const qlmanageOutput = path.join(thumbnailDir, `${basename}.png`);
+        const finalThumbnailPath = path.join(thumbnailDir, `thumb-${doc.savedName}.png`);
+        
+        if (fs.existsSync(qlmanageOutput)) {
+          fs.renameSync(qlmanageOutput, finalThumbnailPath);
+          console.log(`[Doc Worker] Thumbnail generated: thumb-${doc.savedName}.png`);
+        }
+      }
+    }
+  } catch (e: any) {
+    console.log(`[Doc Worker] Thumbnail generation failed for ${id}:`, e.message);
+  }
+
   // Just set status to READY so it shows up in root folder
   docDb.prepare(`
     UPDATE docs SET status = 'READY' WHERE id = ?

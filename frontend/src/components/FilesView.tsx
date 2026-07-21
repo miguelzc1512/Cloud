@@ -632,7 +632,18 @@ export default function FilesView({
                                     />
                                   </div>
                                 ) : (
-                                  <FileIcon filename={doc.name} className="w-16 h-16 opacity-30" />
+                                  <>
+                                    <FileIcon filename={doc.name} className="w-16 h-16 opacity-30 absolute" />
+                                    <img 
+                                      src={`/uploads/thumbnails/thumb-${doc.savedName}.png`}
+                                      alt={doc.name}
+                                      className="w-full h-full object-cover z-10"
+                                      loading="lazy"
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </>
                                 )}
                                 
                                 {doc.status !== 'READY' && (
