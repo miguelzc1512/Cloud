@@ -33,17 +33,43 @@ Tu nube usa Google Maps para mostrarte dónde tomaste tus fotos.
 4. Pega tu propia clave de Google Maps así: `VITE_GOOGLE_MAPS_API_KEY=tu_clave_aqui`.
 
 ### Paso 3: ¡Encender la Nube!
-Ve a la carpeta principal del proyecto (donde está este README) y haz doble clic en el archivo instalador correspondiente a tu sistema:
+Ve a la carpeta principal del proyecto (donde está este README) y usa la opción que prefieras:
 
+#### Opción A: Con un Clic (Archivos Ejecutables)
 * 🪟 **Si usas Windows:** Haz doble clic en `Iniciar_Nube.bat`
 * 🍎 **Si usas Mac:** Haz doble clic en `Iniciar_Nube.command`
 
-*Nota: La primera vez que lo abras, puede tardar unos minutos en descargar y preparar los servicios.*
+#### Opción B: Por Línea de Comandos (Terminal / PowerShell / CMD)
+Abre una terminal en la raíz del proyecto y ejecuta:
+```bash
+docker compose up -d --build
+```
 
-¡Listo! Cuando la terminal te diga que todo está listo, abre tu navegador y visita:
+---
+
+### 🛠️ Comandos Útiles de Docker
+
+* **Encender / Construir contenedores:**
+  ```bash
+  docker compose up -d --build
+  ```
+* **Ver logs en tiempo real (Backend, Worker, Frontend, Redis):**
+  ```bash
+  docker compose logs -f
+  ```
+* **Ver estado de los servicios:**
+  ```bash
+  docker compose ps
+  ```
+* **Apagar la Nube:**
+  ```bash
+  docker compose down
+  ```
+
+---
+
+¡Listo! Cuando los contenedores estén corriendo, abre tu navegador y visita:
 👉 **[http://localhost](http://localhost)**
-
-Para apagar la nube, simplemente escribe `docker-compose down` en tu terminal o cierra la aplicación de Docker.
 
 ---
 
