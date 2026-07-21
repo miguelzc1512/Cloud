@@ -297,6 +297,7 @@ export default function App() {
               <p className="text-xs text-slate-400">Sin carpetas</p>
             </div>
           ) : (
+            <>
               {config.linkedFolders.filter(f => f.contentType === (activeTab === 'gallery' ? undefined : 'drive') || (activeTab === 'gallery' && f.contentType !== 'drive')).length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Carpetas de {activeTab === 'gallery' ? 'Fotos' : 'Documentos'}</p>
@@ -320,6 +321,7 @@ export default function App() {
                   ))}
                 </div>
               )}
+            </>
           )}
         </div>
 

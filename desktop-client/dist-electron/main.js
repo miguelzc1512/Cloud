@@ -16656,7 +16656,8 @@ async function indexFile(filePath, contentType = "gallery") {
 			win.webContents.send("sync-status", {
 				file: filePath,
 				status: "syncing",
-				progress: 50
+				progress: 50,
+				contentType
 			});
 		});
 		await axios.post(`${config.serverUrl}/api/index-file`, {
@@ -16669,7 +16670,8 @@ async function indexFile(filePath, contentType = "gallery") {
 			win.webContents.send("sync-status", {
 				file: filePath,
 				status: "synced",
-				progress: 100
+				progress: 100,
+				contentType
 			});
 		});
 		console.log(`Indexed successfully: ${filePath}`);
@@ -16684,7 +16686,8 @@ async function indexFile(filePath, contentType = "gallery") {
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
 				status: "error",
-				file: node_path.basename(filePath)
+				file: node_path.basename(filePath),
+				contentType
 			});
 		});
 	}
@@ -16701,7 +16704,8 @@ async function uploadFile(filePath, contentType = "gallery") {
 			win.webContents.send("sync-status", {
 				file: filePath,
 				status: "syncing",
-				progress: 0
+				progress: 0,
+				contentType
 			});
 		});
 		await axios.post(`${config.serverUrl}/api/upload`, formData, {
@@ -16712,7 +16716,8 @@ async function uploadFile(filePath, contentType = "gallery") {
 					win.webContents.send("sync-status", {
 						file: filePath,
 						status: "syncing",
-						progress: percentCompleted
+						progress: percentCompleted,
+						contentType
 					});
 				});
 			}
@@ -16723,7 +16728,8 @@ async function uploadFile(filePath, contentType = "gallery") {
 			win.webContents.send("sync-status", {
 				file: filePath,
 				status: "synced",
-				progress: 100
+				progress: 100,
+				contentType
 			});
 		});
 		console.log(`Uploaded successfully: ${filePath}`);
@@ -16738,7 +16744,8 @@ async function uploadFile(filePath, contentType = "gallery") {
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
 				status: "error",
-				file: node_path.basename(filePath)
+				file: node_path.basename(filePath),
+				contentType
 			});
 		});
 	}
