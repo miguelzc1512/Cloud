@@ -3,6 +3,7 @@ import {
   Folder, UploadCloud, Loader2, FileText, Search, Maximize2, MoreVertical, Trash2, FolderPlus, 
   ArrowLeft, ChevronRight, ChevronDown, X, Download, FolderOutput, List, LayoutGrid, Plus
 } from 'lucide-react';
+import { Blurhash } from 'react-blurhash';
 import FileIcon from './FileIcon';
 
 type FileData = {
@@ -41,6 +42,8 @@ type DocumentData = {
   size: number;
   clusterId: string | null;
   status: string;
+  thumbnailName: string | null;
+  blurhash: string | null;
   createdAt: string;
 };
 
@@ -623,26 +626,41 @@ export default function FilesView({
                               {/* Preview Area */}
                               <div className="h-40 bg-slate-50 flex items-center justify-center relative overflow-hidden group-hover:bg-slate-100/50 transition-colors">
                                 {doc.extension?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) ? (
-                                  <div className="w-full h-full p-2 bg-slate-100 pattern-dots-sm text-slate-200 flex items-center justify-center">
+                                  <div className="w-full h-full p-2 bg-slate-100 pattern-dots-sm text-slate-200 flex items-center justify-center relative">
+                                    {doc.blurhash && (
+                                      <div className="absolute inset-0 z-0">
+                                        <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                                      </div>
+                                    )}
                                     <img 
                                       src={`/uploads/${doc.savedName}`} 
                                       alt={doc.name}
-                                      className="max-w-full max-h-full object-contain drop-shadow-sm rounded"
+                                      className="max-w-full max-h-full object-contain drop-shadow-sm rounded relative z-10"
                                       loading="lazy"
                                     />
                                   </div>
                                 ) : (
                                   <>
                                     <FileIcon filename={doc.name} className="w-16 h-16 opacity-30 absolute" />
-                                    <img 
-                                      src={`/uploads/thumbnails/thumb-${doc.savedName}.png`}
-                                      alt={doc.name}
-                                      className="w-full h-full object-cover z-10"
-                                      loading="lazy"
-                                      onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                                      }}
-                                    />
+                                    {doc.thumbnailName && (
+                                      <div className="absolute inset-0 z-10">
+                                        {doc.blurhash && (
+                                          <div className="absolute inset-0 z-0">
+                                            <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                                          </div>
+                                        )}
+                                        <img 
+                                          src={`/uploads/thumbnails/${doc.thumbnailName}`}
+                                          alt={doc.name}
+                                          className="w-full h-full object-cover relative z-10"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                            if (e.currentTarget.parentElement) e.currentTarget.parentElement.style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
+                                    )}
                                   </>
                                 )}
                                 

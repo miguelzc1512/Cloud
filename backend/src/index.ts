@@ -74,6 +74,13 @@ try {
   // Column might already exist, ignore
 }
 
+try {
+  docDb.exec(`ALTER TABLE docs ADD COLUMN thumbnailName TEXT`);
+  docDb.exec(`ALTER TABLE docs ADD COLUMN blurhash TEXT`);
+} catch (e) {
+  // Column might already exist, ignore
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY,
