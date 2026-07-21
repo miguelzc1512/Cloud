@@ -40,7 +40,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   const [coverUpdateCounter, setCoverUpdateCounter] = useState(0);
   const [showHideConfirm, setShowHideConfirm] = useState(false);
   const [coverConfirmId, setCoverConfirmId] = useState<string | null>(null);
-  
+
   const [additionalFilterPeople, setAdditionalFilterPeople] = useState<any[]>([]);
   const [coOccurringPeople, setCoOccurringPeople] = useState<any[]>([]);
   const [showFilterBar, setShowFilterBar] = useState(true);
@@ -134,14 +134,14 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   useEffect(() => {
     let lastScrollY = 0;
     let ticking = false;
-    
+
     const handleScroll = (e: Event) => {
       // Find the element that is actually scrolling
       const target = e.target as HTMLElement;
       if (!target || typeof target.scrollTop !== 'number') return;
-      
+
       const currentScrollY = target.scrollTop;
-      
+
       // Ignore tiny scrolls or scrolls on non-main elements
       if (currentScrollY === 0 && lastScrollY === 0) return;
 
@@ -160,7 +160,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
         ticking = true;
       }
     };
-    
+
     // Window capture phase is guaranteed to catch ANY scroll event in the entire application
     window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
     return () => window.removeEventListener('scroll', handleScroll, { capture: true });
@@ -272,7 +272,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-blue-900 leading-tight">Analizando</span>
-                <span className="text-[11px] font-medium text-blue-600 leading-tight">Faltan {status.total - status.processed} por analizar</span>
+                <span className="text-[11px] font-medium text-blue-600 leading-tight"> {status.total - status.processed} faltante(s) </span>
               </div>
             </div>
           )}
@@ -292,8 +292,8 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
 
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 shrink-0">
-              <img 
-                src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}&t=${coverUpdateCounter}`} 
+              <img
+                src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}&t=${coverUpdateCounter}`}
                 alt={selectedPerson.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -384,13 +384,13 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
           coverConfirmId === selectedIds[0] ? (
             <div className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-200 bg-blue-50 px-3 py-1.5 rounded-full mr-2">
               <span className="text-sm text-blue-700 mr-1">¿Usar de perfil?</span>
-              <button 
+              <button
                 onClick={() => setCoverConfirmId(null)}
                 className="text-blue-600 hover:text-blue-800 px-2 py-1 rounded-full hover:bg-blue-100 transition-colors text-sm font-medium"
               >
                 No
               </button>
-              <button 
+              <button
                 onClick={() => {
                   handleSetCover(selectedIds[0], clearSelection);
                   setCoverConfirmId(null);
@@ -442,95 +442,95 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
   if (selectedPerson) {
     return (
       <div ref={containerRef} className="animate-in fade-in duration-300 h-[calc(100%+5rem)] flex flex-col relative -mt-10">
-        <div 
+        <div
           className={`fixed top-20 left-[64px] right-0 z-[5] transition-all duration-300 ease-in-out bg-slate-50/95 backdrop-blur-md py-3 shadow-sm border-b border-slate-200/50 ${showFilterBar ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}
         >
-          <div 
+          <div
             className="flex items-center gap-2 flex-wrap w-full"
-            style={{ 
+            style={{
               paddingLeft: 'max(1.5rem, calc(2.5rem + 1rem))', // Matches Gallery left padding
               paddingRight: 'max(1.5rem, calc(2.5rem + 1rem))'
             }}
           >
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200 shrink-0 cursor-default shadow-sm">
-            <img 
-              src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}`}
-              className="w-6 h-6 rounded-full object-cover bg-slate-200" 
-              alt={selectedPerson.name}
-            />
-            <span className="text-slate-700 text-sm font-semibold pr-1">Solo estas personas</span>
-          </div>
-          
-          {additionalFilterPeople.map(p => (
-            <div 
-              key={p.id} 
-              onClick={() => setAdditionalFilterPeople(prev => prev.filter(af => af.id !== p.id))}
-              className="flex items-center gap-1.5 px-1 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
-            >
-              <img 
-                src={`/api/people/${p.id}/face?v=${p.coverFile}`}
-                className="w-6 h-6 rounded-full object-cover bg-slate-200" 
-                alt={p.name}
+              <img
+                src={`/api/people/${selectedPerson.id}/face?v=${selectedPerson.coverFile}`}
+                className="w-6 h-6 rounded-full object-cover bg-slate-200"
+                alt={selectedPerson.name}
               />
-              <span className="text-sm font-semibold pl-0.5 pr-0.5 truncate max-w-[120px]">{p.name}</span>
-              <div className="bg-blue-200 group-hover:bg-blue-300 rounded-full p-0.5 mr-0.5 transition-colors">
-                <X className="w-3 h-3 text-blue-700" />
-              </div>
+              <span className="text-slate-700 text-sm font-semibold pr-1">Solo estas personas</span>
             </div>
-          ))}
 
-          {coOccurringPeople.slice(0, 5).map(p => (
-            <div 
-              key={p.id} 
-              onClick={() => setAdditionalFilterPeople(prev => [...prev, p])}
-              className="flex items-center gap-1.5 px-1 py-1 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
-            >
-              <img 
-                src={`/api/people/${p.id}/face?v=${p.coverFile}`}
-                className="w-6 h-6 rounded-full object-cover bg-slate-200 opacity-90 group-hover:opacity-100" 
-                alt={p.name}
-              />
-              <span className="text-sm font-medium pl-0.5 pr-0.5 truncate max-w-[120px]">{p.name}</span>
-              <div className="bg-slate-100 group-hover:bg-slate-200 rounded-full p-0.5 mr-0.5 transition-colors">
-                <Plus className="w-3 h-3 text-slate-500" />
-              </div>
-            </div>
-          ))}
-
-          {coOccurringPeople.length > 5 && (
-            <div className="relative shrink-0" ref={otrosMenuRef}>
-              <div 
-                onClick={() => setShowOtrosDropdown(!showOtrosDropdown)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 cursor-pointer shadow-sm transition-colors"
+            {additionalFilterPeople.map(p => (
+              <div
+                key={p.id}
+                onClick={() => setAdditionalFilterPeople(prev => prev.filter(af => af.id !== p.id))}
+                className="flex items-center gap-1.5 px-1 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full border border-blue-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
               >
-                <span className="text-sm font-medium">Otros ({coOccurringPeople.length - 5})</span>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showOtrosDropdown ? 'rotate-180' : ''}`} />
-              </div>
-              
-              {showOtrosDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 p-2 max-h-[300px] overflow-y-auto">
-                  {coOccurringPeople.slice(5).map(p => (
-                    <div 
-                      key={p.id}
-                      onClick={() => {
-                        setAdditionalFilterPeople(prev => [...prev, p]);
-                        setShowOtrosDropdown(false);
-                      }}
-                      className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
-                    >
-                      <img 
-                        src={`/api/people/${p.id}/face?v=${p.coverFile}`}
-                        className="w-8 h-8 rounded-full object-cover bg-slate-200 shrink-0" 
-                        alt={p.name}
-                      />
-                      <span className="text-sm font-medium text-slate-700 truncate">{p.name}</span>
-                    </div>
-                  ))}
+                <img
+                  src={`/api/people/${p.id}/face?v=${p.coverFile}`}
+                  className="w-6 h-6 rounded-full object-cover bg-slate-200"
+                  alt={p.name}
+                />
+                <span className="text-sm font-semibold pl-0.5 pr-0.5 truncate max-w-[120px]">{p.name}</span>
+                <div className="bg-blue-200 group-hover:bg-blue-300 rounded-full p-0.5 mr-0.5 transition-colors">
+                  <X className="w-3 h-3 text-blue-700" />
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+
+            {coOccurringPeople.slice(0, 5).map(p => (
+              <div
+                key={p.id}
+                onClick={() => setAdditionalFilterPeople(prev => [...prev, p])}
+                className="flex items-center gap-1.5 px-1 py-1 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 shrink-0 cursor-pointer shadow-sm transition-colors group"
+              >
+                <img
+                  src={`/api/people/${p.id}/face?v=${p.coverFile}`}
+                  className="w-6 h-6 rounded-full object-cover bg-slate-200 opacity-90 group-hover:opacity-100"
+                  alt={p.name}
+                />
+                <span className="text-sm font-medium pl-0.5 pr-0.5 truncate max-w-[120px]">{p.name}</span>
+                <div className="bg-slate-100 group-hover:bg-slate-200 rounded-full p-0.5 mr-0.5 transition-colors">
+                  <Plus className="w-3 h-3 text-slate-500" />
+                </div>
+              </div>
+            ))}
+
+            {coOccurringPeople.length > 5 && (
+              <div className="relative shrink-0" ref={otrosMenuRef}>
+                <div
+                  onClick={() => setShowOtrosDropdown(!showOtrosDropdown)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-600 rounded-full border border-slate-200 cursor-pointer shadow-sm transition-colors"
+                >
+                  <span className="text-sm font-medium">Otros ({coOccurringPeople.length - 5})</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showOtrosDropdown ? 'rotate-180' : ''}`} />
+                </div>
+
+                {showOtrosDropdown && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 p-2 max-h-[300px] overflow-y-auto">
+                    {coOccurringPeople.slice(5).map(p => (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setAdditionalFilterPeople(prev => [...prev, p]);
+                          setShowOtrosDropdown(false);
+                        }}
+                        className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                      >
+                        <img
+                          src={`/api/people/${p.id}/face?v=${p.coverFile}`}
+                          className="w-8 h-8 rounded-full object-cover bg-slate-200 shrink-0"
+                          alt={p.name}
+                        />
+                        <span className="text-sm font-medium text-slate-700 truncate">{p.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <PhotosView
           paddingTop="50px"
@@ -574,8 +574,8 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
           {people.map((person) => {
             const isSelected = selectedPersonIds.has(person.id);
             return (
-              <div 
-                key={person.id} 
+              <div
+                key={person.id}
                 className={`flex flex-col items-center group cursor-pointer animate-in fade-in zoom-in duration-300 relative transition-transform ${isSelected ? 'scale-95' : ''}`}
                 onClick={() => {
                   if (selectedPersonIds.size > 0) {
@@ -598,15 +598,14 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
                     </div>
                     <div className={`absolute inset-0 bg-black/0 transition-colors duration-300 ${isSelected ? 'bg-blue-500/10' : 'group-hover:bg-black/5'}`}></div>
                   </div>
-                  
-                  <div 
+
+                  <div
                     onClick={(e) => {
                       e.stopPropagation();
                       togglePersonSelection(person.id);
                     }}
-                    className={`absolute top-1 left-1 bg-white rounded-full shadow-sm z-10 transition-opacity duration-200 cursor-pointer ${
-                      isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                    }`}
+                    className={`absolute top-1 left-1 bg-white rounded-full shadow-sm z-10 transition-opacity duration-200 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
                   >
                     {isSelected ? (
                       <CheckCircle2 className="w-7 h-7 text-blue-500 fill-blue-50" />
@@ -615,7 +614,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
                     )}
                   </div>
                 </div>
-                
+
                 <div className="mt-4 flex flex-col items-center text-center">
                   <span className={`text-base font-semibold transition-colors line-clamp-1 ${isSelected ? 'text-blue-600' : 'text-slate-800 group-hover:text-blue-600'}`}>
                     {person.name}
@@ -630,32 +629,32 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
         </div>
       )}
 
-      <div 
+      <div
         className={`fixed top-0 right-0 left-[64px] h-20 z-40 bg-white flex items-center justify-between px-8 shadow-sm border-b border-slate-200 transition-transform duration-200 ease-out ${selectedPersonIds.size > 0 ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => {
               setSelectedPersonIds(new Set());
-            }} 
+            }}
             className="text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
           <span className="font-medium text-lg text-slate-800 ml-2">{selectedPersonIds.size} seleccionadas</span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {showHideConfirm ? (
             <div className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-200">
               <span className="text-sm text-slate-500 mr-2">¿Ocultar {selectedPersonIds.size > 1 ? 'personas' : 'persona'}?</span>
-              <button 
+              <button
                 onClick={() => setShowHideConfirm(false)}
                 className="text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors text-sm font-medium"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={confirmHide}
                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full shadow-sm transition-colors text-sm font-medium"
               >
@@ -664,20 +663,19 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
             </div>
           ) : (
             <>
-              <button 
+              <button
                 onClick={handleHide}
                 className="text-slate-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
                 title="Quitar / Ocultar"
               >
                 <UserMinus className="w-6 h-6" />
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleMerge}
                 disabled={selectedPersonIds.size < 2}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-all ${
-                  selectedPersonIds.size > 1 ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-all ${selectedPersonIds.size > 1 ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
               >
                 <Merge className="w-5 h-5" />
                 Fusionar

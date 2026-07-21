@@ -81,6 +81,12 @@ try {
   // Column might already exist, ignore
 }
 
+try {
+  docDb.exec(`ALTER TABLE doc_clusters ADD COLUMN deletedAt TEXT`);
+} catch (e) {
+  // Column might already exist, ignore
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY,
@@ -628,7 +634,7 @@ app.get('/api/documents', (_req: Request, res: Response) => {
 // GET /api/documents/clusters (Renombrado conceptualmente a carpetas)
 app.get('/api/documents/clusters', (_req: Request, res: Response) => {
   try {
-    const clusters = docDb.prepare(`SELECT * FROM doc_clusters ORDER BY createdAt DESC`).all();
+    const clusters = docDb.prepare(`SELECT * FROM doc_clusters WHERE deletedAt IS NULL ORDER BY createdAt DESC`).all();
     res.json(clusters);
   } catch (e) {
     res.status(500).json({ error: 'Database error' });
@@ -665,13 +671,11 @@ app.put('/api/documents/folders/:id', (req: Request, res: Response) => {
 app.delete('/api/documents/folders/:id', (req: Request, res: Response) => {
   try {
     const folderId = req.params.id;
-    // Soft-delete all documents inside this folder first
     const now = new Date().toISOString();
-    docDb.prepare(`UPDATE docs SET deletedAt = ? WHERE clusterId = ? AND deletedAt IS NULL`).run(now, folderId);
-    
-    // Delete the folder. SQLite ON DELETE SET NULL will detach the documents,
-    // so if they are restored from trash, they will appear in the root directory.
-    docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(folderId);
+    // Soft-delete all documents inside this folder
+    docDb.prepare(`UPDATE docs SET isDeleted = 1, deletedAt = ? WHERE clusterId = ? AND (isDeleted = 0 OR isDeleted IS NULL)`).run(now, folderId);
+    // Soft-delete the folder itself (keep it in the DB so we can show it in trash)
+    docDb.prepare(`UPDATE doc_clusters SET deletedAt = ? WHERE id = ?`).run(now, folderId);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete folder' });
@@ -706,11 +710,16 @@ app.delete('/api/documents/:id', (req: Request, res: Response) => {
 app.get('/api/documents/trash', (_req: Request, res: Response) => {
   try {
     const docs = docDb.prepare(`
-      SELECT * FROM docs 
+      SELECT *, 'document' as itemType FROM docs 
       WHERE isDeleted = 1
       ORDER BY deletedAt DESC
     `).all();
-    res.json(docs);
+    const folders = docDb.prepare(`
+      SELECT *, 'folder' as itemType FROM doc_clusters
+      WHERE deletedAt IS NOT NULL
+      ORDER BY deletedAt DESC
+    `).all();
+    res.json({ documents: docs, folders });
   } catch (e) {
     res.status(500).json({ error: 'Database error' });
   }
@@ -719,19 +728,32 @@ app.get('/api/documents/trash', (_req: Request, res: Response) => {
 // POST /api/documents/trash/restore
 app.post('/api/documents/trash/restore', (req: Request, res: Response) => {
   try {
-    const { ids } = req.body;
-    if (!ids || !Array.isArray(ids)) {
-      res.status(400).json({ error: 'Invalid input' });
-      return;
+    const { ids, folderIds } = req.body;
+    
+    // Restore individual documents
+    if (ids && Array.isArray(ids)) {
+      const restoreStmt = docDb.prepare(`UPDATE docs SET isDeleted = 0, deletedAt = NULL WHERE id = ?`);
+      const transaction = docDb.transaction((docIds: string[]) => {
+        for (const id of docIds) {
+          restoreStmt.run(id);
+        }
+      });
+      transaction(ids);
     }
     
-    const restoreStmt = docDb.prepare(`UPDATE docs SET isDeleted = 0, deletedAt = NULL WHERE id = ?`);
-    const transaction = docDb.transaction((docIds: string[]) => {
-      for (const id of docIds) {
-        restoreStmt.run(id);
-      }
-    });
-    transaction(ids);
+    // Restore folders and their contents
+    if (folderIds && Array.isArray(folderIds)) {
+      const restoreFolderStmt = docDb.prepare(`UPDATE doc_clusters SET deletedAt = NULL WHERE id = ?`);
+      const restoreDocsInFolder = docDb.prepare(`UPDATE docs SET isDeleted = 0, deletedAt = NULL WHERE clusterId = ?`);
+      const transaction = docDb.transaction((fIds: string[]) => {
+        for (const id of fIds) {
+          restoreFolderStmt.run(id);
+          restoreDocsInFolder.run(id);
+        }
+      });
+      transaction(folderIds);
+    }
+    
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to restore documents' });
@@ -741,13 +763,14 @@ app.post('/api/documents/trash/restore', (req: Request, res: Response) => {
 // DELETE /api/documents/trash/empty
 app.delete('/api/documents/trash/empty', (req: Request, res: Response) => {
   try {
-    const { ids } = req.body; // opcional: si se mandan ids específicos, solo borra esos
+    const { ids, folderIds } = req.body; // opcional: si se mandan ids específicos, solo borra esos
     
+    // Permanently delete specific documents or all
     let docsToDelete: any[] = [];
     if (ids && Array.isArray(ids)) {
       const getStmt = docDb.prepare(`SELECT * FROM docs WHERE id = ? AND isDeleted = 1`);
       docsToDelete = ids.map(id => getStmt.get(id)).filter(Boolean);
-    } else {
+    } else if (!folderIds) {
       docsToDelete = docDb.prepare(`SELECT * FROM docs WHERE isDeleted = 1`).all();
     }
     
@@ -759,6 +782,27 @@ app.delete('/api/documents/trash/empty', (req: Request, res: Response) => {
         if (doc.savedName) fs.unlinkSync(path.join(absoluteStoragePath, doc.savedName));
       } catch (err) {
         console.error('Failed to delete file from disk', err);
+      }
+    }
+    
+    // Permanently delete folders
+    if (folderIds && Array.isArray(folderIds)) {
+      for (const fId of folderIds) {
+        // Also permanently delete documents still linked to this folder
+        const folderDocs: any[] = docDb.prepare(`SELECT * FROM docs WHERE clusterId = ? AND isDeleted = 1`).all(fId);
+        for (const doc of folderDocs) {
+          deleteStmt.run(doc.id);
+          try {
+            if (doc.savedName) fs.unlinkSync(path.join(absoluteStoragePath, doc.savedName));
+          } catch (err) {}
+        }
+        docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(fId);
+      }
+    } else if (!ids) {
+      // Empty all: also delete all soft-deleted folders
+      const deletedFolders: any[] = docDb.prepare(`SELECT id FROM doc_clusters WHERE deletedAt IS NOT NULL`).all();
+      for (const f of deletedFolders) {
+        docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(f.id);
       }
     }
     

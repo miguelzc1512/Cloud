@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, Loader2, AlertCircle, RotateCcw, CheckSquare, X, List, LayoutGrid, ChevronDown, MoreVertical } from 'lucide-react';
+import { Trash2, Loader2, AlertCircle, RotateCcw, CheckSquare, X, List, LayoutGrid, ChevronDown, MoreVertical, Folder } from 'lucide-react';
 import { Blurhash } from 'react-blurhash';
 import FileIcon from './FileIcon';
 
@@ -13,7 +13,18 @@ interface DocFile {
   deletedAt: string;
   thumbnailName?: string;
   blurhash?: string;
+  itemType: 'document';
 }
+
+interface DocFolder {
+  id: string;
+  name: string;
+  deletedAt: string;
+  createdAt: string;
+  itemType: 'folder';
+}
+
+type TrashItem = DocFile | DocFolder;
 
 interface DocTrashViewProps {
   onRefresh: () => void;
@@ -22,6 +33,7 @@ interface DocTrashViewProps {
 
 export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashViewProps) {
   const [deletedFiles, setDeletedFiles] = useState<DocFile[]>([]);
+  const [deletedFolders, setDeletedFolders] = useState<DocFolder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
@@ -50,7 +62,14 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
       const res = await fetch(`/api/documents/trash`);
       if (res.ok) {
         const data = await res.json();
-        setDeletedFiles(data);
+        // Handle both old format (array) and new format ({ documents, folders })
+        if (Array.isArray(data)) {
+          setDeletedFiles(data.map((d: any) => ({ ...d, itemType: 'document' })));
+          setDeletedFolders([]);
+        } else {
+          setDeletedFiles((data.documents || []).map((d: any) => ({ ...d, itemType: 'document' })));
+          setDeletedFolders((data.folders || []).map((f: any) => ({ ...f, itemType: 'folder' })));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -78,12 +97,18 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     }
   }, []);
 
+  // Combine all items for unified list
+  const allItems: TrashItem[] = [
+    ...deletedFolders,
+    ...deletedFiles
+  ];
+
   useEffect(() => {
-    if (deletedFiles.length > 0) {
+    if (allItems.length > 0) {
       setHeaderActions(
         <button 
           onClick={() => {
-            const allIds = new Set(deletedFiles.map(f => f.id));
+            const allIds = new Set(allItems.map(f => f.id));
             setSelectedIds(allIds);
           }}
           className="text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm"
@@ -95,14 +120,20 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     } else {
       setHeaderActions(null);
     }
-  }, [deletedFiles, setHeaderActions]);
+  }, [deletedFiles, deletedFolders, setHeaderActions]);
 
-  const handleRestore = async (ids: string[]) => {
+  const handleRestore = async () => {
     try {
+      const docIds = Array.from(selectedIds).filter(id => deletedFiles.some(f => f.id === id));
+      const folderIdsArr = Array.from(selectedIds).filter(id => deletedFolders.some(f => f.id === id));
+      
       await fetch(`/api/documents/trash/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
+        body: JSON.stringify({ 
+          ids: docIds.length > 0 ? docIds : undefined, 
+          folderIds: folderIdsArr.length > 0 ? folderIdsArr : undefined 
+        })
       });
       setSelectedIds(new Set());
       setShowRestoreMenu(false);
@@ -113,12 +144,18 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     }
   };
 
-  const handleEmptyTrash = async (ids: string[]) => {
+  const handleEmptyTrash = async () => {
     try {
+      const docIds = Array.from(selectedIds).filter(id => deletedFiles.some(f => f.id === id));
+      const folderIdsArr = Array.from(selectedIds).filter(id => deletedFolders.some(f => f.id === id));
+      
       await fetch(`/api/documents/trash/empty`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: ids.length > 0 ? ids : null })
+        body: JSON.stringify({ 
+          ids: docIds.length > 0 ? docIds : undefined,
+          folderIds: folderIdsArr.length > 0 ? folderIdsArr : undefined
+        })
       });
       setSelectedIds(new Set());
       setShowDeleteMenu(false);
@@ -141,9 +178,9 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     const newSelection = new Set(selectedIds);
     
     if (e.shiftKey && lastSelectedId) {
-      const allItems = sortedFiles.map(d => d.id);
-      const startIdx = allItems.indexOf(lastSelectedId);
-      const endIdx = allItems.indexOf(id);
+      const itemIds = sortedItems.map(d => d.id);
+      const startIdx = itemIds.indexOf(lastSelectedId);
+      const endIdx = itemIds.indexOf(id);
       
       if (startIdx !== -1 && endIdx !== -1) {
         if (!e.metaKey && !e.ctrlKey) {
@@ -152,7 +189,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
         const minIdx = Math.min(startIdx, endIdx);
         const maxIdx = Math.max(startIdx, endIdx);
         for (let i = minIdx; i <= maxIdx; i++) {
-          newSelection.add(allItems[i]);
+          newSelection.add(itemIds[i]);
         }
       }
     } else if (e.metaKey || e.ctrlKey) {
@@ -179,7 +216,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     return <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>;
   }
 
-  if (deletedFiles.length === 0) {
+  if (allItems.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 h-full bg-slate-50/50">
         <Trash2 className="w-16 h-16 mb-4 opacity-50" />
@@ -189,12 +226,14 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     );
   }
 
-  const selectedArray = Array.from(selectedIds);
-
-  const sortedFiles = [...deletedFiles].sort((a, b) => {
+  const sortedItems: TrashItem[] = [...allItems].sort((a, b) => {
     let comparison = 0;
     if (sortBy === 'name') comparison = a.name.localeCompare(b.name);
-    else if (sortBy === 'size') comparison = a.size - b.size;
+    else if (sortBy === 'size') {
+      const aSize = a.itemType === 'document' ? a.size : 0;
+      const bSize = b.itemType === 'document' ? b.size : 0;
+      comparison = aSize - bSize;
+    }
     else if (sortBy === 'date') comparison = new Date(a.deletedAt || 0).getTime() - new Date(b.deletedAt || 0).getTime();
     return sortDesc ? -comparison : comparison;
   });
@@ -230,7 +269,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
               <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 p-2">
                 <p className="text-xs text-slate-500 px-2 pb-2 mb-1 border-b border-slate-100">¿Restaurar archivos?</p>
                 <button 
-                  onClick={() => handleRestore(selectedArray)}
+                  onClick={() => handleRestore()}
                   className="w-full text-left px-2 py-2.5 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   Sí, restaurar {selectedIds.size > 1 ? `${selectedIds.size} elementos` : '1 elemento'}
@@ -258,7 +297,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
               <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 p-2">
                 <p className="text-xs text-slate-500 px-2 pb-2 mb-1 border-b border-slate-100">¿Eliminar definitivamente?</p>
                 <button 
-                  onClick={() => handleEmptyTrash(selectedArray)}
+                  onClick={() => handleEmptyTrash()}
                   className="w-full text-left px-2 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors"
                 >
                   Sí, eliminar {selectedIds.size > 1 ? `${selectedIds.size} elementos` : '1 elemento'}
@@ -327,26 +366,33 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
             </div>
             
             <div className="flex flex-col">
-              {sortedFiles.map(file => (
+              {sortedItems.map(item => (
                 <div 
-                  key={file.id}
-                  onClick={(e) => handleSelect(e, file.id)}
-                  className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                  key={item.id}
+                  onClick={(e) => handleSelect(e, item.id)}
+                  className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${selectedIds.has(item.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="col-span-6 md:col-span-5 flex items-center gap-3 overflow-hidden">
-                    <FileIcon filename={file.name} className="w-5 h-5 shrink-0" />
-                    <span className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</span>
+                    {item.itemType === 'folder' ? (
+                      <Folder className="w-5 h-5 text-slate-400 fill-slate-400 shrink-0" />
+                    ) : (
+                      <FileIcon filename={item.name} className="w-5 h-5 shrink-0" />
+                    )}
+                    <span className="text-sm font-medium text-slate-800 truncate" title={item.name}>
+                      {item.name}
+                      {item.itemType === 'folder' && <span className="text-xs text-slate-400 ml-2">(Carpeta)</span>}
+                    </span>
                   </div>
                   <div className="col-span-3 md:col-span-2 hidden md:flex items-center text-sm text-slate-500">
-                    {new Date(file.deletedAt).toLocaleDateString()}
+                    {new Date(item.deletedAt).toLocaleDateString()}
                   </div>
                   <div className="col-span-3 md:col-span-3 flex items-center justify-end">
                     <span className="bg-red-50 text-red-600 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                      {daysLeft(file.deletedAt)} días
+                      {daysLeft(item.deletedAt)} días
                     </span>
                   </div>
                   <div className="col-span-3 md:col-span-2 flex items-center justify-end text-sm text-slate-500">
-                    {formatSize(file.size)}
+                    {item.itemType === 'document' ? formatSize(item.size) : '—'}
                   </div>
                 </div>
               ))}
@@ -354,54 +400,60 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {sortedFiles.map(doc => (
+            {sortedItems.map(item => (
               <div
-                key={doc.id}
-                onClick={(e) => handleSelect(e, doc.id)}
-                className={`flex flex-col rounded-2xl border cursor-pointer select-none overflow-hidden transition-all bg-white group relative ${selectedIds.has(doc.id) ? 'bg-blue-50/10 border-blue-500 ring-1 ring-blue-500' : 'border-slate-200 hover:bg-slate-50 hover:shadow-sm'}`}
+                key={item.id}
+                onClick={(e) => handleSelect(e, item.id)}
+                className={`flex flex-col rounded-2xl border cursor-pointer select-none overflow-hidden transition-all bg-white group relative ${selectedIds.has(item.id) ? 'bg-blue-50/10 border-blue-500 ring-1 ring-blue-500' : 'border-slate-200 hover:bg-slate-50 hover:shadow-sm'}`}
               >
                 {/* 60 days badge */}
                 <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md z-20 shadow-sm pointer-events-none">
-                  {daysLeft(doc.deletedAt)} días
+                  {daysLeft(item.deletedAt)} días
                 </div>
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-white group-hover:bg-slate-50 transition-colors z-10">
                   <div className="flex items-center gap-2.5 overflow-hidden pr-8">
-                    <FileIcon filename={doc.name} className="w-5 h-5 shrink-0" />
-                    <p className="font-medium text-slate-700 text-[13px] truncate" title={doc.name}>{doc.name}</p>
+                    {item.itemType === 'folder' ? (
+                      <Folder className="w-5 h-5 text-slate-400 fill-slate-400 shrink-0" />
+                    ) : (
+                      <FileIcon filename={item.name} className="w-5 h-5 shrink-0" />
+                    )}
+                    <p className="font-medium text-slate-700 text-[13px] truncate" title={item.name}>{item.name}</p>
                   </div>
                 </div>
                 
                 {/* Preview Area */}
                 <div className="h-40 bg-slate-50 flex items-center justify-center relative overflow-hidden group-hover:bg-slate-100/50 transition-colors">
-                  {doc.extension?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                  {item.itemType === 'folder' ? (
+                    <Folder className="w-16 h-16 text-slate-300 fill-slate-300" />
+                  ) : item.extension?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) ? (
                     <div className="w-full h-full p-2 bg-slate-100 pattern-dots-sm text-slate-200 flex items-center justify-center relative">
-                      {doc.blurhash && (
+                      {item.blurhash && (
                         <div className="absolute inset-0 z-0">
-                          <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                          <Blurhash hash={item.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
                         </div>
                       )}
                       <img 
-                        src={`/uploads/${doc.savedName}`} 
-                        alt={doc.name}
+                        src={`/uploads/${item.savedName}`} 
+                        alt={item.name}
                         className="max-w-full max-h-full object-contain drop-shadow-sm rounded relative z-10"
                         loading="lazy"
                       />
                     </div>
                   ) : (
                     <>
-                      <FileIcon filename={doc.name} className="w-16 h-16 opacity-30 absolute" />
-                      {doc.thumbnailName && (
+                      <FileIcon filename={item.name} className="w-16 h-16 opacity-30 absolute" />
+                      {item.thumbnailName && (
                         <div className="absolute inset-0 z-10">
-                          {doc.blurhash && (
+                          {item.blurhash && (
                             <div className="absolute inset-0 z-0">
-                              <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                              <Blurhash hash={item.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
                             </div>
                           )}
                           <img 
-                            src={`/uploads/thumbnails/${doc.thumbnailName}`} 
-                            alt={`${doc.name} thumbnail`}
+                            src={`/uploads/thumbnails/${item.thumbnailName}`} 
+                            alt={`${item.name} thumbnail`}
                             className="w-full h-full object-cover relative z-10"
                             loading="lazy"
                           />
