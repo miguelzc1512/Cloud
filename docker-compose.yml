@@ -10,13 +10,6 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  backend-ia:
-    build: ./backend-ia
-    container_name: cloud-backend-ia
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
-
   backend-api:
     build: ./backend
     container_name: cloud-backend-api
@@ -25,13 +18,11 @@ services:
       - "3001:3001"
     environment:
       - REDIS_HOST=redis
-      - PYTHON_API_URL=http://backend-ia:8000
       - STORAGE_PATH=/app/storage
     volumes:
       - ./storage:/app/storage
     depends_on:
       - redis
-      - backend-ia
     restart: unless-stopped
 
   backend-worker:
@@ -40,13 +31,11 @@ services:
     command: npm run dev:worker
     environment:
       - REDIS_HOST=redis
-      - PYTHON_API_URL=http://backend-ia:8000
       - STORAGE_PATH=/app/storage
     volumes:
       - ./storage:/app/storage
     depends_on:
       - redis
-      - backend-ia
     restart: unless-stopped
 
   frontend:
