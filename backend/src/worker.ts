@@ -231,9 +231,13 @@ const worker = new Worker('image-processing', async job => {
         
         // Guardar por retrocompatibilidad en 'faces' column
         updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
+        emitWorkerStep(fileId, 'faces', `Se ${faces.length === 1 ? 'encontró 1 rostro' : `encontraron ${faces.length} rostros`}`, originalName);
+      } else {
+        emitWorkerStep(fileId, 'faces', 'No se detectaron rostros', originalName);
       }
     } catch (e) {
       console.log(`[Worker] Local face API falló para ${originalName}:`, e);
+      emitWorkerStep(fileId, 'faces', 'No se pudieron detectar rostros (error interno)', originalName);
     }
 
     console.log(`[Worker] Finalizado con éxito ${originalName}`);
