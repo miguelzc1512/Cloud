@@ -13,7 +13,7 @@ import crypto from 'crypto';
 import './docProcessor';
 
 // ─── SSE helper: envía eventos de progreso al backend principal ─────────────
-function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string) {
+function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string, retries = 3) {
   const body = JSON.stringify({ fileId, step, label, originalName });
   const options = {
     hostname: '127.0.0.1',
@@ -23,7 +23,13 @@ function emitWorkerStep(fileId: string, step: string, label: string, originalNam
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
   };
   const req = http.request(options);
-  req.on('error', () => {}); // silenciar errores si el backend no está listo
+  req.on('error', (e) => {
+    if (retries > 0) {
+      setTimeout(() => emitWorkerStep(fileId, step, label, originalName, retries - 1), 500);
+    } else {
+      console.error(`[Worker] Falló emitir evento SSE tras varios intentos: ${e.message}`);
+    }
+  });
   req.write(body);
   req.end();
 }
