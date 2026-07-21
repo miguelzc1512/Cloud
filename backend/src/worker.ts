@@ -13,8 +13,8 @@ import crypto from 'crypto';
 import './docProcessor';
 
 // ─── SSE helper: envía eventos de progreso al backend principal ─────────────
-function emitWorkerStep(fileId: string, step: string, label: string) {
-  const body = JSON.stringify({ fileId, step, label });
+function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string) {
+  const body = JSON.stringify({ fileId, step, label, originalName });
   const options = {
     hostname: '127.0.0.1',
     port: Number(process.env.PORT || 3001),
@@ -115,7 +115,7 @@ const worker = new Worker('image-processing', async job => {
     }
 
     // A) Generar miniatura WebP (Max 800px) — SOLO el thumbnail va a storage, nunca el original
-    emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...');
+    emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
     const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
     const thumbnailPath = path.join(absoluteStoragePath, thumbnailName);
     await image.clone()
@@ -156,7 +156,7 @@ const worker = new Worker('image-processing', async job => {
     } catch(e) {}
 
     // D) Generar CLIP Embedding (Semantic Search)
-    emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...');
+    emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName);
     let embeddingStr = null;
     if (visionPipeline) {
       try {
@@ -181,7 +181,7 @@ const worker = new Worker('image-processing', async job => {
     });
 
     // F) Extraer rostros enviando al modelo local de node.js
-    emitWorkerStep(fileId, 'faces', 'Detectando rostros...');
+    emitWorkerStep(fileId, 'faces', 'Detectando rostros...', originalName);
     try {
       console.log(`[Worker] Detectando rostros en miniatura de ${originalName}`);
       const faces = await detectFacesInImage(thumbnailPath);
@@ -237,7 +237,7 @@ const worker = new Worker('image-processing', async job => {
     }
 
     console.log(`[Worker] Finalizado con éxito ${originalName}`);
-    emitWorkerStep(fileId, 'done', '¡Listo!');
+    emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
 
     if (tempJpegPath) {
       try { fs.unlinkSync(tempJpegPath); } catch(e) {}

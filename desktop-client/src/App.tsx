@@ -59,7 +59,13 @@ export default function App() {
           : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
         );
       } else if (event === 'worker_step') {
-        setProgress(prev => prev ? { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } } : null);
+        setProgress(prev => {
+          if (prev) return { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || prev.currentFile };
+          if (data.originalName) {
+            return { current: 1, total: 1, currentFile: data.originalName, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } };
+          }
+          return null;
+        });
         if (data.step === 'done') {
           setTimeout(() => setProgress(prev => prev ? { ...prev, stepInfo: null } : null), 800);
         }
