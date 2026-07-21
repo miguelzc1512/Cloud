@@ -13,7 +13,7 @@ services:
   backend-api:
     build: ./backend
     container_name: cloud-backend-api
-    command: npm run dev
+    command: npm start
     ports:
       - "3001:3001"
     environment:
@@ -28,7 +28,7 @@ services:
   backend-worker:
     build: ./backend
     container_name: cloud-backend-worker
-    command: npm run dev:worker
+    command: npm run start:worker
     environment:
       - REDIS_HOST=redis
       - STORAGE_PATH=/app/storage

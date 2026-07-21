@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "nodemon --watch src src/index.ts",
     "dev:worker": "nodemon --watch src src/worker.ts",
+    "start": "node dist/index.js",
+    "start:worker": "node dist/worker.js",
     "build": "tsc"
   },
   "keywords": [],
