@@ -569,7 +569,13 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 // GET /api/documents
 app.get('/api/documents', (_req: Request, res: Response) => {
   try {
-    const docs = docDb.prepare(`SELECT * FROM docs ORDER BY createdAt DESC`).all();
+    // Excluir imágenes y videos: solo retornar documentos reales
+    const docs = docDb.prepare(`
+      SELECT * FROM docs 
+      WHERE mimeType NOT LIKE 'image/%' 
+        AND mimeType NOT LIKE 'video/%'
+      ORDER BY createdAt DESC
+    `).all();
     res.json(docs);
   } catch (e) {
     res.status(500).json({ error: 'Database error' });
@@ -724,10 +730,6 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       const savedName = fileId + ext;
 
       if (isMedia) {
-        // ⚠️ Evitar duplicados: si ya existe este absolutePath en la BD, saltar
-        const existing = db.prepare(`SELECT id FROM files WHERE absolutePath = ?`).get(filePath) as any;
-        if (existing) { queued++; broadcastSSE('scan_progress', { queued, total }); continue; }
-
         let mimeType = 'application/octet-stream';
         if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
         else if (ext === '.png') mimeType = 'image/png';
@@ -766,10 +768,6 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         }
       } else {
         // Is Document
-        // ⚠️ Evitar duplicados: si ya existe este absolutePath en docs, saltar
-        const existingDoc = docDb.prepare(`SELECT id FROM docs WHERE absolutePath = ?`).get(filePath) as any;
-        if (existingDoc) { queued++; broadcastSSE('scan_progress', { queued, total }); continue; }
-
         let mimeType = 'application/octet-stream';
         if (ext === '.pdf') mimeType = 'application/pdf';
         else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';

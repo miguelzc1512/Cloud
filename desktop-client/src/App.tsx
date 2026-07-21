@@ -159,23 +159,20 @@ export default function App() {
   if (!config) return <div className="h-screen w-screen flex items-center justify-center text-slate-500 bg-[#f8fafc]">Cargando...</div>;
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-[#f8fafc] font-sans selection:bg-blue-100">
+    <div className="h-screen w-screen flex overflow-hidden bg-[#f8fafc] font-sans selection:bg-blue-100 draggable">
       
-      {/* Invisible draggable area for macOS traffic lights padding */}
-      <div className="absolute top-0 left-0 right-0 h-10 draggable z-0 pointer-events-auto"></div>
-
-      {/* Sidebar - Adjusted for traffic lights */}
-      <aside className="w-64 flex flex-col px-6 pt-12 pb-4 non-draggable relative z-10">
+      {/* Sidebar */}
+      <aside className="w-64 flex flex-col px-6 pt-12 pb-4 relative z-10">
         
         {/* Logo under traffic lights aligned left */}
-        <div className="flex items-center gap-3 mb-8 px-1">
+        <div className="flex items-center gap-3 mb-8 px-1 non-draggable">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
             <Cloud className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-medium text-slate-800 tracking-tight">Cloud Sync</span>
         </div>
 
-        <div className="flex flex-col gap-2 mb-8">
+        <div className="flex flex-col gap-2 mb-8 non-draggable">
           <button 
             onClick={() => handleLinkFolder('sync')}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md text-white font-medium px-4 py-3.5 rounded-2xl transition-all"
@@ -195,7 +192,7 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="flex flex-col gap-2 mt-2 non-draggable">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Enlaces útiles</p>
           <button 
             onClick={openWeb}
@@ -206,7 +203,7 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 mt-4">
+        <div className="flex flex-col gap-2 mt-4 non-draggable">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Rendimiento (Fotos)</p>
           <div className="flex bg-slate-100/80 rounded-xl p-1 mx-2">
             <button 
