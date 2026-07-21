@@ -43,14 +43,14 @@ const saveConfig = () => fs.writeFileSync(configPath, JSON.stringify(config, nul
 const saveState = () => fs.writeFileSync(statePath, JSON.stringify(uploadedState));
 
 let isSyncPaused = false;
-let pendingUploads: string[] = [];
+let pendingUploads: Array<{ path: string; mode: 'index' | 'sync' }> = [];
 
 // Watchers activos
 const watchers: Record<string, chokidar.FSWatcher> = {};
 
 function notifySyncStatus() {
   BrowserWindow.getAllWindows().forEach(win => {
-    win.webContents.send('sync-status', { status: isSyncPaused ? 'paused' : 'idle', pendingCount: pendingUploads.length, pendingFiles: pendingUploads });
+    win.webContents.send('sync-status', { status: isSyncPaused ? 'paused' : 'idle', pendingCount: pendingUploads.length, pendingFiles: pendingUploads.map(p => p.path) });
   });
 }
 
@@ -71,8 +71,8 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
     
     if (isSupported && !uploadedState[filePath]) {
       if (isSyncPaused) {
-        if (!pendingUploads.includes(filePath)) {
-          pendingUploads.push(filePath);
+        if (!pendingUploads.find(p => p.path === filePath)) {
+          pendingUploads.push({ path: filePath, mode: folder.mode });
           notifySyncStatus();
         }
       } else {
@@ -116,7 +116,7 @@ async function indexFile(filePath: string) {
     console.log(`Indexed successfully: ${filePath}`);
   } catch (error: any) {
     console.error(`Failed to index ${filePath}:`, error.message);
-    if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'index' });
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
@@ -159,7 +159,7 @@ async function uploadFile(filePath: string) {
     console.log(`Uploaded successfully: ${filePath}`);
   } catch (error: any) {
     console.error(`Failed to upload ${filePath}:`, error.message);
-    if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'sync' });
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
@@ -170,6 +170,63 @@ async function uploadFile(filePath: string) {
 
 // Iniciar watchers previos
 config.linkedFolders.forEach(startWatching);
+
+// ─── SSE: Escuchar eventos del servidor y reenviarlos al renderer ────────────
+import * as http from 'http';
+import * as https from 'https';
+
+function connectServerSSE() {
+  const serverUrl = config.serverUrl || 'http://localhost:3001';
+  const url = new URL('/api/stream', serverUrl);
+  const lib = url.protocol === 'https:' ? https : http;
+
+  const req = lib.get(url.toString(), (res) => {
+    let buffer = '';
+    res.on('data', (chunk: Buffer) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      let eventName = '';
+      let eventData = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          eventName = line.replace('event:', '').trim();
+        } else if (line.startsWith('data:')) {
+          eventData = line.replace('data:', '').trim();
+        } else if (line === '') {
+          // Fin de un evento, enviarlo a todos los renderers
+          if (eventName && eventData) {
+            try {
+              const parsed = JSON.parse(eventData);
+              BrowserWindow.getAllWindows().forEach(win => {
+                win.webContents.send('sse-event', { event: eventName, data: parsed });
+              });
+            } catch {}
+          }
+          eventName = '';
+          eventData = '';
+        }
+      }
+    });
+
+    res.on('end', () => {
+      // Reconectar si se cierra la conexión
+      setTimeout(connectServerSSE, 3000);
+    });
+  });
+
+  req.on('error', () => {
+    // Reintentar si no está disponible aún
+    setTimeout(connectServerSSE, 5000);
+  });
+}
+
+// Iniciar SSE después de que la app esté lista
+app.whenReady().then(() => {
+  setTimeout(connectServerSSE, 2000);
+});
+
 
 let tray: Tray | null = null;
 let isQuitting = false;
@@ -308,19 +365,23 @@ ipcMain.handle('resume-sync', async () => {
   const toUpload = [...pendingUploads];
   pendingUploads = [];
   
-  // Procesar cola en background
+  // Procesar cola en background respetando el modo de cada archivo
   (async () => {
-    for (const filePath of toUpload) {
+    for (const item of toUpload) {
       if (!isSyncPaused) {
-        await uploadFile(filePath);
+        if (item.mode === 'sync') {
+          await uploadFile(item.path);
+        } else {
+          await indexFile(item.path);
+        }
       } else {
-        pendingUploads.push(filePath);
+        pendingUploads.push(item);
       }
     }
     notifySyncStatus();
   })();
   
-  return { paused: false, pendingCount: pendingUploads.length, pendingFiles: pendingUploads };
+  return { paused: false, pendingCount: pendingUploads.length, pendingFiles: pendingUploads.map(p => p.path) };
 });
 
 ipcMain.handle('pick-folder', async () => {

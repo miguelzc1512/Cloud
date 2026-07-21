@@ -27,5 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onServerLog: (callback: (event: any, data: any) => void) => {
     ipcRenderer.on('server-log', callback);
     return () => ipcRenderer.removeListener('server-log', callback);
+  },
+  onSSEEvent: (callback: (event: any, data: any) => void) => {
+    ipcRenderer.on('sse-event', callback);
+    return () => ipcRenderer.removeListener('sse-event', callback);
   }
 });

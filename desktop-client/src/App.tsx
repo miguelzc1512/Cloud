@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Sparkles } from 'lucide-react';
 
 type StepInfo = {
@@ -28,68 +28,42 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressState | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
-
-  // Conectar al SSE del backend para escuchar progreso en tiempo real
-  const connectSSE = (serverUrl: string) => {
-    if (eventSourceRef.current) eventSourceRef.current.close();
-    const es = new EventSource(`${serverUrl}/api/stream`);
-    
-    es.addEventListener('scan_start', (e: any) => {
-      const data = JSON.parse(e.data);
-      setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
-    });
-
-    es.addEventListener('scan_progress', (e: any) => {
-      const data = JSON.parse(e.data);
-      setProgress(prev => prev ? { ...prev, current: data.queued, total: data.total } : null);
-    });
-
-    es.addEventListener('upload_started', (e: any) => {
-      const data = JSON.parse(e.data);
-      setProgress(prev => prev
-        ? { ...prev, current: data.queued || prev.current, total: data.total || prev.total, currentFile: data.originalName }
-        : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
-      );
-    });
-
-    es.addEventListener('worker_step', (e: any) => {
-      const data = JSON.parse(e.data);
-      setProgress(prev => prev ? { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } } : null);
-      if (data.step === 'done') {
-        // Limpiar el stepInfo al terminar un archivo
-        setTimeout(() => {
-          setProgress(prev => prev ? { ...prev, stepInfo: null } : null);
-        }, 800);
-      }
-    });
-
-    es.addEventListener('scan_done', () => {
-      setTimeout(() => {
-        setProgress(null);
-        const now = new Date();
-        setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
-      }, 2000);
-    });
-
-    es.onerror = () => {
-      // Reconectar silenciosamente si se pierde la conexión
-      setTimeout(() => connectSSE(serverUrl), 5000);
-    };
-
-    eventSourceRef.current = es;
-  };
 
   useEffect(() => {
     const loadConfig = async () => {
       const cfg = await (window as any).electronAPI.getConfig();
       setConfig(cfg);
-      if (cfg?.serverUrl) connectSSE(cfg.serverUrl);
       const state = await (window as any).electronAPI.getSyncState();
       setIsPaused(state.paused);
       setPendingFiles(state.pendingFiles || []);
     };
     loadConfig();
+
+    // Escuchar eventos SSE reenviados desde el main process vía IPC
+    const unsubscribeSSE = (window as any).electronAPI.onSSEEvent((_: any, payload: { event: string; data: any }) => {
+      const { event, data } = payload;
+      if (event === 'scan_start') {
+        setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
+      } else if (event === 'scan_progress') {
+        setProgress(prev => prev ? { ...prev, current: data.queued, total: data.total } : null);
+      } else if (event === 'upload_started') {
+        setProgress(prev => prev
+          ? { ...prev, current: data.queued || prev.current, total: data.total || prev.total, currentFile: data.originalName }
+          : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
+        );
+      } else if (event === 'worker_step') {
+        setProgress(prev => prev ? { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } } : null);
+        if (data.step === 'done') {
+          setTimeout(() => setProgress(prev => prev ? { ...prev, stepInfo: null } : null), 800);
+        }
+      } else if (event === 'scan_done') {
+        setTimeout(() => {
+          setProgress(null);
+          const now = new Date();
+          setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
+        }, 2000);
+      }
+    });
 
     let timeoutId: any;
     const unsubscribe = (window as any).electronAPI.onSyncStatus((_: any, data: any) => {
@@ -112,7 +86,7 @@ export default function App() {
 
     return () => {
       if (unsubscribe) unsubscribe();
-      if (eventSourceRef.current) eventSourceRef.current.close();
+      if (unsubscribeSSE) unsubscribeSSE();
     };
   }, []);
 

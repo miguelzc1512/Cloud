@@ -56,9 +56,11 @@ let stream = require("stream");
 stream = __toESM(stream, 1);
 let path = require("path");
 let http = require("http");
-http = __toESM(http, 1);
+let http$4 = __toESM(http, 1);
+http = __toESM(http);
 let https = require("https");
-https = __toESM(https, 1);
+let https$4 = __toESM(https, 1);
+https = __toESM(https);
 let url = require("url");
 url = __toESM(url, 1);
 let crypto = require("crypto");
@@ -14583,7 +14585,7 @@ function isNodeEnvProxyEnabled(agent, nodeVersion = process.versions && process.
 	return Boolean(agentOptions && utils_default.hasOwnProp(agentOptions, "proxyEnv") && agentOptions.proxyEnv != null);
 }
 function getProxyEnvAgent(options, configHttpAgent, configHttpsAgent) {
-	return isHttps.test(options.protocol) ? configHttpsAgent || https.default.globalAgent : configHttpAgent || http.default.globalAgent;
+	return isHttps.test(options.protocol) ? configHttpsAgent || https$4.default.globalAgent : configHttpAgent || http$4.default.globalAgent;
 }
 function getTunnelingAgent(agentOptions, userHttpsAgent) {
 	const key = agentOptions.protocol + "//" + agentOptions.hostname + ":" + (agentOptions.port || "") + "#" + (agentOptions.auth || "");
@@ -15010,7 +15012,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config) {
 			const configTransport = own("transport");
 			if (configTransport) transport = configTransport;
 			else if (maxRedirects === 0) {
-				transport = isHttpsRequest ? https.default : http.default;
+				transport = isHttpsRequest ? https$4.default : http$4.default;
 				isNativeTransport = true;
 			} else {
 				transportEnforcesMaxBodyLength = true;
@@ -16591,7 +16593,7 @@ function notifySyncStatus() {
 		win.webContents.send("sync-status", {
 			status: isSyncPaused ? "paused" : "idle",
 			pendingCount: pendingUploads.length,
-			pendingFiles: pendingUploads
+			pendingFiles: pendingUploads.map((p) => p.path)
 		});
 	});
 }
@@ -16627,8 +16629,11 @@ function startWatching(folder) {
 			".csv",
 			".md"
 		].includes(ext) && !uploadedState[filePath]) if (isSyncPaused) {
-			if (!pendingUploads.includes(filePath)) {
-				pendingUploads.push(filePath);
+			if (!pendingUploads.find((p) => p.path === filePath)) {
+				pendingUploads.push({
+					path: filePath,
+					mode: folder.mode
+				});
 				notifySyncStatus();
 			}
 		} else if (folder.mode === "sync") await uploadFile(filePath);
@@ -16666,7 +16671,10 @@ async function indexFile(filePath) {
 		console.log(`Indexed successfully: ${filePath}`);
 	} catch (error) {
 		console.error(`Failed to index ${filePath}:`, error.message);
-		if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
+			path: filePath,
+			mode: "index"
+		});
 		isSyncPaused = true;
 		notifySyncStatus();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
@@ -16716,7 +16724,10 @@ async function uploadFile(filePath) {
 		console.log(`Uploaded successfully: ${filePath}`);
 	} catch (error) {
 		console.error(`Failed to upload ${filePath}:`, error.message);
-		if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
+			path: filePath,
+			mode: "sync"
+		});
 		isSyncPaused = true;
 		notifySyncStatus();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
@@ -16728,6 +16739,43 @@ async function uploadFile(filePath) {
 	}
 }
 config.linkedFolders.forEach(startWatching);
+function connectServerSSE() {
+	const serverUrl = config.serverUrl || "http://localhost:3001";
+	const url = new URL("/api/stream", serverUrl);
+	(url.protocol === "https:" ? https : http).get(url.toString(), (res) => {
+		let buffer = "";
+		res.on("data", (chunk) => {
+			buffer += chunk.toString();
+			const lines = buffer.split("\n");
+			buffer = lines.pop() || "";
+			let eventName = "";
+			let eventData = "";
+			for (const line of lines) if (line.startsWith("event:")) eventName = line.replace("event:", "").trim();
+			else if (line.startsWith("data:")) eventData = line.replace("data:", "").trim();
+			else if (line === "") {
+				if (eventName && eventData) try {
+					const parsed = JSON.parse(eventData);
+					electron.BrowserWindow.getAllWindows().forEach((win) => {
+						win.webContents.send("sse-event", {
+							event: eventName,
+							data: parsed
+						});
+					});
+				} catch {}
+				eventName = "";
+				eventData = "";
+			}
+		});
+		res.on("end", () => {
+			setTimeout(connectServerSSE, 3e3);
+		});
+	}).on("error", () => {
+		setTimeout(connectServerSSE, 5e3);
+	});
+}
+electron.app.whenReady().then(() => {
+	setTimeout(connectServerSSE, 2e3);
+});
 var tray = null;
 var isQuitting = false;
 function createWindow() {
@@ -16847,14 +16895,15 @@ electron.ipcMain.handle("resume-sync", async () => {
 	const toUpload = [...pendingUploads];
 	pendingUploads = [];
 	(async () => {
-		for (const filePath of toUpload) if (!isSyncPaused) await uploadFile(filePath);
-		else pendingUploads.push(filePath);
+		for (const item of toUpload) if (!isSyncPaused) if (item.mode === "sync") await uploadFile(item.path);
+		else await indexFile(item.path);
+		else pendingUploads.push(item);
 		notifySyncStatus();
 	})();
 	return {
 		paused: false,
 		pendingCount: pendingUploads.length,
-		pendingFiles: pendingUploads
+		pendingFiles: pendingUploads.map((p) => p.path)
 	};
 });
 electron.ipcMain.handle("pick-folder", async () => {

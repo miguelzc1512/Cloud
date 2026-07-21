@@ -29,6 +29,10 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
 	onServerLog: (callback) => {
 		electron.ipcRenderer.on("server-log", callback);
 		return () => electron.ipcRenderer.removeListener("server-log", callback);
+	},
+	onSSEEvent: (callback) => {
+		electron.ipcRenderer.on("sse-event", callback);
+		return () => electron.ipcRenderer.removeListener("sse-event", callback);
 	}
 });
 //#endregion
