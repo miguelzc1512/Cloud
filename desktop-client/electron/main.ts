@@ -132,7 +132,6 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
     console.log(`Uploading ${filePath}...`);
     const formData = new FormData();
     formData.append('file', fs.createReadStream(filePath));
-    formData.append('relativePath', filePath);
     formData.append('contentType', contentType);
 
     // Notificar inicio de subida
@@ -438,7 +437,7 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
   if (filesToUpload.length > 0) {
     console.log(`Found ${filesToUpload.length} existing files to sync in ${folderPath}`);
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sse-event', { event: 'scan_start', data: { total: filesToUpload.length } });
+      win.webContents.send('sse-event', { event: 'scan_start', data: { total: filesToUpload.length, contentType } });
     });
 
     for (const file of filesToUpload) {
@@ -450,7 +449,7 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
     }
     
     BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('sse-event', { event: 'scan_done', data: { total: filesToUpload.length } });
+      win.webContents.send('sse-event', { event: 'scan_done', data: { total: filesToUpload.length, contentType } });
     });
     notifySyncStatus();
   }

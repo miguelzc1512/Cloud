@@ -25,7 +25,7 @@ const worker = new Worker('doc-processing', async job => {
   `).run(id);
 
   // Send SSE to let desktop client know it's done
-  const body = JSON.stringify({ fileId: id, step: 'upload_done', label: 'Upload Completo', originalName: doc.originalName || doc.name });
+  const body = JSON.stringify({ fileId: id, step: 'upload_done', label: 'Upload Completo', originalName: doc.originalName || doc.name, contentType: 'drive' });
   const options = {
     hostname: '127.0.0.1',
     port: Number(process.env.PORT || 3001),

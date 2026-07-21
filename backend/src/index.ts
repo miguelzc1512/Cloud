@@ -460,9 +460,9 @@ app.get('/api/stream', (req: Request, res: Response) => {
 
 // POST /api/worker-event (recibe eventos del Worker para reenviarlos a los clientes SSE)
 app.post('/api/worker-event', (req: Request, res: Response) => {
-  const { fileId, step, label, originalName } = req.body;
+  const { fileId, step, label, originalName, contentType } = req.body;
   if (fileId && step) {
-    broadcastSSE('worker_step', { fileId, step, label, originalName });
+    broadcastSSE('worker_step', { fileId, step, label, originalName, contentType: contentType || 'gallery' });
   }
   res.json({ ok: true });
 });
@@ -606,11 +606,9 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 // GET /api/documents
 app.get('/api/documents', (_req: Request, res: Response) => {
   try {
-    // Excluir imágenes y videos: solo retornar documentos reales
+    // Retornar todos los documentos de la base de datos de Archivos (incluyendo media si se subió a esta pestaña)
     const docs = docDb.prepare(`
       SELECT * FROM docs 
-      WHERE mimeType NOT LIKE 'image/%' 
-        AND mimeType NOT LIKE 'video/%'
       ORDER BY createdAt DESC
     `).all();
     res.json(docs);
@@ -828,6 +826,8 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
           docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(fileId);
           continue;
         }
+
+        broadcastSSE('upload_started', { id: fileId, originalName: originalName, queued: queued + 1, total, contentType });
       }
       
       queued++;

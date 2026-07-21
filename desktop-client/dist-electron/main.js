@@ -16698,7 +16698,6 @@ async function uploadFile(filePath, contentType = "gallery") {
 		console.log(`Uploading ${filePath}...`);
 		const formData = new import_form_data.default();
 		formData.append("file", fs.createReadStream(filePath));
-		formData.append("relativePath", filePath);
 		formData.append("contentType", contentType);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
@@ -16976,7 +16975,10 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "scan_start",
-				data: { total: filesToUpload.length }
+				data: {
+					total: filesToUpload.length,
+					contentType
+				}
 			});
 		});
 		for (const file of filesToUpload) if (isSyncPaused) {
@@ -16989,7 +16991,10 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "scan_done",
-				data: { total: filesToUpload.length }
+				data: {
+					total: filesToUpload.length,
+					contentType
+				}
 			});
 		});
 		notifySyncStatus();
