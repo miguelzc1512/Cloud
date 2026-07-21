@@ -453,8 +453,19 @@ export default function App() {
           </nav>
 
           <div className="mt-8 flex flex-col gap-2 mb-4">
-            {['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? (
+            {activeTab === 'archivos' ? (
               sidebarActions
+            ) : ['archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? (
+              <div className="flex flex-col gap-1 w-full">
+                <div
+                  className="flex items-center justify-center font-medium h-10 w-10 group-hover:w-full group-hover:justify-start group-hover:px-3.5 rounded-full group-hover:rounded-xl transition-all duration-300 shadow-sm text-sm overflow-hidden whitespace-nowrap z-10 group-hover:h-11 bg-slate-100 text-slate-400 pointer-events-none opacity-50"
+                  title="Agregar Documentos"
+                >
+                  <Plus className="w-5 h-5 shrink-0 block md:group-hover:hidden" />
+                  <FileText className="w-5 h-5 shrink-0 hidden md:group-hover:block" />
+                  <span className="max-w-full md:max-w-0 md:group-hover:max-w-[200px] ml-2.5 md:ml-0 md:group-hover:ml-2.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 overflow-hidden font-medium text-[15px]">Agregar Documentos</span>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col gap-1 w-full">
 
