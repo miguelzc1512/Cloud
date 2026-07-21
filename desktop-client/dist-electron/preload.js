@@ -11,7 +11,7 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
 		path,
 		mode
 	}),
-	unlinkFolder: (path) => electron.ipcRenderer.invoke("unlink-folder", path),
+	unlinkFolder: (params) => electron.ipcRenderer.invoke("unlink-folder", params),
 	getSyncState: () => electron.ipcRenderer.invoke("get-sync-state"),
 	pauseSync: () => electron.ipcRenderer.invoke("pause-sync"),
 	resumeSync: () => electron.ipcRenderer.invoke("resume-sync"),

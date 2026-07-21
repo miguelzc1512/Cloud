@@ -16932,10 +16932,18 @@ electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode }) => {
 	}
 	return config;
 });
-electron.ipcMain.handle("unlink-folder", (event, folderPath) => {
+electron.ipcMain.handle("unlink-folder", async (event, { folderPath, deleteFromCloud }) => {
 	config.linkedFolders = config.linkedFolders.filter((f) => f.path !== folderPath);
 	saveConfig();
 	stopWatching(folderPath);
+	if (config.serverUrl) try {
+		await axios.post(`${config.serverUrl}/api/unlink-folder`, {
+			folderPath,
+			deleteFromCloud
+		});
+	} catch (error) {
+		console.error("Failed to notify backend about unlink-folder", error);
+	}
 	return config;
 });
 electron.ipcMain.handle("get-auto-start", () => {

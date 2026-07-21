@@ -398,6 +398,35 @@ if (fs.existsSync(settingsPath)) {
   try { currentSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch(e) {}
 }
 
+app.post('/api/unlink-folder', (req: Request, res: Response) => {
+  const { folderPath, deleteFromCloud } = req.body;
+  if (!folderPath) {
+    res.status(400).json({ error: 'folderPath is required' });
+    return;
+  }
+
+  if (deleteFromCloud) {
+    // Buscar archivos (fotos/videos) que tengan ese absolutePath
+    const filesStmt = db.prepare(`SELECT id, originalName, savedName FROM files WHERE absolutePath LIKE ? AND isDeleted = 0`);
+    const files = filesStmt.all(`${folderPath}%`) as any[];
+    
+    // Buscar documentos que tengan ese absolutePath
+    const docsStmt = docDb.prepare(`SELECT id, savedName FROM docs WHERE absolutePath LIKE ? AND isDeleted = 0`);
+    const docs = docsStmt.all(`${folderPath}%`) as any[];
+
+    // Soft delete para fotos/videos
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE files SET isDeleted = 1, deletedAt = ? WHERE absolutePath LIKE ?`).run(now, `${folderPath}%`);
+    
+    // Soft delete para documentos
+    docDb.prepare(`UPDATE docs SET isDeleted = 1, deletedAt = ? WHERE absolutePath LIKE ?`).run(now, `${folderPath}%`);
+
+    console.log(`[Unlink] Soft deleted ${files.length} media files and ${docs.length} documents from folder: ${folderPath}`);
+  }
+
+  res.json({ ok: true });
+});
+
 app.get('/api/config', (req, res) => res.json(currentSettings));
 
 app.post('/api/config/power-mode', (req, res) => {
@@ -490,7 +519,7 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       size: req.file.size,
       createdAt: new Date().toISOString(),
       uploadSource,
-      absolutePath: null
+      absolutePath: relativePath || null
     };
 
     const isMedia = req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/');

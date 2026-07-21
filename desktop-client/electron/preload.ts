@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setServerUrl: (url: string) => ipcRenderer.invoke('set-server-url', url),
   pickFolder: () => ipcRenderer.invoke('pick-folder'),
   linkFolder: (path: string, mode: 'index' | 'sync') => ipcRenderer.invoke('link-folder', { path, mode }),
-  unlinkFolder: (path: string) => ipcRenderer.invoke('unlink-folder', path),
+  unlinkFolder: (params: { folderPath: string; deleteFromCloud: boolean }) => ipcRenderer.invoke('unlink-folder', params),
   getSyncState: () => ipcRenderer.invoke('get-sync-state'),
   pauseSync: () => ipcRenderer.invoke('pause-sync'),
   resumeSync: () => ipcRenderer.invoke('resume-sync'),

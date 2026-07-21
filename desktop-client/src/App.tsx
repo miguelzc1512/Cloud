@@ -43,6 +43,7 @@ export default function App() {
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [folderToUnlink, setFolderToUnlink] = useState<string | null>(null);
 
   const addLog = (type: LogEntry['type'], message: string) => {
     setLogs(prev => {
@@ -150,9 +151,15 @@ export default function App() {
     }
   };
 
-  const handleUnlinkFolder = async (path: string) => {
-    const newCfg = await (window as any).electronAPI.unlinkFolder(path);
+  const confirmUnlink = (path: string) => {
+    setFolderToUnlink(path);
+  };
+
+  const handleUnlinkFolder = async (deleteFromCloud: boolean) => {
+    if (!folderToUnlink) return;
+    const newCfg = await (window as any).electronAPI.unlinkFolder({ folderPath: folderToUnlink, deleteFromCloud });
     setConfig(newCfg);
+    setFolderToUnlink(null);
   };
 
   const handlePowerMode = async (mode: 'eco' | 'max') => {
@@ -257,7 +264,7 @@ export default function App() {
                   {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
                 </span>
                 <button 
-                  onClick={() => handleUnlinkFolder(folderObj.path)}
+                  onClick={() => confirmUnlink(folderObj.path)}
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
                   title="Desvincular"
                 >
@@ -422,6 +429,57 @@ export default function App() {
         
       </main>
       </div>
+      {/* ── Modal de confirmación para desvincular carpeta ── */}
+      {folderToUnlink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Desvincular carpeta</h3>
+            <p className="text-sm text-slate-500 mb-4 line-clamp-2" title={folderToUnlink}>
+              {folderToUnlink}
+            </p>
+            <p className="text-sm text-slate-600 mb-6">
+              ¿Qué deseas hacer con los archivos que ya se subieron o indexaron en la nube?
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => handleUnlinkFolder(false)}
+                className="flex items-center gap-3 w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                  <Cloud className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Solo dejar de sincronizar</p>
+                  <p className="text-xs text-slate-500">Mantiene las fotos a salvo en la Nube (Recomendado)</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => handleUnlinkFolder(true)}
+                className="flex items-center gap-3 w-full text-left p-3 rounded-xl hover:bg-red-50 border border-red-100 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 group-hover:bg-red-200 transition-colors">
+                  <XCircle className="w-4 h-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-red-700">Eliminar todo rastro de la nube</p>
+                  <p className="text-xs text-red-500/80">Mueve todas las fotos de esta carpeta a la papelera virtual</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setFolderToUnlink(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
