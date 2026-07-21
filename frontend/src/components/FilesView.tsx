@@ -98,7 +98,12 @@ export default function FilesView({
       setSidebarActions(
         <div className="flex flex-col gap-1 w-full">
           <button 
-            onClick={() => setIsCreatingFolder(true)}
+            onClick={() => {
+              setIsCreatingFolder(true);
+              if (window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('force-collapse-sidebar'));
+              }
+            }}
             className="hidden group-hover:flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-all text-slate-700"
             title="Nueva Carpeta"
           >

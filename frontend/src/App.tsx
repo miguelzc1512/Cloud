@@ -59,6 +59,13 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
   const [powerMode, setPowerMode] = useState('eco');
+  const [forceCollapseSidebar, setForceCollapseSidebar] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setForceCollapseSidebar(true);
+    window.addEventListener('force-collapse-sidebar', handler);
+    return () => window.removeEventListener('force-collapse-sidebar', handler);
+  }, []);
 
   useEffect(() => {
     fetch('/api/config').then(res => res.json()).then(data => {
@@ -345,7 +352,10 @@ export default function App() {
       )}
 
       {/* Sidebar - Premium Collapsible */}
-      <aside className={`group fixed top-0 left-0 h-full bg-white/95 md:bg-white/80 backdrop-blur-md border-r border-slate-200/60 shadow-2xl md:shadow-sm z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:hover:shadow-xl w-[240px] md:w-[64px] md:hover:w-[240px] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <aside 
+        onMouseLeave={() => setForceCollapseSidebar(false)}
+        className={`${!forceCollapseSidebar ? 'group md:hover:w-[240px]' : ''} fixed top-0 left-0 h-full bg-white/95 md:bg-white/80 backdrop-blur-md border-r border-slate-200/60 shadow-2xl md:shadow-sm z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:hover:shadow-xl w-[240px] md:w-[64px] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
         <div className="w-[240px] flex flex-col h-full px-3 py-8">
           <div className="w-full mb-10 flex items-center px-1.5">
             <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
