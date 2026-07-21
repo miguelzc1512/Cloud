@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle, FolderPlus, Zap, Menu } from 'lucide-react';
+import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle, FolderPlus, Zap, Menu, Smartphone } from 'lucide-react';
 import FilesView from './components/FilesView';
 import PhotosView from './components/PhotosView';
 import AlbumsView from './components/photos/albums/AlbumsView';
