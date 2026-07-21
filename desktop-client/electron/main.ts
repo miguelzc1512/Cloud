@@ -253,14 +253,10 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 600,
-    show: false, // Oculto inicialmente mientras carga
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
-    titleBarOverlay: process.platform !== 'darwin' ? {
-      color: '#f8fafc',
-      symbolColor: '#475569',
-      height: 40
-    } : false,
-    backgroundColor: '#f3f4f6', // Gris claro estilo Google Drive
+    show: false,
+    frame: false,           // Sin barra de titulo nativa en todas las plataformas
+    titleBarStyle: 'hidden', // macOS: sin barra pero con semáforos
+    backgroundColor: '#f8fafc',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -332,6 +328,14 @@ app.on('window-all-closed', () => {
 // IPC Handlers
 // IPC Handlers
 // (updatePowerMode would now go to central backend via API if needed)
+
+// Controles de ventana para Windows (frame: false)
+ipcMain.on('window-minimize', () => {
+  BrowserWindow.getFocusedWindow()?.minimize();
+});
+ipcMain.on('window-close', () => {
+  BrowserWindow.getFocusedWindow()?.hide();
+});
 
 ipcMain.handle('get-config', () => config);
 

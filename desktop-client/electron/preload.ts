@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  minimizeWindow: () => ipcRenderer.send('window-minimize'),
+  closeWindow: () => ipcRenderer.send('window-close'),
   getConfig: () => ipcRenderer.invoke('get-config'),
   setPowerMode: (mode: 'eco' | 'max') => ipcRenderer.invoke('set-power-mode', mode),
   setServerUrl: (url: string) => ipcRenderer.invoke('set-server-url', url),

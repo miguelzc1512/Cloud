@@ -1,6 +1,8 @@
 let electron = require("electron");
 //#region electron/preload.ts
 electron.contextBridge.exposeInMainWorld("electronAPI", {
+	minimizeWindow: () => electron.ipcRenderer.send("window-minimize"),
+	closeWindow: () => electron.ipcRenderer.send("window-close"),
 	getConfig: () => electron.ipcRenderer.invoke("get-config"),
 	setPowerMode: (mode) => electron.ipcRenderer.invoke("set-power-mode", mode),
 	setServerUrl: (url) => electron.ipcRenderer.invoke("set-server-url", url),

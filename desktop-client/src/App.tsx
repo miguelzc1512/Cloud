@@ -132,10 +132,33 @@ export default function App() {
   if (!config) return <div className="h-screen w-screen flex items-center justify-center text-slate-500 bg-[#f8fafc]">Cargando...</div>;
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-[#f8fafc] font-sans selection:bg-blue-100 draggable">
-      
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#f8fafc] font-sans selection:bg-blue-100">
+
+      {/* ── Barra de título arrastrable (funciona en Mac y Windows) ─────── */}
+      <div className="draggable flex items-center justify-between h-10 px-4 shrink-0 bg-[#f8fafc] border-b border-slate-100/80">
+        <div className="flex items-center gap-2 non-draggable" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {/* En Mac los semáforos van aquí automáticamente via titleBarStyle:hidden */}
+        </div>
+        <span className="text-xs text-slate-400 font-medium tracking-wide select-none">Cloud Sync</span>
+        {/* Botones de control para Windows */}
+        <div className="flex items-center gap-1 non-draggable" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <button
+            onClick={() => (window as any).electronAPI.minimizeWindow()}
+            className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors text-lg leading-none"
+            title="Minimizar"
+          >─</button>
+          <button
+            onClick={() => (window as any).electronAPI.closeWindow()}
+            className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors text-base leading-none"
+            title="Cerrar"
+          >✕</button>
+        </div>
+      </div>
+
+      {/* ── Contenido principal ───────────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col px-6 pt-12 pb-4 relative z-10">
+      <aside className="w-64 flex flex-col px-6 pt-6 pb-4 relative z-10 shrink-0">
         
         {/* Logo under traffic lights aligned left */}
         <div className="flex items-center gap-3 mb-8 px-1 non-draggable">
@@ -312,6 +335,7 @@ export default function App() {
 
         </div>
       </main>
+      </div>
     </div>
   );
 }

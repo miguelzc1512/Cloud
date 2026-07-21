@@ -16796,13 +16796,9 @@ function createWindow() {
 		width: 900,
 		height: 600,
 		show: false,
-		titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
-		titleBarOverlay: process.platform !== "darwin" ? {
-			color: "#f8fafc",
-			symbolColor: "#475569",
-			height: 40
-		} : false,
-		backgroundColor: "#f3f4f6",
+		frame: false,
+		titleBarStyle: "hidden",
+		backgroundColor: "#f8fafc",
 		webPreferences: {
 			preload: node_path.join(__dirname, "preload.js"),
 			nodeIntegration: false,
@@ -16861,6 +16857,12 @@ electron.app.on("before-quit", () => {
 });
 electron.app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {}
+});
+electron.ipcMain.on("window-minimize", () => {
+	electron.BrowserWindow.getFocusedWindow()?.minimize();
+});
+electron.ipcMain.on("window-close", () => {
+	electron.BrowserWindow.getFocusedWindow()?.hide();
 });
 electron.ipcMain.handle("get-config", () => config);
 electron.ipcMain.handle("set-power-mode", (event, mode) => {
