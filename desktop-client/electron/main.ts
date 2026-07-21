@@ -70,7 +70,7 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
     const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
     
     if (isSupported) {
-      const isAlreadyUploaded = uploadedState['sync:' + filePath] || uploadedState[filePath];
+      const isAlreadyUploaded = uploadedState['sync:' + filePath];
       const isAlreadyIndexed = uploadedState['index:' + filePath];
 
       if ((folder.mode === 'sync' && !isAlreadyUploaded) || (folder.mode === 'index' && !isAlreadyIndexed)) {
@@ -163,7 +163,6 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
     });
 
     uploadedState['sync:' + filePath] = true;
-    uploadedState[filePath] = true;
     saveState();
     
     // Notificar finalización
@@ -436,7 +435,7 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
         } else {
           const ext = path.extname(fullPath).toLowerCase();
           const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
-          const isAlreadyUploaded = uploadedState['sync:' + fullPath] || uploadedState[fullPath];
+          const isAlreadyUploaded = uploadedState['sync:' + fullPath];
           if (isSupported && !isAlreadyUploaded) {
             filesToUpload.push(fullPath);
           }

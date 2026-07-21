@@ -16629,7 +16629,7 @@ function startWatching(folder) {
 			".csv",
 			".md"
 		].includes(ext)) {
-			const isAlreadyUploaded = uploadedState["sync:" + filePath] || uploadedState[filePath];
+			const isAlreadyUploaded = uploadedState["sync:" + filePath];
 			const isAlreadyIndexed = uploadedState["index:" + filePath];
 			if (folder.mode === "sync" && !isAlreadyUploaded || folder.mode === "index" && !isAlreadyIndexed) if (isSyncPaused) {
 				if (!pendingUploads.find((p) => p.path === filePath)) {
@@ -16733,7 +16733,6 @@ async function uploadFile(filePath, contentType = "gallery") {
 			}
 		});
 		uploadedState["sync:" + filePath] = true;
-		uploadedState[filePath] = true;
 		saveState();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
@@ -16975,7 +16974,7 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 						".csv",
 						".md"
 					].includes(ext);
-					const isAlreadyUploaded = uploadedState["sync:" + fullPath] || uploadedState[fullPath];
+					const isAlreadyUploaded = uploadedState["sync:" + fullPath];
 					if (isSupported && !isAlreadyUploaded) filesToUpload.push(fullPath);
 				}
 			}
