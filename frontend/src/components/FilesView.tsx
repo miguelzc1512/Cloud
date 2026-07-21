@@ -71,6 +71,7 @@ export default function FilesView({
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const deleteMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -256,9 +257,26 @@ export default function FilesView({
     setDraggedDocId(docId);
   };
 
+  const handleFolderDragOver = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverFolderId !== folderId) {
+      setDragOverFolderId(folderId);
+    }
+  };
+
+  const handleFolderDragLeave = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragOverFolderId === folderId) {
+      setDragOverFolderId(null);
+    }
+  };
+
   const handleFolderDrop = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragOverFolderId(null);
     const docId = e.dataTransfer.getData('text/plain');
     if (docId && documents.some(d => d.id === docId)) {
       handleMoveDocument(docId, folderId);
@@ -465,41 +483,6 @@ export default function FilesView({
             </div>
           </div>
         </div>
-      {/* Create Folder Modal */}
-      {isCreatingFolder && (
-        <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-[400px]">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Nueva Carpeta</h3>
-            <form onSubmit={handleCreateFolder}>
-              <input
-                type="text"
-                autoFocus
-                placeholder="Nombre de la carpeta"
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-              />
-              <div className="flex justify-end gap-3 mt-6">
-                <button 
-                  type="button" 
-                  onClick={() => setIsCreatingFolder(false)}
-                  className="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  disabled={!newFolderName.trim()}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-all shadow-sm"
-                >
-                  Crear
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Main Content Area */}
       <div 
         className="flex-1 overflow-y-auto p-4 md:p-8"
@@ -558,14 +541,42 @@ export default function FilesView({
                     </div>
                     
                     <div className="flex flex-col">
+                      {isCreatingFolder && (
+                        <div className="grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors select-none border-b border-slate-200 bg-blue-50/50">
+                          <div className="col-span-8 md:col-span-6 flex items-center gap-4 overflow-hidden">
+                            <Folder className="w-7 h-7 text-blue-400 fill-blue-400 shrink-0" />
+                            <form 
+                              className="flex-1"
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                handleCreateFolder(e);
+                              }}
+                            >
+                              <input
+                                autoFocus
+                                type="text"
+                                value={newFolderName}
+                                onChange={e => setNewFolderName(e.target.value)}
+                                onBlur={() => { if (!newFolderName.trim()) setIsCreatingFolder(false); }}
+                                placeholder="Nombre de carpeta..."
+                                className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none placeholder:text-blue-300"
+                              />
+                            </form>
+                          </div>
+                          <div className="col-span-4 md:col-span-6 flex justify-end">
+                            <span className="text-xs text-slate-400 italic hidden sm:block">Presiona Enter para crear</span>
+                          </div>
+                        </div>
+                      )}
                       {currentFolders.map(folder => (
                         <div 
                           key={folder.id}
                           onClick={(e) => handleSelect(e, folder.id)}
                           onDoubleClick={() => setCurrentFolderId(folder.id)}
-                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                          onDragLeave={(e) => handleFolderDragLeave(e, folder.id)}
                           onDrop={(e) => handleFolderDrop(e, folder.id)}
-                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${selectedIds.has(folder.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${dragOverFolderId === folder.id ? 'bg-blue-100 ring-2 ring-blue-400 ring-inset z-10 relative' : selectedIds.has(folder.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                         >
                           <div className="col-span-8 md:col-span-6 flex items-center gap-4 overflow-hidden">
                             <Folder className="w-7 h-7 text-slate-400 fill-slate-400 shrink-0" />
@@ -629,18 +640,43 @@ export default function FilesView({
                   </>
                 ) : (
                   <div className="p-6">
-                    {currentFolders.length > 0 && (
+                    {(currentFolders.length > 0 || isCreatingFolder) && (
                       <div className="mb-8">
                         <h4 className="text-sm font-semibold text-slate-500 mb-4 px-1">Carpetas</h4>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                          {isCreatingFolder && (
+                            <div className="flex items-center justify-between p-3.5 rounded-2xl border bg-blue-50/50 border-blue-200 shadow-sm transition-all">
+                              <div className="flex items-center gap-3 overflow-hidden w-full">
+                                <Folder className="w-5 h-5 text-blue-400 fill-blue-400 shrink-0" />
+                                <form 
+                                  className="flex-1"
+                                  onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleCreateFolder(e);
+                                  }}
+                                >
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    value={newFolderName}
+                                    onChange={e => setNewFolderName(e.target.value)}
+                                    onBlur={() => { if (!newFolderName.trim()) setIsCreatingFolder(false); }}
+                                    placeholder="Carpeta..."
+                                    className="w-full bg-transparent text-sm font-medium text-slate-700 outline-none placeholder:text-blue-300"
+                                  />
+                                </form>
+                              </div>
+                            </div>
+                          )}
                           {currentFolders.map(folder => (
                             <div
                               key={folder.id}
                               onClick={(e) => handleSelect(e, folder.id)}
                               onDoubleClick={() => setCurrentFolderId(folder.id)}
-                              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              onDragOver={(e) => handleFolderDragOver(e, folder.id)}
+                              onDragLeave={(e) => handleFolderDragLeave(e, folder.id)}
                               onDrop={(e) => handleFolderDrop(e, folder.id)}
-                              className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer select-none transition-all group ${selectedIds.has(folder.id) ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-100/60 border-transparent hover:border-slate-200 hover:shadow-sm hover:bg-slate-100'}`}
+                              className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer select-none transition-all group ${dragOverFolderId === folder.id ? 'bg-blue-100 ring-2 ring-blue-400' : selectedIds.has(folder.id) ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-100/60 border-transparent hover:border-slate-200 hover:shadow-sm hover:bg-slate-100'}`}
                             >
                               <div className="flex items-center gap-3 overflow-hidden">
                                 <Folder className="w-5 h-5 text-slate-600 fill-slate-600 shrink-0" />
