@@ -47,7 +47,7 @@ export default function App() {
   const [lastSyncTime, setLastSyncTime] = useState<string>('Buscando últimas actualizaciones...');
 
   const [folderToUnlink, setFolderToUnlink] = useState<string | null>(null);
-  const [folderTypeDialog, setFolderTypeDialog] = useState<{ mode: 'index' | 'sync', path: string } | null>(null);
+
 
   const addLog = (type: LogEntry['type'], message: string, contentType: 'gallery' | 'drive' = 'gallery') => {
     const log = { id: Math.random().toString(36).substring(7), time: new Date(), type, message };
@@ -173,7 +173,8 @@ export default function App() {
   const handleLinkFolder = async (mode: 'index' | 'sync') => {
     const path = await (window as any).electronAPI.pickFolder();
     if (path) {
-      setFolderTypeDialog({ mode, path });
+      const newCfg = await (window as any).electronAPI.linkFolder(path, mode, activeTab);
+      setConfig(newCfg);
     }
   };
 
@@ -543,52 +544,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Modal de Tipo de Carpeta ──────────────────────────────────────── */}
-      {folderTypeDialog && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6">
-              <FolderPlus className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">¿Qué tipo de contenido es?</h3>
-            <p className="text-slate-500 mb-8 leading-relaxed">
-              Elige cómo quieres que se trate esta carpeta en tu nube.
-            </p>
-            <div className="flex flex-col gap-4 w-full">
-              <button 
-                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-medium transition-colors flex flex-col items-center justify-center gap-1"
-                onClick={async () => {
-                  const newCfg = await (window as any).electronAPI.linkFolder(folderTypeDialog.path, folderTypeDialog.mode, 'gallery');
-                  setConfig(newCfg);
-                  setFolderTypeDialog(null);
-                }}
-              >
-                <span>Galería Inteligente</span>
-                <span className="text-xs text-blue-200 font-normal">Analizar rostros y mostrar en la galería</span>
-              </button>
-              
-              <button 
-                className="w-full py-3.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-medium transition-colors flex flex-col items-center justify-center gap-1"
-                onClick={async () => {
-                  const newCfg = await (window as any).electronAPI.linkFolder(folderTypeDialog.path, folderTypeDialog.mode, 'drive');
-                  setConfig(newCfg);
-                  setFolderTypeDialog(null);
-                }}
-              >
-                <span>Archivos / Trabajos</span>
-                <span className="text-xs text-slate-500 font-normal">Solo respaldar, no mezclar fotos en galería</span>
-              </button>
-              
-              <button 
-                className="w-full py-3 text-slate-400 hover:text-slate-600 font-medium transition-colors mt-2"
-                onClick={() => setFolderTypeDialog(null)}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );
