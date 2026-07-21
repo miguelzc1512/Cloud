@@ -18,5 +18,8 @@ osascript -e "tell application \"Terminal\" to do script \"cd \\\"$PROJECT_DIR/b
 # Terminal 4: Frontend
 osascript -e "tell application \"Terminal\" to do script \"cd \\\"$PROJECT_DIR/frontend\\\" && npm run dev\""
 
+# Terminal 5: Desktop Client (Sincronizador)
+osascript -e "tell application \"Terminal\" to do script \"cd \\\"$PROJECT_DIR/desktop-client\\\" && npm run dev\""
+
 echo "¡Terminales abiertas! Revisa las ventanas de la terminal."
 echo "La interfaz estará en http://localhost:5173/"
