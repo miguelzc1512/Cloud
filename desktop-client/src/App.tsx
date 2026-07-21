@@ -38,8 +38,9 @@ export default function App() {
       }
     });
 
-    const unsubscribeLog = (window as any).electronAPI.onServerLog((_: any, log: string) => {
-      setLogs(prev => [...prev, log].slice(-100));
+    const unsubscribeLog = (window as any).electronAPI.onServerLog((_: any, log: any) => {
+      const logText = typeof log === 'string' ? log : (log?.text || JSON.stringify(log));
+      setLogs(prev => [...prev, logText].slice(-100));
     });
 
     return () => {

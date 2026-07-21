@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import { processDocument } from './docProcessor';
 import translate from 'translate';
 import multer from 'multer';
 import dotenv from 'dotenv';
@@ -1406,6 +1407,49 @@ const cleanupTrash = () => {
   }
 };
 
+// ─── API Endpoints para Documentos (Grafo / Red Neuronal) ───────────────────
+
+app.get('/api/documents', (req, res) => {
+  try {
+    const docs = docsDb.prepare(`SELECT id, name, extension, absolutePath, size, status, clusterId, updatedAt FROM documents ORDER BY updatedAt DESC`).all();
+    res.json(docs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch documents' });
+  }
+});
+
+app.get('/api/documents/clusters', (req, res) => {
+  try {
+    const clusters = docsDb.prepare(`SELECT id, name FROM doc_clusters`).all();
+    res.json(clusters);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch clusters' });
+  }
+});
+
+app.post('/api/documents/scan', async (req, res) => {
+  try {
+    const { absolutePath } = req.body;
+    if (!absolutePath || !fs.existsSync(absolutePath)) {
+      res.status(400).json({ error: 'Ruta inválida' });
+      return;
+    }
+    const stat = fs.statSync(absolutePath);
+    const originalName = path.basename(absolutePath);
+    const extension = path.extname(absolutePath).toLowerCase();
+    
+    // Asynchronous processing
+    processDocument({ absolutePath, originalName, extension, size: stat.size }).catch(console.error);
+    
+    res.json({ message: 'Procesamiento en segundo plano iniciado' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to scan document' });
+  }
+});
+
 // Fallback for React Router (Web UI)
 app.use((req: Request, res: Response, next: express.NextFunction) => {
   if (req.method !== 'GET') return next();
@@ -1508,53 +1552,6 @@ app.post('/api/queue/reset', async (_req: Request, res: Response) => {
     res.json({ ok: true, cleared: clearedCount, requeued: stuckFiles.length });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
-  }
-});
-
-
-// ─── API Endpoints para Documentos (Grafo / Red Neuronal) ───────────────────
-
-app.get('/api/documents', (req, res) => {
-  try {
-    const docs = docsDb.prepare(`SELECT id, name, extension, absolutePath, size, status, clusterId, updatedAt FROM documents ORDER BY updatedAt DESC`).all();
-    res.json(docs);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch documents' });
-  }
-});
-
-app.get('/api/documents/clusters', (req, res) => {
-  try {
-    const clusters = docsDb.prepare(`SELECT id, name FROM doc_clusters`).all();
-    res.json(clusters);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch clusters' });
-  }
-});
-
-// Import doc processor
-import { processDocument } from './docProcessor';
-// Add to queue or just a dummy endpoint for now to test indexing
-app.post('/api/documents/scan', async (req, res) => {
-  try {
-    const { absolutePath } = req.body;
-    if (!absolutePath || !fs.existsSync(absolutePath)) {
-      res.status(400).json({ error: 'Ruta inválida' });
-      return;
-    }
-    const stat = fs.statSync(absolutePath);
-    const originalName = path.basename(absolutePath);
-    const extension = path.extname(absolutePath).toLowerCase();
-    
-    // Asynchronous processing
-    processDocument({ absolutePath, originalName, extension, size: stat.size }).catch(console.error);
-    
-    res.json({ message: 'Procesamiento en segundo plano iniciado' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to scan document' });
   }
 });
 
