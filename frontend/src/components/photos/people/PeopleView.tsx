@@ -272,7 +272,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ setCustomHeader, setHead
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-blue-900 leading-tight">Analizando</span>
-                <span className="text-[11px] font-medium text-blue-600 leading-tight">{status.processed} de {status.total} fotos</span>
+                <span className="text-[11px] font-medium text-blue-600 leading-tight">Faltan {status.total - status.processed} por analizar</span>
               </div>
             </div>
           )}

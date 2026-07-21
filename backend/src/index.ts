@@ -1379,10 +1379,12 @@ app.get('/api/people', (req, res) => {
       SELECT p.id, p.name, f.savedName as coverFile, f.thumbnailName as coverThumbnail, f.blurhash as coverBlurhash,
              COUNT(DISTINCT ff.fileId) as faceCount 
       FROM people p 
-      LEFT JOIN file_faces ff ON p.id = ff.personId 
+      INNER JOIN file_faces ff ON p.id = ff.personId 
+      INNER JOIN files ff_file ON ff.fileId = ff_file.id AND ff_file.isDeleted = 0
       LEFT JOIN files f ON p.coverFileId = f.id 
       WHERE p.isHidden = 0
       GROUP BY p.id 
+      HAVING faceCount > 0
       ORDER BY faceCount DESC
     `).all();
     res.json(people);
