@@ -70,8 +70,22 @@ export default function FilesView({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+  const deleteMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (deleteMenuRef.current && !deleteMenuRef.current.contains(event.target as Node)) {
+        setShowDeleteMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     setSelectedIds(new Set());
@@ -211,8 +225,6 @@ export default function FilesView({
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     
-    if (!window.confirm(`¿Seguro que deseas mover ${ids.length} elemento(s) a la papelera?`)) return;
-    
     try {
       const folderIds = ids.filter(id => folders.some(f => f.id === id));
       const documentIds = ids.filter(id => documents.some(d => d.id === id));
@@ -231,6 +243,7 @@ export default function FilesView({
       
       setSelectedIds(new Set());
       setLastSelectedId(null);
+      setShowDeleteMenu(false);
       fetchItems();
     } catch (e) {
       console.error('Error deleting selected items', e);
@@ -388,13 +401,33 @@ export default function FilesView({
           >
             <FolderOutput className="w-5 h-5 -scale-x-100" />
           </button>
-          <button 
-            onClick={handleBulkDelete}
-            className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
-            title="Borrar seleccionados"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+          <div className="relative" ref={deleteMenuRef}>
+            <button 
+              onClick={() => setShowDeleteMenu(!showDeleteMenu)}
+              className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
+              title="Borrar seleccionados"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            
+            {showDeleteMenu && (
+              <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 p-2">
+                <p className="text-xs text-slate-500 px-2 pb-2 mb-1 border-b border-slate-100">¿Mover a papelera?</p>
+                <button 
+                  onClick={handleBulkDelete}
+                  className="w-full text-left px-2 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  Sí, mover {selectedIds.size > 1 ? `${selectedIds.size} elementos` : '1 elemento'}
+                </button>
+                <button 
+                  onClick={() => setShowDeleteMenu(false)}
+                  className="w-full text-left px-2 py-2 text-sm text-slate-700 font-medium hover:bg-slate-50 rounded-lg transition-colors mt-1"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
