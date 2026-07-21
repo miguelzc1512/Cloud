@@ -664,11 +664,14 @@ app.put('/api/documents/folders/:id', (req: Request, res: Response) => {
 // DELETE /api/documents/folders/:id
 app.delete('/api/documents/folders/:id', (req: Request, res: Response) => {
   try {
-    // SQLite will cascade delete documents if FOREIGN KEY ON DELETE CASCADE is set.
-    // Wait, the docDb schema sets ON DELETE SET NULL for documents. 
-    // We should manually delete documents inside it or let them fall to root.
-    // Let's let them fall to root (SET NULL).
-    docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(req.params.id);
+    const folderId = req.params.id;
+    // Soft-delete all documents inside this folder first
+    const now = new Date().toISOString();
+    docDb.prepare(`UPDATE docs SET deletedAt = ? WHERE clusterId = ? AND deletedAt IS NULL`).run(now, folderId);
+    
+    // Delete the folder. SQLite ON DELETE SET NULL will detach the documents,
+    // so if they are restored from trash, they will appear in the root directory.
+    docDb.prepare(`DELETE FROM doc_clusters WHERE id = ?`).run(folderId);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete folder' });
