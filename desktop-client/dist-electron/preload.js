@@ -7,9 +7,10 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
 	setPowerMode: (mode) => electron.ipcRenderer.invoke("set-power-mode", mode),
 	setServerUrl: (url) => electron.ipcRenderer.invoke("set-server-url", url),
 	pickFolder: () => electron.ipcRenderer.invoke("pick-folder"),
-	linkFolder: (path, mode) => electron.ipcRenderer.invoke("link-folder", {
+	linkFolder: (path, mode, contentType) => electron.ipcRenderer.invoke("link-folder", {
 		path,
-		mode
+		mode,
+		contentType
 	}),
 	unlinkFolder: (params) => electron.ipcRenderer.invoke("unlink-folder", params),
 	getSyncState: () => electron.ipcRenderer.invoke("get-sync-state"),

@@ -16632,12 +16632,13 @@ function startWatching(folder) {
 			if (!pendingUploads.find((p) => p.path === filePath)) {
 				pendingUploads.push({
 					path: filePath,
-					mode: folder.mode
+					mode: folder.mode,
+					contentType: folder.contentType || "gallery"
 				});
 				notifySyncStatus();
 			}
-		} else if (folder.mode === "sync") await uploadFile(filePath);
-		else await indexFile(filePath);
+		} else if (folder.mode === "sync") await uploadFile(filePath, folder.contentType || "gallery");
+		else await indexFile(filePath, folder.contentType || "gallery");
 	});
 	watchers[folder.path] = watcher;
 }
@@ -16648,7 +16649,7 @@ function stopWatching(folderPath) {
 		console.log(`Stopped watching: ${folderPath}`);
 	}
 }
-async function indexFile(filePath) {
+async function indexFile(filePath, contentType = "gallery") {
 	try {
 		console.log(`Indexing ${filePath}...`);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
@@ -16658,7 +16659,10 @@ async function indexFile(filePath) {
 				progress: 50
 			});
 		});
-		await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath });
+		await axios.post(`${config.serverUrl}/api/index-file`, {
+			absolutePath: filePath,
+			contentType
+		});
 		uploadedState[filePath] = true;
 		saveState();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
@@ -16685,13 +16689,14 @@ async function indexFile(filePath) {
 		});
 	}
 }
-async function uploadFile(filePath) {
+async function uploadFile(filePath, contentType = "gallery") {
 	if (!config.serverUrl) return;
 	try {
 		console.log(`Uploading ${filePath}...`);
 		const formData = new import_form_data.default();
 		formData.append("file", fs.createReadStream(filePath));
 		formData.append("relativePath", filePath);
+		formData.append("contentType", contentType);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
 				file: filePath,
@@ -16903,8 +16908,8 @@ electron.ipcMain.handle("resume-sync", async () => {
 	const toUpload = [...pendingUploads];
 	pendingUploads = [];
 	(async () => {
-		for (const item of toUpload) if (!isSyncPaused) if (item.mode === "sync") await uploadFile(item.path);
-		else await indexFile(item.path);
+		for (const item of toUpload) if (!isSyncPaused) if (item.mode === "sync") await uploadFile(item.path, item.contentType || "gallery");
+		else await indexFile(item.path, item.contentType || "gallery");
 		else pendingUploads.push(item);
 		notifySyncStatus();
 	})();
@@ -16919,7 +16924,7 @@ electron.ipcMain.handle("pick-folder", async () => {
 	if (!result.canceled && result.filePaths.length > 0) return result.filePaths[0];
 	return null;
 });
-async function processExistingSyncFiles(folderPath) {
+async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 	const filesToUpload = [];
 	function scan(dir) {
 		try {
@@ -16970,9 +16975,10 @@ async function processExistingSyncFiles(folderPath) {
 		for (const file of filesToUpload) if (isSyncPaused) {
 			if (!pendingUploads.find((p) => p.path === file)) pendingUploads.push({
 				path: file,
-				mode: "sync"
+				mode: "sync",
+				contentType
 			});
-		} else await uploadFile(file);
+		} else await uploadFile(file, contentType);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "scan_done",
@@ -16982,17 +16988,21 @@ async function processExistingSyncFiles(folderPath) {
 		notifySyncStatus();
 	}
 }
-electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode }) => {
+electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode, contentType }) => {
 	if (!config.linkedFolders.find((f) => f.path === folderPath)) {
 		const folder = {
 			path: folderPath,
-			mode
+			mode,
+			contentType
 		};
 		config.linkedFolders.push(folder);
 		saveConfig();
 		startWatching(folder);
-		if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath }).catch(console.error);
-		else if (mode === "sync") processExistingSyncFiles(folderPath).catch(console.error);
+		if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, {
+			directoryPath: folderPath,
+			contentType
+		}).catch(console.error);
+		else if (mode === "sync") processExistingSyncFiles(folderPath, contentType).catch(console.error);
 	}
 	return config;
 });

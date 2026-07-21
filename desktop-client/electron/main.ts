@@ -72,14 +72,14 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
     if (isSupported && !uploadedState[filePath]) {
       if (isSyncPaused) {
         if (!pendingUploads.find(p => p.path === filePath)) {
-          pendingUploads.push({ path: filePath, mode: folder.mode });
+          pendingUploads.push({ path: filePath, mode: folder.mode, contentType: folder.contentType || 'gallery' });
           notifySyncStatus();
         }
       } else {
         if (folder.mode === 'sync') {
-          await uploadFile(filePath);
+          await uploadFile(filePath, folder.contentType || 'gallery');
         } else {
-          await indexFile(filePath);
+          await indexFile(filePath, folder.contentType || 'gallery');
         }
       }
     }
@@ -96,7 +96,7 @@ function stopWatching(folderPath: string) {
   }
 }
 
-async function indexFile(filePath: string) {
+async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'gallery') {
   try {
     console.log(`Indexing ${filePath}...`);
     // Notificar inicio
@@ -104,7 +104,7 @@ async function indexFile(filePath: string) {
       win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 50 });
     });
 
-    await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath });
+    await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath, contentType });
 
     uploadedState[filePath] = true;
     saveState();
@@ -125,7 +125,7 @@ async function indexFile(filePath: string) {
   }
 }
 
-async function uploadFile(filePath: string) {
+async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = 'gallery') {
   if (!config.serverUrl) return;
 
   try {
@@ -133,6 +133,7 @@ async function uploadFile(filePath: string) {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(filePath));
     formData.append('relativePath', filePath);
+    formData.append('contentType', contentType);
 
     // Notificar inicio de subida
     BrowserWindow.getAllWindows().forEach(win => {
@@ -384,9 +385,9 @@ ipcMain.handle('resume-sync', async () => {
     for (const item of toUpload) {
       if (!isSyncPaused) {
         if (item.mode === 'sync') {
-          await uploadFile(item.path);
+          await uploadFile(item.path, item.contentType as 'gallery' | 'drive' || 'gallery');
         } else {
-          await indexFile(item.path);
+          await indexFile(item.path, item.contentType as 'gallery' | 'drive' || 'gallery');
         }
       } else {
         pendingUploads.push(item);
@@ -408,7 +409,7 @@ ipcMain.handle('pick-folder', async () => {
   return null;
 });
 
-async function processExistingSyncFiles(folderPath: string) {
+async function processExistingSyncFiles(folderPath: string, contentType: 'gallery' | 'drive' = 'gallery') {
   const filesToUpload: string[] = [];
   
   function scan(dir: string) {
@@ -442,9 +443,9 @@ async function processExistingSyncFiles(folderPath: string) {
 
     for (const file of filesToUpload) {
       if (isSyncPaused) {
-        if (!pendingUploads.find(p => p.path === file)) pendingUploads.push({ path: file, mode: 'sync' });
+        if (!pendingUploads.find(p => p.path === file)) pendingUploads.push({ path: file, mode: 'sync', contentType });
       } else {
-        await uploadFile(file);
+        await uploadFile(file, contentType);
       }
     }
     
@@ -455,18 +456,18 @@ async function processExistingSyncFiles(folderPath: string) {
   }
 }
 
-ipcMain.handle('link-folder', (event, { path: folderPath, mode }) => {
+ipcMain.handle('link-folder', (event, { path: folderPath, mode, contentType }) => {
   if (!config.linkedFolders.find(f => f.path === folderPath)) {
-    const folder = { path: folderPath, mode: mode as 'index' | 'sync' };
+    const folder = { path: folderPath, mode: mode as 'index' | 'sync', contentType: contentType as 'gallery' | 'drive' };
     config.linkedFolders.push(folder);
     saveConfig();
     startWatching(folder);
     
     // Si es index, corremos scan-local una vez para asegurar todo el árbol
     if (mode === 'index') {
-      axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath }).catch(console.error);
+      axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath, contentType: contentType as 'gallery' | 'drive' }).catch(console.error);
     } else if (mode === 'sync') {
-      processExistingSyncFiles(folderPath).catch(console.error);
+      processExistingSyncFiles(folderPath, contentType as 'gallery' | 'drive').catch(console.error);
     }
   }
   return config;

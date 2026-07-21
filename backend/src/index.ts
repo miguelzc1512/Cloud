@@ -529,7 +529,8 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       absolutePath: relativePath || null
     };
 
-    const isMedia = req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/');
+    const contentType = req.body.contentType || 'gallery';
+    const isMedia = (req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/')) && contentType !== 'drive';
 
     if (isMedia) {
       // 1. Guardar registro inicial en la DB rápida
@@ -699,7 +700,8 @@ app.delete('/api/documents/:id', (req: Request, res: Response) => {
 
 // POST /api/scan-local
 app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> => {
-  let { directoryPath } = req.body;
+  let { directoryPath, contentType } = req.body;
+  contentType = contentType || 'gallery';
   
   // Clean up quotes if user accidentally pasted them
   if (directoryPath) {
@@ -757,8 +759,8 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
     for (const filePath of supportedFiles) {
       const ext = path.extname(filePath).toLowerCase();
-      const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext);
-      const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
+      const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext) && contentType !== 'drive';
+      const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext) || (!isMedia);
 
       const stat = fs.statSync(filePath);
       const originalName = path.basename(filePath);
@@ -803,12 +805,16 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
           continue;
         }
       } else {
-        // Is Document
         let mimeType = 'application/octet-stream';
         if (ext === '.pdf') mimeType = 'application/pdf';
         else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
         else if (ext === '.doc' || ext === '.docx') mimeType = 'application/msword';
         else if (ext === '.xls' || ext === '.xlsx') mimeType = 'application/vnd.ms-excel';
+        else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+        else if (ext === '.png') mimeType = 'image/png';
+        else if (ext === '.webp') mimeType = 'image/webp';
+        else if (ext === '.mp4') mimeType = 'video/mp4';
+        else if (ext === '.mov') mimeType = 'video/quicktime';
 
         docDb.prepare(`
           INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
@@ -838,11 +844,15 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
 // POST /api/index-file
 app.post('/api/index-file', async (req: Request, res: Response): Promise<void> => {
-  let { absolutePath } = req.body;
+  let { absolutePath, contentType } = req.body;
+  contentType = contentType || 'gallery';
   if (!absolutePath) {
     res.status(400).json({ error: 'Falta la ruta absoluta (absolutePath)' });
     return;
   }
+
+  // Clean up quotes
+  absolutePath = absolutePath.replace(/^["']|["']$/g, '').trim();
 
   try {
     if (!fs.existsSync(absolutePath)) {
@@ -856,8 +866,8 @@ app.post('/api/index-file', async (req: Request, res: Response): Promise<void> =
     }
 
     const ext = path.extname(absolutePath).toLowerCase();
-    const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext);
-    const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
+    const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext) && contentType !== 'drive';
+    const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext) || (!isMedia);
 
     if (!isMedia && !isDoc) {
       res.status(400).json({ error: 'Tipo de archivo no soportado para indexación' });
@@ -905,6 +915,11 @@ app.post('/api/index-file', async (req: Request, res: Response): Promise<void> =
       else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
       else if (ext === '.doc' || ext === '.docx') mimeType = 'application/msword';
       else if (ext === '.xls' || ext === '.xlsx') mimeType = 'application/vnd.ms-excel';
+      else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+      else if (ext === '.png') mimeType = 'image/png';
+      else if (ext === '.webp') mimeType = 'image/webp';
+      else if (ext === '.mp4') mimeType = 'video/mp4';
+      else if (ext === '.mov') mimeType = 'video/quicktime';
 
       docDb.prepare(`
         INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
