@@ -69,17 +69,22 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
     const ext = path.extname(filePath).toLowerCase();
     const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
     
-    if (isSupported && !uploadedState[filePath]) {
-      if (isSyncPaused) {
-        if (!pendingUploads.find(p => p.path === filePath)) {
-          pendingUploads.push({ path: filePath, mode: folder.mode, contentType: folder.contentType || 'gallery' });
-          notifySyncStatus();
-        }
-      } else {
-        if (folder.mode === 'sync') {
-          await uploadFile(filePath, folder.contentType || 'gallery');
+    if (isSupported) {
+      const isAlreadyUploaded = uploadedState['sync:' + filePath] || uploadedState[filePath];
+      const isAlreadyIndexed = uploadedState['index:' + filePath];
+
+      if ((folder.mode === 'sync' && !isAlreadyUploaded) || (folder.mode === 'index' && !isAlreadyIndexed)) {
+        if (isSyncPaused) {
+          if (!pendingUploads.find(p => p.path === filePath)) {
+            pendingUploads.push({ path: filePath, mode: folder.mode, contentType: (folder as any).contentType || 'gallery' });
+            notifySyncStatus();
+          }
         } else {
-          await indexFile(filePath, folder.contentType || 'gallery');
+          if (folder.mode === 'sync') {
+            await uploadFile(filePath, (folder as any).contentType || 'gallery');
+          } else {
+            await indexFile(filePath, (folder as any).contentType || 'gallery');
+          }
         }
       }
     }
@@ -106,7 +111,7 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
 
     await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath, contentType });
 
-    uploadedState[filePath] = true;
+    uploadedState['index:' + filePath] = true;
     saveState();
     
     // Notificar finalización
@@ -157,6 +162,7 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
       }
     });
 
+    uploadedState['sync:' + filePath] = true;
     uploadedState[filePath] = true;
     saveState();
     
@@ -430,7 +436,8 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
         } else {
           const ext = path.extname(fullPath).toLowerCase();
           const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
-          if (isSupported && !uploadedState[fullPath]) {
+          const isAlreadyUploaded = uploadedState['sync:' + fullPath] || uploadedState[fullPath];
+          if (isSupported && !isAlreadyUploaded) {
             filesToUpload.push(fullPath);
           }
         }
@@ -464,18 +471,23 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
 }
 
 ipcMain.handle('link-folder', (event, { path: folderPath, mode, contentType }) => {
-  if (!config.linkedFolders.find(f => f.path === folderPath)) {
-    const folder = { path: folderPath, mode: mode as 'index' | 'sync', contentType: contentType as 'gallery' | 'drive' };
+  let folder = config.linkedFolders.find(f => f.path === folderPath);
+  if (!folder) {
+    folder = { path: folderPath, mode: mode as 'index' | 'sync', contentType: contentType as 'gallery' | 'drive' } as any;
     config.linkedFolders.push(folder);
-    saveConfig();
-    startWatching(folder);
-    
-    // Si es index, corremos scan-local una vez para asegurar todo el árbol
-    if (mode === 'index') {
-      axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath, contentType: contentType as 'gallery' | 'drive' }).catch(console.error);
-    } else if (mode === 'sync') {
-      processExistingSyncFiles(folderPath, contentType as 'gallery' | 'drive').catch(console.error);
-    }
+  } else {
+    folder.mode = mode as 'index' | 'sync';
+    (folder as any).contentType = contentType as 'gallery' | 'drive';
+  }
+  saveConfig();
+  stopWatching(folderPath);
+  startWatching(folder);
+  
+  // Si es index, corremos scan-local una vez para asegurar todo el árbol
+  if (mode === 'index') {
+    axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath, contentType: contentType as 'gallery' | 'drive' }).catch(console.error);
+  } else if (mode === 'sync') {
+    processExistingSyncFiles(folderPath, contentType as 'gallery' | 'drive').catch(console.error);
   }
   return config;
 });

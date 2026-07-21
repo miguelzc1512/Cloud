@@ -16628,17 +16628,21 @@ function startWatching(folder) {
 			".pptx",
 			".csv",
 			".md"
-		].includes(ext) && !uploadedState[filePath]) if (isSyncPaused) {
-			if (!pendingUploads.find((p) => p.path === filePath)) {
-				pendingUploads.push({
-					path: filePath,
-					mode: folder.mode,
-					contentType: folder.contentType || "gallery"
-				});
-				notifySyncStatus();
-			}
-		} else if (folder.mode === "sync") await uploadFile(filePath, folder.contentType || "gallery");
-		else await indexFile(filePath, folder.contentType || "gallery");
+		].includes(ext)) {
+			const isAlreadyUploaded = uploadedState["sync:" + filePath] || uploadedState[filePath];
+			const isAlreadyIndexed = uploadedState["index:" + filePath];
+			if (folder.mode === "sync" && !isAlreadyUploaded || folder.mode === "index" && !isAlreadyIndexed) if (isSyncPaused) {
+				if (!pendingUploads.find((p) => p.path === filePath)) {
+					pendingUploads.push({
+						path: filePath,
+						mode: folder.mode,
+						contentType: folder.contentType || "gallery"
+					});
+					notifySyncStatus();
+				}
+			} else if (folder.mode === "sync") await uploadFile(filePath, folder.contentType || "gallery");
+			else await indexFile(filePath, folder.contentType || "gallery");
+		}
 	});
 	watchers[folder.path] = watcher;
 }
@@ -16664,7 +16668,7 @@ async function indexFile(filePath, contentType = "gallery") {
 			absolutePath: filePath,
 			contentType
 		});
-		uploadedState[filePath] = true;
+		uploadedState["index:" + filePath] = true;
 		saveState();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
@@ -16728,6 +16732,7 @@ async function uploadFile(filePath, contentType = "gallery") {
 				});
 			}
 		});
+		uploadedState["sync:" + filePath] = true;
 		uploadedState[filePath] = true;
 		saveState();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
@@ -16948,7 +16953,7 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 				if (entry.isDirectory()) scan(fullPath);
 				else {
 					const ext = node_path.extname(fullPath).toLowerCase();
-					if ([
+					const isSupported = [
 						".jpg",
 						".jpeg",
 						".png",
@@ -16969,7 +16974,9 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 						".pptx",
 						".csv",
 						".md"
-					].includes(ext) && !uploadedState[fullPath]) filesToUpload.push(fullPath);
+					].includes(ext);
+					const isAlreadyUploaded = uploadedState["sync:" + fullPath] || uploadedState[fullPath];
+					if (isSupported && !isAlreadyUploaded) filesToUpload.push(fullPath);
 				}
 			}
 		} catch (e) {
@@ -17008,21 +17015,26 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 	}
 }
 electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode, contentType }) => {
-	if (!config.linkedFolders.find((f) => f.path === folderPath)) {
-		const folder = {
+	let folder = config.linkedFolders.find((f) => f.path === folderPath);
+	if (!folder) {
+		folder = {
 			path: folderPath,
 			mode,
 			contentType
 		};
 		config.linkedFolders.push(folder);
-		saveConfig();
-		startWatching(folder);
-		if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, {
-			directoryPath: folderPath,
-			contentType
-		}).catch(console.error);
-		else if (mode === "sync") processExistingSyncFiles(folderPath, contentType).catch(console.error);
+	} else {
+		folder.mode = mode;
+		folder.contentType = contentType;
 	}
+	saveConfig();
+	stopWatching(folderPath);
+	startWatching(folder);
+	if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, {
+		directoryPath: folderPath,
+		contentType
+	}).catch(console.error);
+	else if (mode === "sync") processExistingSyncFiles(folderPath, contentType).catch(console.error);
 	return config;
 });
 electron.ipcMain.handle("unlink-folder", async (event, { folderPath, deleteFromCloud }) => {
