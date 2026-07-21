@@ -130,9 +130,17 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
 
   try {
     console.log(`Uploading ${filePath}...`);
+    let relativePath = path.basename(filePath);
+    const matchedFolder = config.linkedFolders.filter(f => filePath.startsWith(f.path)).sort((a,b) => b.path.length - a.path.length)[0];
+    if (matchedFolder) {
+      const parentDir = path.dirname(matchedFolder.path);
+      relativePath = path.relative(parentDir, filePath).replace(/\\/g, '/');
+    }
+
     const formData = new FormData();
     formData.append('file', fs.createReadStream(filePath));
     formData.append('contentType', contentType);
+    formData.append('relativePath', relativePath);
 
     // Notificar inicio de subida
     BrowserWindow.getAllWindows().forEach(win => {

@@ -16696,9 +16696,16 @@ async function uploadFile(filePath, contentType = "gallery") {
 	if (!config.serverUrl) return;
 	try {
 		console.log(`Uploading ${filePath}...`);
+		let relativePath = node_path.basename(filePath);
+		const matchedFolder = config.linkedFolders.filter((f) => filePath.startsWith(f.path)).sort((a, b) => b.path.length - a.path.length)[0];
+		if (matchedFolder) {
+			const parentDir = node_path.dirname(matchedFolder.path);
+			relativePath = node_path.relative(parentDir, filePath).replace(/\\/g, "/");
+		}
 		const formData = new import_form_data.default();
 		formData.append("file", fs.createReadStream(filePath));
 		formData.append("contentType", contentType);
+		formData.append("relativePath", relativePath);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sync-status", {
 				file: filePath,

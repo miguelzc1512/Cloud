@@ -814,10 +814,17 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         else if (ext === '.mp4') mimeType = 'video/mp4';
         else if (ext === '.mov') mimeType = 'video/quicktime';
 
+        let finalClusterId = null;
+        if (contentType === 'drive') {
+          const parentDir = path.dirname(directoryPath);
+          const relativePath = path.relative(parentDir, filePath).replace(/\\/g, '/');
+          finalClusterId = resolveFoldersTransaction(relativePath, null);
+        }
+
         docDb.prepare(`
           INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
-        `).run(fileId, originalName, savedName, ext.substring(1) || 'file', mimeType, stat.size, filePath, null, new Date().toISOString());
+        `).run(fileId, originalName, savedName, ext.substring(1) || 'file', mimeType, stat.size, filePath, finalClusterId, new Date().toISOString());
 
         try {
           await docQueue.add('process-doc', { id: fileId, absolutePath: filePath }, { jobId: fileId });
