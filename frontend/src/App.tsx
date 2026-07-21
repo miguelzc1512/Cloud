@@ -453,7 +453,7 @@ export default function App() {
           </nav>
 
           <div className="mt-8 flex flex-col gap-2 mb-4">
-            {sidebarActions && activeTab === 'archivos' ? (
+            {['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? (
               sidebarActions
             ) : (
               <div className="flex flex-col gap-1 w-full">
