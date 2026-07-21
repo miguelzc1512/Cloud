@@ -20,6 +20,12 @@ const absoluteStoragePath = path.resolve(__dirname, '..', storagePath);
 if (!fs.existsSync(absoluteStoragePath)) {
   fs.mkdirSync(absoluteStoragePath, { recursive: true });
 }
+const fotosStoragePath = path.join(absoluteStoragePath, 'fotos');
+const archivosStoragePath = path.join(absoluteStoragePath, 'archivos');
+const thumbnailsStoragePath = path.join(absoluteStoragePath, 'thumbnails');
+if (!fs.existsSync(fotosStoragePath)) fs.mkdirSync(fotosStoragePath, { recursive: true });
+if (!fs.existsSync(archivosStoragePath)) fs.mkdirSync(archivosStoragePath, { recursive: true });
+if (!fs.existsSync(thumbnailsStoragePath)) fs.mkdirSync(thumbnailsStoragePath, { recursive: true });
 
 // ─── SQLite Database Setup ─────────────────────────────────────────────────
 const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '..', 'storage');
@@ -228,11 +234,37 @@ export const stmts = {
 // ─── Express Middleware ────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(absoluteStoragePath));
+app.use('/uploads', (req, res, next) => {
+  const relPath = req.path.replace(/^\//, '');
+  if (relPath) {
+    const directPath = path.join(absoluteStoragePath, relPath);
+    if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
+      return res.sendFile(directPath);
+    }
+    const fotosPath = path.join(fotosStoragePath, relPath);
+    if (fs.existsSync(fotosPath) && fs.statSync(fotosPath).isFile()) {
+      return res.sendFile(fotosPath);
+    }
+    const archivosPath = path.join(archivosStoragePath, relPath);
+    if (fs.existsSync(archivosPath) && fs.statSync(archivosPath).isFile()) {
+      return res.sendFile(archivosPath);
+    }
+  }
+  next();
+}, express.static(absoluteStoragePath));
 app.use('/public', express.static(path.resolve(__dirname, '..', 'public')));
 
 const multerStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, absoluteStoragePath),
+  destination: (req, file, cb) => {
+    const contentType = req.body.contentType || 'gallery';
+    const isMedia = (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) && contentType !== 'drive';
+    const subfolder = isMedia ? 'fotos' : 'archivos';
+    const targetDir = path.join(absoluteStoragePath, subfolder);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    cb(null, targetDir);
+  },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + '-' + file.originalname);
@@ -531,19 +563,20 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
     else if (/Android/.test(ua)) uploadSource = 'Android';
     else if (/Linux/.test(ua)) uploadSource = 'Linux';
 
+    const contentType = req.body.contentType || 'gallery';
+    const isMedia = (req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/')) && contentType !== 'drive';
+    const relativeSavedName = path.relative(absoluteStoragePath, req.file.path).replace(/\\/g, '/');
+
     const fileMeta = {
       id: Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7),
       originalName: req.file.originalname,
-      savedName: req.file.filename,
+      savedName: relativeSavedName,
       mimeType: req.file.mimetype,
       size: req.file.size,
       createdAt: new Date().toISOString(),
       uploadSource,
       absolutePath: req.file ? path.resolve(req.file.path) : null
     };
-
-    const contentType = req.body.contentType || 'gallery';
-    const isMedia = (req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/')) && contentType !== 'drive';
 
     if (isMedia) {
       // 1. Guardar registro inicial en la DB rápida
