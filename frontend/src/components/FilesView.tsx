@@ -401,8 +401,6 @@ export default function FilesView({
             </div>
           </div>
         </div>
-      )}
-
       {/* Create Folder Modal */}
       {isCreatingFolder && (
         <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center">
