@@ -69,19 +69,18 @@ export default function App() {
         setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
         addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`);
       } else if (event === 'scan_progress') {
-        setProgress(prev => prev ? { ...prev, current: data.queued, total: data.total } : null);
-        if (data.queued % 10 === 0) addLog('info', `Procesando lote: ${data.queued} / ${data.total}`);
+        if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`);
       } else if (event === 'upload_started') {
         setProgress(prev => prev
-          ? { ...prev, current: data.queued || prev.current, total: data.total || prev.total, currentFile: data.originalName }
-          : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
+          ? { ...prev, total: Math.max(prev.total, data.total || 1), currentFile: data.originalName }
+          : { current: 0, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
         );
         addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
       } else if (event === 'worker_step') {
         setProgress(prev => {
           if (prev) return { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || prev.currentFile };
           if (data.originalName) {
-            return { current: 1, total: 1, currentFile: data.originalName, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } };
+            return { current: 0, total: 1, currentFile: data.originalName, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } };
           }
           return null;
         });
@@ -90,25 +89,20 @@ export default function App() {
           setTimeout(() => {
             setProgress(prev => {
               if (!prev) return null;
-              // Clear progress if it's a single file or we reached the total
-              if (prev.total === 1 || prev.current >= prev.total) {
+              const nextCurrent = prev.current + 1;
+              if (nextCurrent >= prev.total) {
                 const now = new Date();
                 setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
                 return null;
               }
-              return { ...prev, stepInfo: null };
+              return { ...prev, current: nextCurrent, stepInfo: null };
             });
           }, 1500);
         } else {
           addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`);
         }
       } else if (event === 'scan_done') {
-        addLog('success', 'Sincronización completada exitosamente.');
-        setTimeout(() => {
-          setProgress(null);
-          const now = new Date();
-          setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
-        }, 2000);
+        addLog('success', `Carpetas analizadas. ${data.total || 0} archivos en cola para IA...`);
       }
     });
 
