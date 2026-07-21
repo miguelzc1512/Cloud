@@ -422,6 +422,15 @@ app.get('/api/stream', (req: Request, res: Response) => {
   req.on('close', () => sseClients.delete(res));
 });
 
+// POST /api/worker-event (recibe eventos del Worker para reenviarlos a los clientes SSE)
+app.post('/api/worker-event', (req: Request, res: Response) => {
+  const { fileId, step, label } = req.body;
+  if (fileId && step) {
+    broadcastSSE('worker_step', { fileId, step, label });
+  }
+  res.json({ ok: true });
+});
+
 // Función para crear/buscar la estructura de carpetas en una transacción
 const resolveFoldersTransaction = docDb.transaction((relativePath: string, targetFolderId: string | null) => {
   if (!relativePath) return targetFolderId;
@@ -691,14 +700,23 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     };
 
     const files = await walkAsync(directoryPath);
+    // Filtrar solo los soportados para saber el total antes de procesar
+    const supportedFiles = files.filter(f => {
+      const ext = path.extname(f).toLowerCase();
+      return ['.jpg','.jpeg','.png','.webp','.heic','.heif','.mp4','.mov','.webm','.avi',
+              '.pdf','.txt','.doc','.docx','.xls','.xlsx','.ppt','.pptx','.csv','.md'].includes(ext);
+    });
+
+    const total = supportedFiles.length;
     let queued = 0;
 
-    for (const filePath of files) {
+    // Avisar al cliente cuántos archivos hay en total para la barra de progreso
+    broadcastSSE('scan_start', { total, directoryPath });
+
+    for (const filePath of supportedFiles) {
       const ext = path.extname(filePath).toLowerCase();
       const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext);
       const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
-
-      if (!isMedia && !isDoc) continue;
 
       const stat = fs.statSync(filePath);
       const originalName = path.basename(filePath);
@@ -706,6 +724,10 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       const savedName = fileId + ext;
 
       if (isMedia) {
+        // ⚠️ Evitar duplicados: si ya existe este absolutePath en la BD, saltar
+        const existing = db.prepare(`SELECT id FROM files WHERE absolutePath = ?`).get(filePath) as any;
+        if (existing) { queued++; broadcastSSE('scan_progress', { queued, total }); continue; }
+
         let mimeType = 'application/octet-stream';
         if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
         else if (ext === '.png') mimeType = 'image/png';
@@ -727,7 +749,7 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         };
 
         stmts.insertFile.run(fileMeta);
-        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total });
 
         try {
           await imageQueue.add('process-image', {
@@ -744,6 +766,10 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         }
       } else {
         // Is Document
+        // ⚠️ Evitar duplicados: si ya existe este absolutePath en docs, saltar
+        const existingDoc = docDb.prepare(`SELECT id FROM docs WHERE absolutePath = ?`).get(filePath) as any;
+        if (existingDoc) { queued++; broadcastSSE('scan_progress', { queued, total }); continue; }
+
         let mimeType = 'application/octet-stream';
         if (ext === '.pdf') mimeType = 'application/pdf';
         else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
@@ -765,9 +791,11 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       }
       
       queued++;
+      broadcastSSE('scan_progress', { queued, total });
     }
 
-    res.json({ success: true, filesQueued: queued, message: `Queued ${queued} files for indexing` });
+    broadcastSSE('scan_done', { total, queued });
+    res.json({ success: true, filesQueued: queued, total, message: `Queued ${queued} files for indexing` });
   } catch (error) {
     console.error('Scan error:', error);
     res.status(500).json({ error: 'Failed to scan directory' });

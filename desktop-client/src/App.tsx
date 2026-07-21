@@ -1,5 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Sparkles } from 'lucide-react';
+
+type StepInfo = {
+  step: 'thumbnail' | 'embedding' | 'faces' | 'done';
+  label: string;
+  fileId: string;
+};
+
+type ProgressState = {
+  current: number;
+  total: number;
+  currentFile: string;
+  stepInfo: StepInfo | null;
+};
+
+const STEP_ICONS: Record<string, React.ReactNode> = {
+  thumbnail: <Image className="w-3.5 h-3.5" />,
+  embedding: <Brain className="w-3.5 h-3.5" />,
+  faces: <Users className="w-3.5 h-3.5" />,
+  done: <Sparkles className="w-3.5 h-3.5" />,
+};
 
 export default function App() {
   const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
@@ -7,11 +27,65 @@ export default function App() {
   const [lastSyncTime, setLastSyncTime] = useState<string>('Buscando últimas actualizaciones...');
   const [isPaused, setIsPaused] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
+  const [progress, setProgress] = useState<ProgressState | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Conectar al SSE del backend para escuchar progreso en tiempo real
+  const connectSSE = (serverUrl: string) => {
+    if (eventSourceRef.current) eventSourceRef.current.close();
+    const es = new EventSource(`${serverUrl}/api/stream`);
+    
+    es.addEventListener('scan_start', (e: any) => {
+      const data = JSON.parse(e.data);
+      setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
+    });
+
+    es.addEventListener('scan_progress', (e: any) => {
+      const data = JSON.parse(e.data);
+      setProgress(prev => prev ? { ...prev, current: data.queued, total: data.total } : null);
+    });
+
+    es.addEventListener('upload_started', (e: any) => {
+      const data = JSON.parse(e.data);
+      setProgress(prev => prev
+        ? { ...prev, current: data.queued || prev.current, total: data.total || prev.total, currentFile: data.originalName }
+        : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
+      );
+    });
+
+    es.addEventListener('worker_step', (e: any) => {
+      const data = JSON.parse(e.data);
+      setProgress(prev => prev ? { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } } : null);
+      if (data.step === 'done') {
+        // Limpiar el stepInfo al terminar un archivo
+        setTimeout(() => {
+          setProgress(prev => prev ? { ...prev, stepInfo: null } : null);
+        }, 800);
+      }
+    });
+
+    es.addEventListener('scan_done', (e: any) => {
+      const data = JSON.parse(e.data);
+      setTimeout(() => {
+        setProgress(null);
+        const now = new Date();
+        setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
+      }, 2000);
+    });
+
+    es.onerror = () => {
+      // Reconectar silenciosamente si se pierde la conexión
+      setTimeout(() => connectSSE(serverUrl), 5000);
+    };
+
+    eventSourceRef.current = es;
+  };
 
   useEffect(() => {
     const loadConfig = async () => {
       const cfg = await (window as any).electronAPI.getConfig();
       setConfig(cfg);
+      if (cfg?.serverUrl) connectSSE(cfg.serverUrl);
       const state = await (window as any).electronAPI.getSyncState();
       setIsPaused(state.paused);
       setPendingFiles(state.pendingFiles || []);
@@ -39,6 +113,7 @@ export default function App() {
 
     return () => {
       if (unsubscribe) unsubscribe();
+      if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, []);
 
@@ -77,6 +152,9 @@ export default function App() {
       window.open(config.serverUrl.replace('3001', '5173'), '_blank');
     }
   };
+
+  const isProcessing = progress !== null || (syncStatus && syncStatus.status === 'syncing');
+  const progressPercent = progress && progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
 
   if (!config) return <div className="h-screen w-screen flex items-center justify-center text-slate-500 bg-[#f8fafc]">Cargando...</div>;
 
@@ -162,23 +240,50 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     {isPaused ? <Pause className="w-7 h-7 text-amber-500 fill-amber-500" /> : <Cloud className="w-7 h-7 text-green-600" />}
                     <h2 className="text-2xl font-medium text-slate-800">
-                      {isPaused ? 'En Pausa' : syncStatus && syncStatus.status === 'syncing' ? 'Sincronizando...' : 'Actualizado'}
+                      {isPaused ? 'En Pausa' : isProcessing ? 'Procesando...' : 'Actualizado'}
                     </h2>
                   </div>
                   <button onClick={togglePause} className={`p-2 rounded-full transition-colors ${isPaused ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={isPaused ? "Reanudar" : "Pausar"}>
                     {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
                   </button>
                 </div>
-                <p className="text-sm text-slate-500 ml-10">
+                <p className="text-sm text-slate-500 ml-10 truncate">
                   {isPaused
                     ? (pendingFiles.length > 0 ? `${pendingFiles.length} ${pendingFiles.length === 1 ? 'archivo pendiente' : 'archivos pendientes'} por subir` : 'La subida automática está detenida')
-                    : syncStatus && syncStatus.status === 'syncing' 
-                      ? `Subiendo: ${syncStatus.file.split(/[/\\]/).pop()} (${syncStatus.progress}%)` 
-                      : syncStatus && syncStatus.status === 'synced'
-                        ? `Completado: ${syncStatus.file.split(/[/\\]/).pop()}`
-                        : lastSyncTime}
+                    : progress
+                      ? progress.currentFile ? progress.currentFile : 'Preparando...'
+                      : syncStatus && syncStatus.status === 'syncing'
+                        ? `Subiendo: ${syncStatus.file.split(/[/\\]/).pop()} (${syncStatus.progress}%)`
+                        : syncStatus && syncStatus.status === 'synced'
+                          ? `Completado: ${syncStatus.file.split(/[/\\]/).pop()}`
+                          : lastSyncTime}
                 </p>
               </div>
+
+              {/* Barra de progreso general */}
+              {progress && progress.total > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-blue-600">
+                      {progress.current} de {progress.total} archivos
+                    </span>
+                    <span className="text-xs text-slate-400">{progressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  {/* Pasos del worker */}
+                  {progress.stepInfo && (
+                    <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
+                      <span className="text-blue-500">{STEP_ICONS[progress.stepInfo.step]}</span>
+                      <span>{progress.stepInfo.label}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* All Good Card */}
@@ -217,6 +322,9 @@ export default function App() {
                       <div className="min-w-0">
                         <p className="text-[15px] font-medium text-slate-800 truncate">{folderObj.path.split(/[/\\]/).pop()}</p>
                         <p className="text-xs text-slate-400 truncate mt-0.5" title={folderObj.path}>{folderObj.path}</p>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full mt-1 inline-block ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                          {folderObj.mode === 'sync' ? '↑ Sincronizar' : '🔍 Solo indexar'}
+                        </span>
                       </div>
                     </div>
                     <button 

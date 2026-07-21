@@ -40,7 +40,9 @@ export default function App() {
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ total: number; current: number; percentage: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [importingCount, setImportingCount] = useState(0);
+  // importingCount ahora rastrea { current, total } para mostrar "X de Y"
+  const [importing, setImporting] = useState<{ current: number; total: number } | null>(null);
+  const importingCount = importing ? importing.current : 0; // retrocompatibilidad
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -62,14 +64,53 @@ export default function App() {
   useEffect(() => {
     const eventSource = new EventSource('/api/stream');
 
-    eventSource.addEventListener('upload_started', () => {
-      setImportingCount(prev => prev + 1);
+    // Importación masiva: scan inició
+    eventSource.addEventListener('scan_start', (e: any) => {
+      try {
+        const data = JSON.parse(e.data);
+        setImporting({ current: 0, total: data.total });
+      } catch {}
+    });
+
+    // Progreso de scan
+    eventSource.addEventListener('scan_progress', (e: any) => {
+      try {
+        const data = JSON.parse(e.data);
+        setImporting(prev => prev ? { ...prev, current: data.queued } : null);
+      } catch {}
+    });
+
+    // Scan terminado
+    eventSource.addEventListener('scan_done', () => {
+      setImporting(null);
+      fetchFiles();
+    });
+
+    // Subida manual de un archivo
+    eventSource.addEventListener('upload_started', (e: any) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.total) {
+          // Vino del scan-local, ya manejado por scan_progress
+          setImporting(prev => prev ? { ...prev, current: data.queued || prev.current, total: data.total } : { current: data.queued || 1, total: data.total });
+        } else {
+          // Subida manual suelta
+          setImporting(prev => prev ? { ...prev, total: prev.total + 1 } : { current: 0, total: 1 });
+        }
+      } catch {}
     });
 
     eventSource.addEventListener('photo_ready', () => {
       // Recargar archivos cuando terminen de procesar
       fetchFiles();
-      setImportingCount(prev => Math.max(0, prev - 1));
+      setImporting(prev => {
+        if (!prev) return null;
+        const next = { ...prev, current: prev.current + 1 };
+        if (next.current >= next.total) {
+          setTimeout(() => setImporting(null), 2000);
+        }
+        return next;
+      });
     });
 
     eventSource.addEventListener('powerModeChanged', (e) => {
@@ -537,10 +578,12 @@ export default function App() {
 
           <div className="flex items-center gap-4 w-1/3 justify-end">
             {headerActions}
-            {importingCount > 0 && (
+            {importing && importing.total > 0 && (
               <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100/50 shadow-sm animate-in fade-in zoom-in duration-300">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm font-medium tracking-tight">Importando...</span>
+                <span className="text-sm font-medium tracking-tight">
+                  Importando {importing.current} de {importing.total}
+                </span>
               </div>
             )}
           </div>

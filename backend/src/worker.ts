@@ -4,11 +4,29 @@ import sharp from 'sharp';
 import exifr from 'exifr';
 import { encode } from 'blurhash';
 import path from 'path';
+import fs from 'fs';
+import http from 'http';
 import Database from 'better-sqlite3';
 import { pipeline, env } from '@huggingface/transformers';
 import { detectFacesInImage } from './faceUtils';
 import crypto from 'crypto';
 import './docProcessor';
+
+// ─── SSE helper: envía eventos de progreso al backend principal ─────────────
+function emitWorkerStep(fileId: string, step: string, label: string) {
+  const body = JSON.stringify({ fileId, step, label });
+  const options = {
+    hostname: '127.0.0.1',
+    port: Number(process.env.PORT || 3001),
+    path: '/api/worker-event',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+  };
+  const req = http.request(options);
+  req.on('error', () => {}); // silenciar errores si el backend no está listo
+  req.write(body);
+  req.end();
+}
 
 // Configurar paths
 const storagePath = process.env.STORAGE_PATH || '../storage';
@@ -62,10 +80,11 @@ const worker = new Worker('image-processing', async job => {
 
   try {
     const start = Date.now();
+    // Si absolutePath existe (modo index), leemos el archivo desde ahí sin copiarlo
     let filePath = absolutePath || path.join(absoluteStoragePath, savedName);
     let tempJpegPath: string | null = null;
     
-    // Convertir HEIC a JPG usando sips nativo de macOS para evitar crashes de libheif
+    // Convertir HEIC a JPG temporalmente (solo para procesamiento, no guardamos el original)
     if (originalName.toLowerCase().endsWith('.heic')) {
       try {
         const { execSync } = require('child_process');
@@ -91,11 +110,12 @@ const worker = new Worker('image-processing', async job => {
     
     // Ensure thumbnails directory exists
     const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
-    if (!require('fs').existsSync(thumbnailsDir)) {
-      require('fs').mkdirSync(thumbnailsDir, { recursive: true });
+    if (!fs.existsSync(thumbnailsDir)) {
+      fs.mkdirSync(thumbnailsDir, { recursive: true });
     }
 
-    // A) Generar miniatura WebP (Max 800px)
+    // A) Generar miniatura WebP (Max 800px) — SOLO el thumbnail va a storage, nunca el original
+    emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...');
     const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
     const thumbnailPath = path.join(absoluteStoragePath, thumbnailName);
     await image.clone()
@@ -136,6 +156,7 @@ const worker = new Worker('image-processing', async job => {
     } catch(e) {}
 
     // D) Generar CLIP Embedding (Semantic Search)
+    emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...');
     let embeddingStr = null;
     if (visionPipeline) {
       try {
@@ -160,6 +181,7 @@ const worker = new Worker('image-processing', async job => {
     });
 
     // F) Extraer rostros enviando al modelo local de node.js
+    emitWorkerStep(fileId, 'faces', 'Detectando rostros...');
     try {
       console.log(`[Worker] Detectando rostros en miniatura de ${originalName}`);
       const faces = await detectFacesInImage(thumbnailPath);
@@ -215,9 +237,10 @@ const worker = new Worker('image-processing', async job => {
     }
 
     console.log(`[Worker] Finalizado con éxito ${originalName}`);
+    emitWorkerStep(fileId, 'done', '¡Listo!');
 
     if (tempJpegPath) {
-      try { require('fs').unlinkSync(tempJpegPath); } catch(e) {}
+      try { fs.unlinkSync(tempJpegPath); } catch(e) {}
     }
   } catch (error) {
     console.error(`[Worker] Error crítico procesando ${originalName}`, error);
