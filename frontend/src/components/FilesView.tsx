@@ -207,6 +207,36 @@ export default function FilesView({
     }
   };
 
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    
+    if (!window.confirm(`¿Seguro que deseas mover ${ids.length} elemento(s) a la papelera?`)) return;
+    
+    try {
+      const folderIds = ids.filter(id => folders.some(f => f.id === id));
+      const documentIds = ids.filter(id => documents.some(d => d.id === id));
+      
+      const promises: Promise<any>[] = [];
+      
+      for (const id of folderIds) {
+        promises.push(fetch(`/api/documents/folders/${id}`, { method: 'DELETE' }));
+      }
+      
+      for (const id of documentIds) {
+        promises.push(fetch(`/api/documents/${id}`, { method: 'DELETE' }));
+      }
+      
+      await Promise.all(promises);
+      
+      setSelectedIds(new Set());
+      setLastSelectedId(null);
+      fetchItems();
+    } catch (e) {
+      console.error('Error deleting selected items', e);
+    }
+  };
+
   // Drag and drop to move items
   const handleDragStart = (e: React.DragEvent, docId: string) => {
     e.dataTransfer.setData('text/plain', docId);
@@ -359,11 +389,7 @@ export default function FilesView({
             <FolderOutput className="w-5 h-5 -scale-x-100" />
           </button>
           <button 
-            onClick={() => {
-              selectedIds.forEach(id => onDelete(id));
-              setSelectedIds(new Set());
-              setLastSelectedId(null);
-            }}
+            onClick={handleBulkDelete}
             className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
             title="Borrar seleccionados"
           >
