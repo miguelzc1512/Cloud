@@ -86,7 +86,17 @@ export default function App() {
         });
         if (data.step === 'done') {
           addLog('success', `Completado: ${data.originalName || 'Archivo procesado'}`);
-          setTimeout(() => setProgress(prev => prev ? { ...prev, stepInfo: null } : null), 800);
+          setTimeout(() => {
+            setProgress(prev => {
+              if (!prev) return null;
+              if (prev.current >= prev.total) {
+                const now = new Date();
+                setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
+                return null;
+              }
+              return { ...prev, stepInfo: null };
+            });
+          }, 1500);
         } else {
           addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`);
         }

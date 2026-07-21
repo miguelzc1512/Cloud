@@ -16744,12 +16744,12 @@ function connectServerSSE() {
 	const url = new URL("/api/stream", serverUrl);
 	(url.protocol === "https:" ? https : http).get(url.toString(), (res) => {
 		let buffer = "";
+		let eventName = "";
+		let eventData = "";
 		res.on("data", (chunk) => {
 			buffer += chunk.toString();
 			const lines = buffer.split("\n");
 			buffer = lines.pop() || "";
-			let eventName = "";
-			let eventData = "";
 			for (const line of lines) if (line.startsWith("event:")) eventName = line.replace("event:", "").trim();
 			else if (line.startsWith("data:")) eventData = line.replace("data:", "").trim();
 			else if (line === "") {

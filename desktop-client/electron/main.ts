@@ -182,13 +182,14 @@ function connectServerSSE() {
 
   const req = lib.get(url.toString(), (res) => {
     let buffer = '';
+    let eventName = '';
+    let eventData = '';
+
     res.on('data', (chunk: Buffer) => {
       buffer += chunk.toString();
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
-      let eventName = '';
-      let eventData = '';
       for (const line of lines) {
         if (line.startsWith('event:')) {
           eventName = line.replace('event:', '').trim();
