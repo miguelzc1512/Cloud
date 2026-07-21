@@ -212,7 +212,16 @@ function connectServerSSE() {
     });
 
     res.on('end', () => {
-      // Reconectar si se cierra la conexión
+      // Reconectar si se cierra la conexión de forma limpia
+      setTimeout(connectServerSSE, 3000);
+    });
+
+    res.on('close', () => {
+      // Reconectar si el socket se cierra de forma abrupta
+      if (!res.complete) setTimeout(connectServerSSE, 3000);
+    });
+
+    res.on('error', () => {
       setTimeout(connectServerSSE, 3000);
     });
   });

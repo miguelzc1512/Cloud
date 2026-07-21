@@ -16769,6 +16769,12 @@ function connectServerSSE() {
 		res.on("end", () => {
 			setTimeout(connectServerSSE, 3e3);
 		});
+		res.on("close", () => {
+			if (!res.complete) setTimeout(connectServerSSE, 3e3);
+		});
+		res.on("error", () => {
+			setTimeout(connectServerSSE, 3e3);
+		});
 	}).on("error", () => {
 		setTimeout(connectServerSSE, 5e3);
 	});
