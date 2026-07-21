@@ -21,6 +21,13 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
   done: <Sparkles className="w-3.5 h-3.5" />,
 };
 
+const PIPELINE_STEPS = [
+  { id: 'upload', label: 'Copiando', icon: <Cloud className="w-3 h-3" /> },
+  { id: 'thumbnail', label: 'Miniatura', icon: <Image className="w-3 h-3" /> },
+  { id: 'embedding', label: 'Analizando', icon: <Brain className="w-3 h-3" /> },
+  { id: 'faces', label: 'Rostros', icon: <Users className="w-3 h-3" /> },
+];
+
 export default function App() {
   const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ file: string, status: 'synced' | 'error' | 'syncing' | 'paused', progress?: number } | null>(null);
@@ -268,11 +275,40 @@ export default function App() {
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                  {/* Pasos del worker */}
-                  {progress.stepInfo && (
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
-                      <span className="text-blue-500">{STEP_ICONS[progress.stepInfo.step]}</span>
-                      <span>{progress.stepInfo.label}</span>
+                  {/* Pasos del worker (Stepper) */}
+                  {progress.currentFile && (
+                    <div className="flex items-center justify-between mt-4 relative">
+                      {/* Línea conectora de fondo */}
+                      <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-100 -z-10 -translate-y-1/2 rounded-full" />
+                      
+                      {PIPELINE_STEPS.map((step, idx) => {
+                        let activeIdx = 0;
+                        if (progress.stepInfo) {
+                          if (progress.stepInfo.step === 'thumbnail') activeIdx = 1;
+                          if (progress.stepInfo.step === 'embedding') activeIdx = 2;
+                          if (progress.stepInfo.step === 'faces') activeIdx = 3;
+                          if (progress.stepInfo.step === 'done') activeIdx = 4;
+                        }
+
+                        const isCompleted = idx < activeIdx;
+                        const isCurrent = idx === activeIdx;
+                        const isPending = idx > activeIdx;
+
+                        return (
+                          <div key={step.id} className={`flex flex-col items-center gap-1.5 bg-white px-1 ${isPending ? 'opacity-40 grayscale' : ''}`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
+                              ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' : 
+                                isCurrent ? 'bg-blue-50 border-blue-500 text-blue-600 animate-pulse' : 
+                                'bg-slate-50 border-slate-200 text-slate-400'}`}
+                            >
+                              {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : step.icon}
+                            </div>
+                            <span className={`text-[10px] font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-slate-600' : 'text-slate-400'}`}>
+                              {step.label}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
