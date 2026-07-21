@@ -86,23 +86,16 @@ export default function FilesView({
             <span className="font-medium text-[15px]">Nueva Carpeta</span>
           </button>
           
-          <button 
-            onClick={() => folderInputRef.current?.click()}
-            className="hidden group-hover:flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-all text-slate-700 mb-1"
-            title="Subir Carpeta"
-          >
-            <UploadCloud className="w-5 h-5 shrink-0 text-slate-500" />
-            <span className="font-medium text-[15px]">Subir Carpeta</span>
-          </button>
+
           
           <button 
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center justify-center font-medium h-10 w-10 group-hover:w-full group-hover:justify-start group-hover:px-3.5 rounded-full group-hover:rounded-xl transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md group-hover:h-11"
-            title="Subir Archivos"
+            title="Agregar Documentos"
           >
             <Plus className="w-5 h-5 shrink-0 block group-hover:hidden" />
             <FileText className="w-5 h-5 shrink-0 hidden group-hover:block" />
-            <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden font-medium text-[15px]">Subir Archivos</span>
+            <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden font-medium text-[15px]">Agregar Documentos</span>
           </button>
         </div>
       );

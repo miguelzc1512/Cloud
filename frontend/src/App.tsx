@@ -389,6 +389,7 @@ export default function App() {
                 onClick={() => {
                   setActiveTab('fotos');
                   setIsFotosSubmenuOpen(true);
+                  setIsArchivosSubmenuOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-sm ${['fotos', 'albums', 'people', 'map', 'trash', 'buscar', 'duplicates'].includes(activeTab)
                   ? 'bg-blue-50 text-blue-600 font-medium'
@@ -539,11 +540,14 @@ export default function App() {
               activeTab === 'people' ? 'Personas' :
               activeTab === 'map' ? 'Mapa' :
               activeTab === 'duplicates' ? 'Duplicados' :
+              activeTab === 'archivos' ? 'Explorador' :
+              activeTab === 'archivos_dispositivos' ? 'Dispositivos' :
+              activeTab === 'archivos_papelera' ? 'Papelera de Archivos' :
               activeTab
             )}
           </div>
           
-          {activeTab !== 'archivos' ? (
+          {!['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? (
             <div className="flex-1 max-w-2xl mx-4 relative group z-50" ref={searchDropdownRef}>
               <div className={`relative flex items-center overflow-hidden px-4 py-2.5 transition-all duration-200 ${showSearchDropdown ? 'bg-white rounded-t-2xl border border-b-0 border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05),0_4px_6px_-1px_rgba(0,0,0,0.05)]' : 'bg-slate-100 hover:bg-slate-200/50 rounded-full border border-transparent'}`}>
                 <Search className={`w-5 h-5 shrink-0 transition-colors ${showSearchDropdown ? 'text-blue-500' : 'text-slate-400'}`} />
@@ -621,7 +625,7 @@ export default function App() {
             )}
           </div>
         </header>
-        <div id="main-scroll-container" className={`flex-1 overflow-y-auto ${activeTab === 'archivos' ? 'p-0 overflow-hidden' : 'p-10'}`}>
+        <div id="main-scroll-container" className={`flex-1 overflow-y-auto ${['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? 'p-0 overflow-hidden' : 'p-10'}`}>
           {activeTab === 'archivos' && (
             <FilesView
               files={files}
