@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Sparkles } from 'lucide-react';
+import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Sparkles, Info, AlertCircle, Terminal } from 'lucide-react';
 
 type StepInfo = {
   step: 'thumbnail' | 'embedding' | 'faces' | 'done';
@@ -12,6 +12,13 @@ type ProgressState = {
   total: number;
   currentFile: string;
   stepInfo: StepInfo | null;
+};
+
+type LogEntry = {
+  id: string;
+  time: Date;
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
 };
 
 const STEP_ICONS: Record<string, React.ReactNode> = {
@@ -35,6 +42,14 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressState | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  const addLog = (type: LogEntry['type'], message: string) => {
+    setLogs(prev => {
+      const newLogs = [...prev, { id: Math.random().toString(36).substring(7), time: new Date(), type, message }];
+      return newLogs.slice(-25);
+    });
+  };
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -51,13 +66,16 @@ export default function App() {
       const { event, data } = payload;
       if (event === 'scan_start') {
         setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
+        addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`);
       } else if (event === 'scan_progress') {
         setProgress(prev => prev ? { ...prev, current: data.queued, total: data.total } : null);
+        if (data.queued % 10 === 0) addLog('info', `Procesando lote: ${data.queued} / ${data.total}`);
       } else if (event === 'upload_started') {
         setProgress(prev => prev
           ? { ...prev, current: data.queued || prev.current, total: data.total || prev.total, currentFile: data.originalName }
           : { current: 1, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
         );
+        addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
       } else if (event === 'worker_step') {
         setProgress(prev => {
           if (prev) return { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || prev.currentFile };
@@ -67,9 +85,13 @@ export default function App() {
           return null;
         });
         if (data.step === 'done') {
+          addLog('success', `Completado: ${data.originalName || 'Archivo procesado'}`);
           setTimeout(() => setProgress(prev => prev ? { ...prev, stepInfo: null } : null), 800);
+        } else {
+          addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`);
         }
       } else if (event === 'scan_done') {
+        addLog('success', 'Sincronización completada exitosamente.');
         setTimeout(() => {
           setProgress(null);
           const now = new Date();
@@ -83,9 +105,15 @@ export default function App() {
       if (data.status === 'paused' || data.status === 'idle') {
         setIsPaused(data.status === 'paused');
         setPendingFiles(data.pendingFiles || []);
-        if (data.status === 'paused') setSyncStatus(null);
+        if (data.status === 'paused') {
+          setSyncStatus(null);
+          addLog('warning', 'Sincronización pausada.');
+        }
       } else {
         setSyncStatus(data);
+        if (data.status === 'error') {
+          addLog('error', `Error sincronizando: ${data.file || 'archivo'}`);
+        }
         if (data.status === 'synced' || data.status === 'error') {
           const now = new Date();
           setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
@@ -171,7 +199,7 @@ export default function App() {
       {/* ── Contenido principal ───────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col px-6 pt-6 pb-4 relative z-10 shrink-0">
+      <aside className="w-64 flex flex-col px-6 pt-6 pb-4 relative z-10 shrink-0 border-r border-slate-100/80">
         
         {/* Logo under traffic lights aligned left */}
         <div className="flex items-center gap-3 mb-8 px-1 non-draggable">
@@ -181,7 +209,7 @@ export default function App() {
           <span className="text-xl font-medium text-slate-800 tracking-tight">Cloud Sync</span>
         </div>
 
-        <div className="flex flex-col gap-2 mb-8 non-draggable">
+        <div className="flex flex-col gap-2 mb-6 non-draggable">
           <button 
             onClick={() => handleLinkFolder('sync')}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md text-white font-medium px-4 py-3.5 rounded-2xl transition-all"
@@ -201,181 +229,186 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 mt-2 non-draggable">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Enlaces útiles</p>
-          <button 
-            onClick={openWeb}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Abrir versión web
-          </button>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Carpetas Activas</p>
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-2 non-draggable pr-1">
+          {config.linkedFolders.length === 0 ? (
+            <div className="py-4 px-3 rounded-xl border border-dashed border-slate-200 text-center">
+              <p className="text-xs text-slate-400">Sin carpetas</p>
+            </div>
+          ) : (
+            config.linkedFolders.map(folderObj => (
+              <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
+                <div className="flex items-center gap-2 overflow-hidden mb-1">
+                  <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+                  <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
+                </div>
+                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                  {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
+                </span>
+                <button 
+                  onClick={() => handleUnlinkFolder(folderObj.path)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
+                  title="Desvincular"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="flex flex-col gap-2 mt-4 non-draggable">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Rendimiento (Fotos)</p>
-          <div className="flex bg-slate-100/80 rounded-xl p-1 mx-2">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Rendimiento (Fotos)</p>
+          <div className="flex bg-slate-100/80 rounded-xl p-1 mx-1 mb-2">
             <button 
               onClick={() => handlePowerMode('eco')}
               className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'eco' || !config?.powerMode ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
-              title="Ahorra batería, ideal para el día a día"
+              title="Ahorra batería"
             >
               Normal
             </button>
             <button 
               onClick={() => handlePowerMode('max')}
               className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'max' ? 'bg-blue-600 shadow-sm text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
-              title="Usa todos los núcleos para cargar más rápido (consume más batería)"
+              title="Máxima velocidad"
             >
               Máximo
             </button>
           </div>
+          <button 
+            onClick={openWeb}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Abrir versión web
+          </button>
         </div>
       </aside>
 
       {/* Dashboard Area */}
-      <main className="flex-1 overflow-y-auto p-4 pt-12 non-draggable relative z-10">
-        <div className="flex flex-col gap-4 max-w-3xl">
-          
-          {/* Status Cards Row */}
-          <div className="flex gap-4">
-            {/* Sync Status Card */}
-            <div className="flex-[3] bg-white rounded-[1.75rem] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    {isPaused ? <Pause className="w-7 h-7 text-amber-500 fill-amber-500" /> : <Cloud className="w-7 h-7 text-green-600" />}
-                    <h2 className="text-2xl font-medium text-slate-800">
-                      {isPaused ? 'En Pausa' : isProcessing ? 'Procesando...' : 'Actualizado'}
-                    </h2>
-                  </div>
-                  <button onClick={togglePause} className={`p-2 rounded-full transition-colors ${isPaused ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={isPaused ? "Reanudar" : "Pausar"}>
-                    {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
-                  </button>
-                </div>
-                <p className="text-sm text-slate-500 ml-10 truncate">
-                  {isPaused
-                    ? (pendingFiles.length > 0 ? `${pendingFiles.length} ${pendingFiles.length === 1 ? 'archivo pendiente' : 'archivos pendientes'} por subir` : 'La subida automática está detenida')
-                    : progress
-                      ? progress.currentFile ? progress.currentFile : 'Preparando...'
-                      : syncStatus && syncStatus.status === 'syncing'
-                        ? `Subiendo: ${syncStatus.file.split(/[/\\]/).pop()} (${syncStatus.progress}%)`
-                        : syncStatus && syncStatus.status === 'synced'
-                          ? `Completado: ${syncStatus.file.split(/[/\\]/).pop()}`
-                          : lastSyncTime}
-                </p>
-              </div>
-
-              {/* Barra de progreso general */}
-              {progress && progress.total > 0 && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-blue-600">
-                      {progress.current} de {progress.total} archivos
-                    </span>
-                    <span className="text-xs text-slate-400">{progressPercent}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  {/* Pasos del worker (Stepper) */}
-                  {progress.currentFile && (
-                    <div className="flex items-center justify-between mt-4 relative">
-                      {/* Línea conectora de fondo */}
-                      <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-100 -z-10 -translate-y-1/2 rounded-full" />
-                      
-                      {PIPELINE_STEPS.map((step, idx) => {
-                        let activeIdx = 0;
-                        if (progress.stepInfo) {
-                          if (progress.stepInfo.step === 'thumbnail') activeIdx = 1;
-                          if (progress.stepInfo.step === 'embedding') activeIdx = 2;
-                          if (progress.stepInfo.step === 'faces') activeIdx = 3;
-                          if (progress.stepInfo.step === 'done') activeIdx = 4;
-                        }
-
-                        const isCompleted = idx < activeIdx;
-                        const isCurrent = idx === activeIdx;
-                        const isPending = idx > activeIdx;
-
-                        return (
-                          <div key={step.id} className={`flex flex-col items-center gap-1.5 bg-white px-1 ${isPending ? 'opacity-40 grayscale' : ''}`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
-                              ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' : 
-                                isCurrent ? 'bg-blue-50 border-blue-500 text-blue-600 animate-pulse' : 
-                                'bg-slate-50 border-slate-200 text-slate-400'}`}
-                            >
-                              {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : step.icon}
-                            </div>
-                            <span className={`text-[10px] font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-slate-600' : 'text-slate-400'}`}>
-                              {step.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 non-draggable relative z-10 flex flex-col h-full gap-4 bg-slate-50/50">
+        
+        {/* Top Status Card (Progress & Stepper) */}
+        <div className="bg-white rounded-[1.75rem] p-6 shadow-sm border border-slate-100 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              {isPaused ? <Pause className="w-7 h-7 text-amber-500 fill-amber-500" /> : <Cloud className="w-7 h-7 text-green-600" />}
+              <h2 className="text-2xl font-medium text-slate-800">
+                {isPaused ? 'En Pausa' : isProcessing ? 'Procesando...' : 'Actualizado'}
+              </h2>
             </div>
-
-            {/* All Good Card */}
-            <div className="flex-[2] bg-white rounded-[1.75rem] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-slate-800 mb-1">Estás al día</h2>
-                <p className="text-xs text-slate-500">Todo en orden.</p>
-              </div>
-              <div className="w-16 h-16 bg-blue-50/80 rounded-full flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-8 h-8 text-blue-500" />
-              </div>
-            </div>
+            <button onClick={togglePause} className={`p-2 rounded-full transition-colors ${isPaused ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={isPaused ? "Reanudar" : "Pausar"}>
+              {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
+            </button>
           </div>
+          <p className="text-sm text-slate-500 ml-10 truncate">
+            {isPaused
+              ? (pendingFiles.length > 0 ? `${pendingFiles.length} ${pendingFiles.length === 1 ? 'archivo pendiente' : 'archivos pendientes'} por subir` : 'La subida automática está detenida')
+              : progress
+                ? progress.currentFile ? progress.currentFile : 'Preparando...'
+                : syncStatus && syncStatus.status === 'syncing'
+                  ? `Subiendo: ${syncStatus.file.split(/[/\\]/).pop()} (${syncStatus.progress}%)`
+                  : syncStatus && syncStatus.status === 'synced'
+                    ? `Completado: ${syncStatus.file.split(/[/\\]/).pop()}`
+                    : lastSyncTime}
+          </p>
 
-          {/* Linked Folders Card */}
-          <div className="bg-white rounded-[1.75rem] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-slate-100 mt-2 min-h-[300px]">
-            <h2 className="text-lg font-medium text-slate-800 mb-1">Carpetas locales vigiladas</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              El contenido de estas carpetas se sube automáticamente a la nube.
-            </p>
+          {progress && progress.total > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-blue-600">
+                  {progress.current} de {progress.total} archivos
+                </span>
+                <span className="text-xs text-slate-400">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              {/* Pasos del worker (Stepper) */}
+              {progress.currentFile && (
+                <div className="flex items-center justify-between mt-4 relative">
+                  {/* Línea conectora de fondo */}
+                  <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-100 -z-10 -translate-y-1/2 rounded-full" />
+                  
+                  {PIPELINE_STEPS.map((step, idx) => {
+                    let activeIdx = 0;
+                    if (progress.stepInfo) {
+                      if (progress.stepInfo.step === 'thumbnail') activeIdx = 1;
+                      if (progress.stepInfo.step === 'embedding') activeIdx = 2;
+                      if (progress.stepInfo.step === 'faces') activeIdx = 3;
+                      if (progress.stepInfo.step === 'done') activeIdx = 4;
+                    }
 
-            <div className="space-y-3">
-              {config.linkedFolders.length === 0 ? (
-                <div className="py-12 px-6 rounded-[1.25rem] border-2 border-dashed border-slate-200 text-center flex flex-col items-center justify-center">
-                  <Folder className="w-12 h-12 text-slate-300 mb-4" />
-                  <p className="text-[15px] text-slate-600 font-medium">No hay carpetas vinculadas</p>
-                  <p className="text-[13px] text-slate-400 mt-1">Añade una carpeta local para empezar a sincronizar</p>
-                </div>
-              ) : (
-                config.linkedFolders.map(folderObj => (
-                  <div key={folderObj.path} className="flex items-center justify-between p-4 rounded-[1.25rem] hover:bg-slate-50 border border-slate-100 hover:border-slate-200 group transition-all">
-                    <div className="flex items-center gap-4 overflow-hidden">
-                      <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                        <Folder className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[15px] font-medium text-slate-800 truncate">{folderObj.path.split(/[/\\]/).pop()}</p>
-                        <p className="text-xs text-slate-400 truncate mt-0.5" title={folderObj.path}>{folderObj.path}</p>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full mt-1 inline-block ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                          {folderObj.mode === 'sync' ? '↑ Sincronizar' : '🔍 Solo indexar'}
+                    const isCompleted = idx < activeIdx;
+                    const isCurrent = idx === activeIdx;
+                    const isPending = idx > activeIdx;
+
+                    return (
+                      <div key={step.id} className={`flex flex-col items-center gap-1.5 bg-white px-1 ${isPending ? 'opacity-40 grayscale' : ''}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
+                          ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' : 
+                            isCurrent ? 'bg-blue-50 border-blue-500 text-blue-600 animate-pulse' : 
+                            'bg-slate-50 border-slate-200 text-slate-400'}`}
+                        >
+                          {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : step.icon}
+                        </div>
+                        <span className={`text-[10px] font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-slate-600' : 'text-slate-400'}`}>
+                          {step.label}
                         </span>
                       </div>
-                    </div>
-                    <button 
-                      onClick={() => handleUnlinkFolder(folderObj.path)}
-                      className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-all shrink-0"
-                      title="Desvincular"
-                    >
-                      <XCircle className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))
+                    );
+                  })}
+                </div>
               )}
             </div>
-          </div>
-
+          )}
         </div>
+
+        {/* Log Hub Terminal (Bottom Area) */}
+        <div className="flex-1 bg-white rounded-[1.75rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden min-h-[250px]">
+          <div className="px-5 py-3 border-b border-slate-100 bg-white flex items-center gap-2 shrink-0">
+            <Terminal className="w-4 h-4 text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700">Hub de Registros</span>
+            <div className="ml-auto flex items-center gap-1.5 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-[10px] text-green-600 font-bold tracking-wide">EN VIVO</span>
+            </div>
+          </div>
+          {/* El listado de logs invertido usa flex-col-reverse, el overflow-y-auto maneja el scroll */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-1.5 flex flex-col-reverse font-mono text-[13px] bg-slate-50/30">
+            {logs.length === 0 ? (
+              <div className="text-slate-400 text-center py-8 font-sans">
+                Esperando actividad...
+              </div>
+            ) : (
+              [...logs].reverse().map((log) => (
+                <div key={log.id} className="flex gap-3 leading-relaxed hover:bg-slate-100/50 p-2 rounded-lg transition-colors border border-transparent hover:border-slate-100">
+                  <span className="text-slate-400 shrink-0 font-medium tracking-tight">
+                    [{log.time.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]
+                  </span>
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {log.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                    {log.type === 'error' && <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
+                    {log.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                    {log.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+                    <span className={`break-words ${
+                      log.type === 'error' ? 'text-red-600 font-semibold' :
+                      log.type === 'success' ? 'text-emerald-700 font-medium' :
+                      log.type === 'warning' ? 'text-amber-700 font-medium' :
+                      'text-slate-600'
+                    }`}>
+                      {log.message}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        
       </main>
       </div>
     </div>
