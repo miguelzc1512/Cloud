@@ -8,6 +8,7 @@ import exifr from 'exifr';
 import path from 'path';
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
+const archiver = require('archiver');
 dotenv.config();
 
 const app = express();
@@ -27,12 +28,14 @@ export const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrent read performance
 db.pragma('journal_mode = WAL');
+db.pragma('busy_timeout = 5000');
 db.pragma('foreign_keys = ON');
 
 // Create tables
 const docDbPath = path.resolve(STORAGE_PATH, 'documents.db');
 export const docDb = new Database(docDbPath);
 docDb.pragma('journal_mode = WAL');
+docDb.pragma('busy_timeout = 5000');
 docDb.pragma('foreign_keys = ON');
 
 docDb.exec(`
@@ -276,6 +279,74 @@ imageQueueEvents.on('completed', ({ jobId, returnvalue }) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────
 
+app.get('/api/download/zip', (req: Request, res: Response): void => {
+  const idsParam = req.query.ids as string;
+  if (!idsParam) {
+    res.status(400).json({ error: 'Missing ids parameter' });
+    return;
+  }
+  const ids = idsParam.split(',');
+  if (ids.length === 0) {
+    res.status(400).json({ error: 'No ids provided' });
+    return;
+  }
+
+  const validFiles: any[] = [];
+  ids.forEach(id => {
+    if (!id.trim()) return;
+    let file = stmts.getFileById.get(id) as any;
+    if (!file) {
+      file = docDb.prepare(`SELECT * FROM docs WHERE id = ?`).get(id) as any;
+    }
+    if (file) {
+      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      if (fs.existsSync(filePath)) {
+        validFiles.push({ filePath, name: file.originalName || file.name || file.savedName });
+      }
+    }
+  });
+
+  if (validFiles.length === 0) {
+    res.status(404).json({ error: 'No valid files found on disk' });
+    return;
+  }
+
+  if (validFiles.length === 1) {
+    const singleFile = validFiles[0];
+    res.download(singleFile.filePath, singleFile.name);
+    return;
+  }
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename=nube_download_${Date.now()}.zip`);
+
+  try {
+    console.log("ARCHIVER TYPE:", typeof archiver, archiver); const archive = archiver('zip', {
+      zlib: { level: 9 }
+    });
+
+    archive.on('error', (err: any) => {
+      console.error('Archive error:', err);
+      if (!res.headersSent) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+    archive.pipe(res);
+
+    validFiles.forEach(f => {
+      archive.file(f.filePath, { name: f.name });
+    });
+
+    archive.finalize();
+  } catch (err: any) {
+    console.error('ZIP setup error:', err);
+    if (!res.headersSent) {
+      res.status(500).send({ error: err.message });
+    }
+  }
+});
+
 // GET /api/media/:id/:type
 app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
   const { id, type } = req.params;
@@ -319,6 +390,24 @@ app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
     console.error('Media endpoint error:', error);
     res.status(500).json({ error: 'Failed to serve media' });
   }
+});
+
+const settingsPath = path.join(absoluteStoragePath, 'settings.json');
+let currentSettings = { powerMode: 'eco' };
+if (fs.existsSync(settingsPath)) {
+  try { currentSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch(e) {}
+}
+
+app.get('/api/config', (req, res) => res.json(currentSettings));
+
+app.post('/api/config/power-mode', (req, res) => {
+  const { mode } = req.body;
+  if (mode === 'eco' || mode === 'max') {
+    currentSettings.powerMode = mode;
+    fs.writeFileSync(settingsPath, JSON.stringify(currentSettings));
+    broadcastSSE('powerModeChanged', { mode });
+  }
+  res.json({ success: true, mode: currentSettings.powerMode });
 });
 
 // GET /api/stream (SSE)
@@ -405,13 +494,23 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
 
       // 2. Encolar trabajo de procesamiento asíncrono
-      await imageQueue.add('process-image', {
-        fileId: fileMeta.id,
-        savedName: fileMeta.savedName,
-        originalName: fileMeta.originalName,
-        mimeType: fileMeta.mimeType,
-        absolutePath: null
-      });
+      try {
+        await imageQueue.add('process-image', {
+          fileId: fileMeta.id,
+          savedName: fileMeta.savedName,
+          originalName: fileMeta.originalName,
+          mimeType: fileMeta.mimeType,
+          absolutePath: null
+        });
+      } catch (err) {
+        console.error('Redis Queue Error (imageQueue):', err);
+        // Fallback or just continue (it will show as processing forever, or we could delete it)
+        // We'll throw to the outer catch block to reject the upload
+        stmts.hardDelete.run(fileMeta.id);
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(503).json({ error: 'Service Unavailable (Queue Error)' });
+        return;
+      }
 
       // Si se subió desde la pestaña de Archivos o como parte de una carpeta mixta, guardarlo en Documentos también
       if (sourceTab === 'archivos' || relativePath || targetFolderId) {
@@ -435,7 +534,15 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
       `).run(fileMeta.id, fileMeta.originalName, fileMeta.savedName, ext, fileMeta.mimeType, fileMeta.size, null, finalClusterId, fileMeta.createdAt);
 
-      await docQueue.add('process-doc', { id: fileMeta.id }, { jobId: fileMeta.id });
+      try {
+        await docQueue.add('process-doc', { id: fileMeta.id }, { jobId: fileMeta.id });
+      } catch (err) {
+        console.error('Redis Queue Error (docQueue):', err);
+        docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(fileMeta.id);
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(503).json({ error: 'Service Unavailable (Queue Error)' });
+        return;
+      }
       
       broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
       res.status(202).json({
@@ -569,32 +676,137 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
   }
 
   try {
-    const walkSync = (dir: string, filelist: string[] = []) => {
-      fs.readdirSync(dir).forEach(file => {
+    const walkAsync = async (dir: string, filelist: string[] = []): Promise<string[]> => {
+      const files = await fs.promises.readdir(dir);
+      for (const file of files) {
         const filepath = path.join(dir, file);
-        if (fs.statSync(filepath).isDirectory()) {
-          filelist = walkSync(filepath, filelist);
+        const stat = await fs.promises.stat(filepath);
+        if (stat.isDirectory()) {
+          filelist = await walkAsync(filepath, filelist);
         } else {
           filelist.push(filepath);
         }
-      });
+      }
       return filelist;
     };
 
-    const files = walkSync(directoryPath);
+    const files = await walkAsync(directoryPath);
     let queued = 0;
 
     for (const filePath of files) {
       const ext = path.extname(filePath).toLowerCase();
-      // Only process common media extensions
-      if (!['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext)) {
-        continue;
-      }
+      const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext);
+      const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
+
+      if (!isMedia && !isDoc) continue;
 
       const stat = fs.statSync(filePath);
       const originalName = path.basename(filePath);
+      const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+      const savedName = fileId + ext;
+
+      if (isMedia) {
+        let mimeType = 'application/octet-stream';
+        if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+        else if (ext === '.png') mimeType = 'image/png';
+        else if (ext === '.webp') mimeType = 'image/webp';
+        else if (ext === '.heic') mimeType = 'image/heic';
+        else if (ext === '.mp4') mimeType = 'video/mp4';
+        else if (ext === '.mov') mimeType = 'video/quicktime';
+        else if (ext === '.webm') mimeType = 'video/webm';
+
+        const fileMeta = {
+          id: fileId,
+          originalName: originalName,
+          savedName: savedName,
+          mimeType,
+          size: stat.size,
+          createdAt: new Date().toISOString(),
+          uploadSource: 'Directorio Local',
+          absolutePath: filePath
+        };
+
+        stmts.insertFile.run(fileMeta);
+        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
+
+        try {
+          await imageQueue.add('process-image', {
+            fileId: fileMeta.id,
+            savedName: fileMeta.savedName,
+            originalName: fileMeta.originalName,
+            mimeType: fileMeta.mimeType,
+            absolutePath: filePath
+          });
+        } catch (err) {
+          console.error('Queue Error during scan:', err);
+          stmts.hardDelete.run(fileMeta.id);
+          continue;
+        }
+      } else {
+        // Is Document
+        let mimeType = 'application/octet-stream';
+        if (ext === '.pdf') mimeType = 'application/pdf';
+        else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
+        else if (ext === '.doc' || ext === '.docx') mimeType = 'application/msword';
+        else if (ext === '.xls' || ext === '.xlsx') mimeType = 'application/vnd.ms-excel';
+
+        docDb.prepare(`
+          INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
+        `).run(fileId, originalName, savedName, ext.substring(1) || 'file', mimeType, stat.size, filePath, null, new Date().toISOString());
+
+        try {
+          await docQueue.add('process-doc', { id: fileId, absolutePath: filePath }, { jobId: fileId });
+        } catch (err) {
+          console.error('Queue Error during doc scan:', err);
+          docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(fileId);
+          continue;
+        }
+      }
       
-      // Determine MIME type simply based on extension
+      queued++;
+    }
+
+    res.json({ success: true, filesQueued: queued, message: `Queued ${queued} files for indexing` });
+  } catch (error) {
+    console.error('Scan error:', error);
+    res.status(500).json({ error: 'Failed to scan directory' });
+  }
+});
+
+// POST /api/index-file
+app.post('/api/index-file', async (req: Request, res: Response): Promise<void> => {
+  let { absolutePath } = req.body;
+  if (!absolutePath) {
+    res.status(400).json({ error: 'Falta la ruta absoluta (absolutePath)' });
+    return;
+  }
+
+  try {
+    if (!fs.existsSync(absolutePath)) {
+      res.status(404).json({ error: 'Archivo no encontrado' });
+      return;
+    }
+    const stat = fs.statSync(absolutePath);
+    if (stat.isDirectory()) {
+      res.status(400).json({ error: 'Es un directorio, no un archivo' });
+      return;
+    }
+
+    const ext = path.extname(absolutePath).toLowerCase();
+    const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext);
+    const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
+
+    if (!isMedia && !isDoc) {
+      res.status(400).json({ error: 'Tipo de archivo no soportado para indexación' });
+      return;
+    }
+
+    const originalName = path.basename(absolutePath);
+    const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+    const savedName = fileId + ext;
+
+    if (isMedia) {
       let mimeType = 'application/octet-stream';
       if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
       else if (ext === '.png') mimeType = 'image/png';
@@ -604,16 +816,15 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       else if (ext === '.mov') mimeType = 'video/quicktime';
       else if (ext === '.webm') mimeType = 'video/webm';
 
-      const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
       const fileMeta = {
         id: fileId,
-        originalName: originalName,
-        savedName: fileId + ext,
+        originalName,
+        savedName,
         mimeType,
         size: stat.size,
         createdAt: new Date().toISOString(),
-        uploadSource: 'Directorio Local',
-        absolutePath: filePath
+        uploadSource: 'Directorio Local (Live)',
+        absolutePath
       };
 
       stmts.insertFile.run(fileMeta);
@@ -624,16 +835,27 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         savedName: fileMeta.savedName,
         originalName: fileMeta.originalName,
         mimeType: fileMeta.mimeType,
-        absolutePath: filePath
+        absolutePath
       });
-      
-      queued++;
+    } else {
+      let mimeType = 'application/octet-stream';
+      if (ext === '.pdf') mimeType = 'application/pdf';
+      else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
+      else if (ext === '.doc' || ext === '.docx') mimeType = 'application/msword';
+      else if (ext === '.xls' || ext === '.xlsx') mimeType = 'application/vnd.ms-excel';
+
+      docDb.prepare(`
+        INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
+      `).run(fileId, originalName, savedName, ext.substring(1) || 'file', mimeType, stat.size, absolutePath, null, new Date().toISOString());
+
+      await docQueue.add('process-doc', { id: fileId, absolutePath }, { jobId: fileId });
     }
 
-    res.json({ success: true, filesQueued: queued, message: `Queued ${queued} files for indexing` });
+    res.json({ success: true, message: 'Archivo indexado exitosamente' });
   } catch (error) {
-    console.error('Scan error:', error);
-    res.status(500).json({ error: 'Failed to scan directory' });
+    console.error('Index file error:', error);
+    res.status(500).json({ error: 'Error al indexar archivo individual' });
   }
 });
 

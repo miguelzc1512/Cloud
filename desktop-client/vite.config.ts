@@ -39,23 +39,7 @@ export default defineConfig({
           options.reload()
         },
       },
-      {
-        // Worker thread for face detection — runs TensorFlow in isolation
-        entry: 'electron/server/faceWorker.ts',
-        vite: {
-          build: {
-            rollupOptions: {
-              external: [
-                'sharp',
-                '@vladmandic/face-api',
-                '@tensorflow/tfjs',
-                '@tensorflow/tfjs-backend-wasm',
-                'worker_threads',
-              ]
-            }
-          }
-        }
-      },
+
     ]),
   ],
 })

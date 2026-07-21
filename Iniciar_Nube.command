@@ -1,35 +1,21 @@
 #!/bin/bash
-clear
-echo "=============================================="
-echo "      INICIANDO TU NUBE PERSONAL (DOCKER)     "
-echo "=============================================="
-echo ""
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if ! command -v docker &> /dev/null
-then
-    echo "[ERROR] No tienes Docker instalado o no esta en ejecucion."
-    echo "Por favor instala 'Docker Desktop' desde docker.com, abrelo y vuelve a intentar."
-    read -p "Presiona Enter para salir..."
-    exit
-fi
+echo "☁️  Iniciando todos los servicios de Nube..."
 
-echo "Levantando servidores en el fondo (esto puede tardar la primera vez)..."
-cd "$(dirname "$0")"
-if ! docker-compose up -d --build; then
-    echo ""
-    echo "[ERROR] Hubo un problema al levantar la nube. Por favor lee el error de arriba."
-    read -p "Presiona Enter para salir..."
-    exit 1
-fi
+# 1. Backend IA (Inteligencia Artificial)
+osascript -e "tell application \"Terminal\" to do script \"cd '$DIR/backend-ia' && ./start.sh\""
 
-echo ""
-echo ==============================================
-echo "  !LISTO! TU NUBE ESTA FUNCIONANDO"
-echo "=============================================="
-echo ""
-echo "Abre tu navegador y entra a:"
-echo "http://localhost"
-echo ""
-echo "(Para apagar la nube, usa el comando: docker-compose down)"
-echo ""
-read -p "Presiona Enter para cerrar esta ventana..."
+# 2. Backend Principal (Node.js)
+osascript -e "tell application \"Terminal\" to do script \"cd '$DIR/backend' && npm run dev\""
+
+# 3. Worker (Procesamiento en segundo plano)
+osascript -e "tell application \"Terminal\" to do script \"cd '$DIR/backend' && npm run dev:worker\""
+
+# 4. Frontend Web (React)
+osascript -e "tell application \"Terminal\" to do script \"cd '$DIR/frontend' && npm run dev\""
+
+# 5. Cliente de Escritorio (Electron)
+osascript -e "tell application \"Terminal\" to do script \"cd '$DIR/desktop-client' && npm run dev\""
+
+echo "✅ Los servicios se están abriendo en nuevas ventanas de Terminal."

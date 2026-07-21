@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle } from 'lucide-react';
+import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle, FolderPlus, Zap, Menu } from 'lucide-react';
 import FilesView from './components/FilesView';
 import PhotosView from './components/PhotosView';
 import AlbumsView from './components/photos/albums/AlbumsView';
@@ -33,6 +33,7 @@ export default function App() {
   const [isFotosSubmenuOpen, setIsFotosSubmenuOpen] = useState(true);
   const [customHeader, setCustomHeader] = useState<React.ReactNode | null>(null);
   const [sidebarActions, setSidebarActions] = useState<React.ReactNode>(null);
+  const [headerActions, setHeaderActions] = useState<React.ReactNode | null>(null);
   
   const [files, setFiles] = useState<FileData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,15 +41,22 @@ export default function App() {
   const [uploadProgress, setUploadProgress] = useState<{ total: number; current: number; percentage: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [importingCount, setImportingCount] = useState(0);
-  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [targetPersonId, setTargetPersonId] = useState<string | null>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
+  const [powerMode, setPowerMode] = useState('eco');
+
+  useEffect(() => {
+    fetch('/api/config').then(res => res.json()).then(data => {
+      if (data.powerMode) setPowerMode(data.powerMode);
+    }).catch(() => {});
+  }, []);
 
   // ─── Server-Sent Events (SSE) ─────────────────────────────────────────────
   useEffect(() => {
@@ -62,6 +70,13 @@ export default function App() {
       // Recargar archivos cuando terminen de procesar
       fetchFiles();
       setImportingCount(prev => Math.max(0, prev - 1));
+    });
+
+    eventSource.addEventListener('powerModeChanged', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setPowerMode(data.mode);
+      } catch (err) {}
     });
 
     return () => {
@@ -91,6 +106,7 @@ export default function App() {
   useEffect(() => {
     setCustomHeader(null);
     setSidebarActions(null);
+    setHeaderActions(null);
   }, [activeTab]);
 
   const fetchFiles = useCallback(async () => {
@@ -248,16 +264,32 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-slate-50/50 text-slate-800 font-sans selection:bg-blue-100 selection:text-blue-900">
+      
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar - Premium Collapsible */}
-      <aside className="group fixed top-0 left-0 h-full w-[64px] hover:w-[240px] bg-white/80 backdrop-blur-md border-r border-slate-200/60 shadow-sm z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:shadow-xl">
+      <aside className={`group fixed top-0 left-0 h-full bg-white/95 md:bg-white/80 backdrop-blur-md border-r border-slate-200/60 shadow-2xl md:shadow-sm z-50 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:hover:shadow-xl w-[240px] md:w-[64px] md:hover:w-[240px] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="w-[240px] flex flex-col h-full px-3 py-8">
           <div className="w-full mb-10 flex items-center px-1.5">
             <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
               M
             </div>
-            <h2 className="text-xl md:text-2xl tracking-tight text-slate-800 leading-none ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              <span className="font-bold">Hola</span> Miguel!
-            </h2>
+            <div className="flex flex-col ml-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 min-w-0">
+              <h2 className="text-xl md:text-2xl tracking-tight text-slate-800 leading-none whitespace-nowrap">
+                <span className="font-bold">Hola</span> Miguel!
+              </h2>
+              {powerMode === 'max' && (
+                <div className="flex items-center gap-1 mt-1 text-[10px] uppercase tracking-wider font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full w-fit border border-orange-200">
+                  <Zap className="w-3 h-3 fill-orange-600 text-orange-600" /> Turbo Activado
+                </div>
+              )}
+            </div>
           </div>
 
           <nav className="flex-1 space-y-1">
@@ -265,6 +297,7 @@ export default function App() {
               onClick={() => {
                 setActiveTab('archivos');
                 setIsFotosSubmenuOpen(false);
+                setIsMobileMenuOpen(false);
               }}
               className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'archivos'
                 ? 'bg-blue-50 text-blue-600 font-medium'
@@ -272,7 +305,7 @@ export default function App() {
                 }`}
             >
               <Folder className={`w-4 h-4 shrink-0 ${activeTab === 'archivos' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Archivos</span>
+              <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Archivos</span>
             </button>
 
 
@@ -290,7 +323,7 @@ export default function App() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <ImageIcon className={`w-4 h-4 shrink-0 ${['fotos', 'albums', 'people', 'map', 'trash', 'buscar', 'duplicates'].includes(activeTab) ? 'text-blue-600' : 'text-slate-400'}`} />
-                  <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Fotos</span>
+                  <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Fotos</span>
                 </div>
               </button>
 
@@ -298,46 +331,46 @@ export default function App() {
               <div className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${isFotosSubmenuOpen ? 'max-h-[280px] opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="flex flex-col pl-0 group-hover:pl-7 pr-1 py-1 mt-1 space-y-0.5 relative before:content-[''] before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-slate-200 before:opacity-0 group-hover:before:opacity-100 transition-all duration-300">
                   <button
-                    onClick={() => setActiveTab('fotos')}
+                    onClick={() => { setActiveTab('fotos'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'fotos' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <LayoutGrid className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'fotos' ? 'text-blue-600' : ''}`} />
-                    <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Galería</span>
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Galería</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('albums')}
+                    onClick={() => { setActiveTab('albums'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'albums' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Book className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'albums' ? 'text-blue-600' : ''}`} />
-                    <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Álbumes</span>
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Álbumes</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('people')}
+                    onClick={() => { setActiveTab('people'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'people' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Users className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'people' ? 'text-blue-600' : ''}`} />
-                    <span className="leading-tight truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Personas</span>
+                    <span className="leading-tight truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Personas</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('map')}
+                    onClick={() => { setActiveTab('map'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'map' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Map className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'map' ? 'text-blue-600' : ''}`} />
-                    <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Mapa</span>
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Mapa</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('duplicates')}
+                    onClick={() => { setActiveTab('duplicates'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'duplicates' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Copy className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'duplicates' ? 'text-blue-600' : ''}`} />
-                    <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Duplicados</span>
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Duplicados</span>
                   </button>
                   <button
-                    onClick={() => setActiveTab('trash')}
+                    onClick={() => { setActiveTab('trash'); setIsMobileMenuOpen(false); }}
                     className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'trash' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
                   >
                     <Trash2 className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'trash' ? 'text-blue-600' : ''}`} />
-                    <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Papelera</span>
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Papelera</span>
                   </button>
                 </div>
               </div>
@@ -348,30 +381,34 @@ export default function App() {
             {sidebarActions && activeTab === 'archivos' ? (
               sidebarActions
             ) : (
-              <label
-                className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap ${['buscar', 'trash'].includes(activeTab) || isUploading
-                  ? 'bg-slate-100 text-slate-400 pointer-events-none opacity-50'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md'
-                  }`}
-              >
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileChange}
-                  accept={['fotos', 'albums', 'people', 'map'].includes(activeTab) ? 'image/*,video/*' : undefined}
-                />
-                {isUploading ? (
-                  <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5 shrink-0" />
-                    <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
-                      Añadir Fotos
-                    </span>
-                  </>
-                )}
-              </label>
+              <div className="flex flex-col gap-1 w-full">
+
+                {/* Subir Fotos (Archivos sueltos) */}
+                <label
+                  className={`flex items-center justify-center font-medium h-10 w-10 group-hover:w-full group-hover:justify-start group-hover:px-3.5 rounded-full group-hover:rounded-xl transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap z-10 group-hover:h-11 ${['buscar', 'trash'].includes(activeTab) || isUploading
+                    ? 'bg-slate-100 text-slate-400 pointer-events-none opacity-50'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md'
+                    }`}
+                  title="Subir Fotos"
+                >
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                    accept={['fotos', 'albums', 'people', 'map'].includes(activeTab) ? 'image/*,video/*' : undefined}
+                  />
+                  {isUploading ? (
+                    <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5 shrink-0 block md:group-hover:hidden" />
+                      <Cloud className="w-5 h-5 shrink-0 hidden md:group-hover:block" />
+                      <span className="max-w-full md:max-w-0 md:group-hover:max-w-[200px] ml-2.5 md:ml-0 md:group-hover:ml-2.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 overflow-hidden font-medium text-[15px]">Subir Fotos</span>
+                    </>
+                  )}
+                </label>
+              </div>
             )}
           </div>
         </div>
@@ -379,7 +416,7 @@ export default function App() {
 
       {/* Main Content */}
       <main 
-        className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 ml-[64px] relative"
+        className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 w-full md:ml-[64px] relative"
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -403,8 +440,14 @@ export default function App() {
           </div>
         )}
 
-        <header className="h-20 flex items-center justify-between px-10 border-b border-slate-200/50 bg-white/40 backdrop-blur-sm z-10 shrink-0">
-          <div className="flex items-center gap-3 text-2xl font-semibold tracking-tight capitalize w-1/3">
+        <header className="h-16 md:h-20 flex items-center justify-between px-4 md:px-10 border-b border-slate-200/50 bg-white/40 backdrop-blur-sm z-10 shrink-0">
+          <div className="flex items-center gap-2 md:gap-3 text-xl md:text-2xl font-semibold tracking-tight capitalize w-auto md:w-1/3">
+            <button 
+              className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
             {activeTab === 'buscar' && (
               <button 
                 onClick={() => {
@@ -493,16 +536,12 @@ export default function App() {
           )}
 
           <div className="flex items-center gap-4 w-1/3 justify-end">
+            {headerActions}
             {importingCount > 0 && (
               <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100/50 shadow-sm animate-in fade-in zoom-in duration-300">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm font-medium tracking-tight">Importando...</span>
               </div>
-            )}
-            {(activeTab === 'fotos' || activeTab === 'archivos') && (
-              <button onClick={() => setIsDownloadModalOpen(true)} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="Descargar App de Escritorio">
-                <MonitorDown className="w-5 h-5" />
-              </button>
             )}
           </div>
         </header>
@@ -610,39 +649,6 @@ export default function App() {
           </p>
         </div>
       )}
-
-      {/* Modal Descarga */}
-      {isDownloadModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200" onClick={() => setIsDownloadModalOpen(false)}>
-           <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col items-center" onClick={e => e.stopPropagation()}>
-             <button onClick={() => setIsDownloadModalOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-               <XCircle className="w-6 h-6" />
-             </button>
-             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-               <Cloud className="w-8 h-8 text-blue-600" />
-             </div>
-             <h2 className="text-2xl font-bold text-slate-800 text-center mb-3">Descarga la App de Escritorio</h2>
-             <p className="text-slate-500 text-center mb-8 text-sm max-w-md">Sincroniza tus carpetas automáticamente en segundo plano sin necesidad de tener el navegador abierto.</p>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 hover:border-slate-300 transition-colors flex flex-col items-center text-center">
-                 <Apple className="w-10 h-10 text-slate-700 mb-3" />
-                 <h3 className="font-semibold text-slate-800 mb-1">Para Mac</h3>
-                 <a href="/public/downloads/CloudSync-mac.dmg" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors">
-                   <Download className="w-4 h-4" /> Descargar
-                 </a>
-               </div>
-               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 hover:border-slate-300 transition-colors flex flex-col items-center text-center">
-                 <Monitor className="w-10 h-10 text-blue-500 mb-3" />
-                 <h3 className="font-semibold text-slate-800 mb-1">Para Windows</h3>
-                 <a href="/public/downloads/CloudSync-win.exe" download className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors">
-                   <Download className="w-4 h-4" /> Descargar
-                 </a>
-               </div>
-             </div>
-           </div>
-        </div>
-      )}
-
     </div>
   );
 }

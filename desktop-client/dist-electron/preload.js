@@ -1,1 +1,34 @@
-let e=require("electron");e.contextBridge.exposeInMainWorld(`electronAPI`,{getConfig:()=>e.ipcRenderer.invoke(`get-config`),setPowerMode:t=>e.ipcRenderer.invoke(`set-power-mode`,t),setServerUrl:t=>e.ipcRenderer.invoke(`set-server-url`,t),pickFolder:()=>e.ipcRenderer.invoke(`pick-folder`),linkFolder:(t,n)=>e.ipcRenderer.invoke(`link-folder`,{path:t,mode:n}),unlinkFolder:t=>e.ipcRenderer.invoke(`unlink-folder`,t),getSyncState:()=>e.ipcRenderer.invoke(`get-sync-state`),pauseSync:()=>e.ipcRenderer.invoke(`pause-sync`),resumeSync:()=>e.ipcRenderer.invoke(`resume-sync`),onSyncStatus:t=>(e.ipcRenderer.on(`sync-status`,t),()=>e.ipcRenderer.removeListener(`sync-status`,t)),getAutoStart:()=>e.ipcRenderer.invoke(`get-auto-start`),setAutoStart:t=>e.ipcRenderer.invoke(`set-auto-start`,t),backupDB:()=>e.ipcRenderer.invoke(`backup-db`),openStorage:()=>e.ipcRenderer.invoke(`open-storage`),openUrl:t=>e.ipcRenderer.invoke(`open-url`,t),onServerStats:t=>(e.ipcRenderer.on(`server-stats`,t),()=>e.ipcRenderer.removeListener(`server-stats`,t)),onServerLog:t=>(e.ipcRenderer.on(`server-log`,t),()=>e.ipcRenderer.removeListener(`server-log`,t))});
+let electron = require("electron");
+//#region electron/preload.ts
+electron.contextBridge.exposeInMainWorld("electronAPI", {
+	getConfig: () => electron.ipcRenderer.invoke("get-config"),
+	setPowerMode: (mode) => electron.ipcRenderer.invoke("set-power-mode", mode),
+	setServerUrl: (url) => electron.ipcRenderer.invoke("set-server-url", url),
+	pickFolder: () => electron.ipcRenderer.invoke("pick-folder"),
+	linkFolder: (path, mode) => electron.ipcRenderer.invoke("link-folder", {
+		path,
+		mode
+	}),
+	unlinkFolder: (path) => electron.ipcRenderer.invoke("unlink-folder", path),
+	getSyncState: () => electron.ipcRenderer.invoke("get-sync-state"),
+	pauseSync: () => electron.ipcRenderer.invoke("pause-sync"),
+	resumeSync: () => electron.ipcRenderer.invoke("resume-sync"),
+	onSyncStatus: (callback) => {
+		electron.ipcRenderer.on("sync-status", callback);
+		return () => electron.ipcRenderer.removeListener("sync-status", callback);
+	},
+	getAutoStart: () => electron.ipcRenderer.invoke("get-auto-start"),
+	setAutoStart: (enable) => electron.ipcRenderer.invoke("set-auto-start", enable),
+	backupDB: () => electron.ipcRenderer.invoke("backup-db"),
+	openStorage: () => electron.ipcRenderer.invoke("open-storage"),
+	openUrl: (url) => electron.ipcRenderer.invoke("open-url", url),
+	onServerStats: (callback) => {
+		electron.ipcRenderer.on("server-stats", callback);
+		return () => electron.ipcRenderer.removeListener("server-stats", callback);
+	},
+	onServerLog: (callback) => {
+		electron.ipcRenderer.on("server-log", callback);
+		return () => electron.ipcRenderer.removeListener("server-log", callback);
+	}
+});
+//#endregion

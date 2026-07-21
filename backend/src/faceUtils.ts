@@ -40,9 +40,15 @@ export async function detectFacesInImage(imagePath: string) {
 
     const tensor = tf.tensor3d(rgbData, [info.height, info.width, 3], 'int32');
     
-    const detections = await faceapi.detectAllFaces(tensor as any)
+    const detectionPromise = faceapi.detectAllFaces(tensor as any)
       .withFaceLandmarks()
       .withFaceDescriptors();
+      
+    const timeoutPromise = new Promise<any[]>((resolve, reject) => {
+      setTimeout(() => reject(new Error('TIMEOUT_FACE_DETECTION')), 60000);
+    });
+
+    const detections = await Promise.race([detectionPromise, timeoutPromise]);
       
     tensor.dispose(); 
 

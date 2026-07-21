@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Leaf, Zap, Terminal } from 'lucide-react';
+import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play } from 'lucide-react';
 
 export default function App() {
-  const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: string[], powerMode?: 'eco' | 'max' } | null>(null);
+  const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ file: string, status: 'synced' | 'error' | 'syncing' | 'paused', progress?: number } | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>('Buscando últimas actualizaciones...');
   const [isPaused, setIsPaused] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -38,21 +37,15 @@ export default function App() {
       }
     });
 
-    const unsubscribeLog = (window as any).electronAPI.onServerLog((_: any, log: any) => {
-      const logText = typeof log === 'string' ? log : (log?.text || JSON.stringify(log));
-      setLogs(prev => [...prev, logText].slice(-100));
-    });
-
     return () => {
       if (unsubscribe) unsubscribe();
-      if (unsubscribeLog) unsubscribeLog();
     };
   }, []);
 
-  const handleLinkFolder = async () => {
+  const handleLinkFolder = async (mode: 'index' | 'sync') => {
     const path = await (window as any).electronAPI.pickFolder();
     if (path) {
-      const newCfg = await (window as any).electronAPI.linkFolder(path);
+      const newCfg = await (window as any).electronAPI.linkFolder(path, mode);
       setConfig(newCfg);
     }
   };
@@ -60,6 +53,11 @@ export default function App() {
   const handleUnlinkFolder = async (path: string) => {
     const newCfg = await (window as any).electronAPI.unlinkFolder(path);
     setConfig(newCfg);
+  };
+
+  const handlePowerMode = async (mode: 'eco' | 'max') => {
+    await (window as any).electronAPI.setPowerMode(mode);
+    setConfig(prev => prev ? { ...prev, powerMode: mode } : prev);
   };
 
   const togglePause = async () => {
@@ -72,13 +70,6 @@ export default function App() {
       setIsPaused(state.paused);
       setPendingFiles(state.pendingFiles || []);
     }
-  };
-
-  const togglePowerMode = async () => {
-    if (!config) return;
-    const newMode = config.powerMode === 'eco' ? 'max' : 'eco';
-    await (window as any).electronAPI.setPowerMode(newMode);
-    setConfig({ ...config, powerMode: newMode });
   };
 
   const openWeb = () => {
@@ -106,13 +97,25 @@ export default function App() {
           <span className="text-xl font-medium text-slate-800 tracking-tight">Cloud Sync</span>
         </div>
 
-        <button 
-          onClick={handleLinkFolder}
-          className="flex items-center justify-center gap-2 bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-md hover:border-blue-100 hover:bg-slate-50 text-slate-700 font-medium px-4 py-3.5 rounded-2xl mb-8 transition-all"
-        >
-          <FolderPlus className="w-5 h-5 text-blue-600" />
-          Añadir carpeta...
-        </button>
+        <div className="flex flex-col gap-2 mb-8">
+          <button 
+            onClick={() => handleLinkFolder('sync')}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md text-white font-medium px-4 py-3.5 rounded-2xl transition-all"
+            title="Sube los archivos de esta carpeta a la nube y los mantiene sincronizados"
+          >
+            <Cloud className="w-5 h-5 shrink-0" />
+            <span className="truncate">Sincronizar carpeta</span>
+          </button>
+          
+          <button 
+            onClick={() => handleLinkFolder('index')}
+            className="flex items-center justify-center gap-2 bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-sm hover:border-blue-100 hover:bg-slate-50 text-slate-700 font-medium px-4 py-3 rounded-2xl transition-all"
+            title="Solo analiza rostros y metadatos localmente para buscar, sin subir fotos a la nube (ahorra espacio)"
+          >
+            <FolderPlus className="w-5 h-5 text-blue-600 shrink-0" />
+            <span className="truncate">Solo indexar (No subir)</span>
+          </button>
+        </div>
 
         <div className="flex flex-col gap-2 mt-2">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Enlaces útiles</p>
@@ -125,20 +128,24 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 mt-6">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Energía</p>
-          <button 
-            onClick={togglePowerMode}
-            className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${config.powerMode === 'eco' ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
-          >
-            <div className="flex items-center gap-3">
-              {config.powerMode === 'eco' ? <Leaf className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
-              <span>Modo {config.powerMode === 'eco' ? 'Eco' : 'Turbo'}</span>
-            </div>
-            <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${config.powerMode === 'eco' ? 'bg-green-200' : 'bg-amber-200'}`}>
-              <div className={`w-3 h-3 rounded-full bg-white transition-transform ${config.powerMode === 'eco' ? 'translate-x-0' : 'translate-x-4'}`}></div>
-            </div>
-          </button>
+        <div className="flex flex-col gap-2 mt-4">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Rendimiento (Fotos)</p>
+          <div className="flex bg-slate-100/80 rounded-xl p-1 mx-2">
+            <button 
+              onClick={() => handlePowerMode('eco')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'eco' || !config?.powerMode ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+              title="Ahorra batería, ideal para el día a día"
+            >
+              Normal
+            </button>
+            <button 
+              onClick={() => handlePowerMode('max')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'max' ? 'bg-blue-600 shadow-sm text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+              title="Usa todos los núcleos para cargar más rápido (consume más batería)"
+            >
+              Máximo
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -201,45 +208,25 @@ export default function App() {
                   <p className="text-[13px] text-slate-400 mt-1">Añade una carpeta local para empezar a sincronizar</p>
                 </div>
               ) : (
-                config.linkedFolders.map((f: any) => {
-                  const folderPath = typeof f === 'string' ? f : f.path;
-                  return (
-                    <div key={folderPath} className="flex items-center justify-between p-4 rounded-[1.25rem] hover:bg-slate-50 border border-slate-100 hover:border-slate-200 group transition-all">
-                      <div className="flex items-center gap-4 overflow-hidden">
-                        <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                          <Folder className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[15px] font-medium text-slate-800 truncate">{folderPath.split(/[/\\]/).pop()}</p>
-                          <p className="text-xs text-slate-400 truncate mt-0.5" title={folderPath}>{folderPath}</p>
-                        </div>
+                config.linkedFolders.map(folderObj => (
+                  <div key={folderObj.path} className="flex items-center justify-between p-4 rounded-[1.25rem] hover:bg-slate-50 border border-slate-100 hover:border-slate-200 group transition-all">
+                    <div className="flex items-center gap-4 overflow-hidden">
+                      <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                        <Folder className="w-5 h-5 text-blue-600" />
                       </div>
-                      <button 
-                        onClick={() => handleUnlinkFolder(folderPath)}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-all shrink-0"
-                        title="Desvincular"
-                      >
-                        <XCircle className="w-5 h-5" />
-                      </button>
+                      <div className="min-w-0">
+                        <p className="text-[15px] font-medium text-slate-800 truncate">{folderObj.path.split(/[/\\]/).pop()}</p>
+                        <p className="text-xs text-slate-400 truncate mt-0.5" title={folderObj.path}>{folderObj.path}</p>
+                      </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Logs Terminal */}
-          <div className="bg-slate-900 rounded-[1.75rem] p-6 shadow-lg mt-2 min-h-[200px] flex flex-col">
-            <div className="flex items-center gap-2 mb-4">
-              <Terminal className="w-5 h-5 text-slate-400" />
-              <h2 className="text-sm font-medium text-slate-300">Registro de Actividad</h2>
-            </div>
-            <div className="flex-1 bg-black/40 rounded-xl p-4 overflow-y-auto max-h-[250px] font-mono text-[11px] text-slate-300 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-              {logs.length === 0 ? (
-                <p className="text-slate-500 italic">Esperando actividad...</p>
-              ) : (
-                logs.map((log, i) => (
-                  <div key={i} className="break-all border-l-2 border-slate-700 pl-2 opacity-90 hover:opacity-100">{log}</div>
+                    <button 
+                      onClick={() => handleUnlinkFolder(folderObj.path)}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-all shrink-0"
+                      title="Desvincular"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>

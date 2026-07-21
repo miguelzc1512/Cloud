@@ -11,13 +11,17 @@ const blurhash_1 = require("blurhash");
 const path_1 = __importDefault(require("path"));
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const transformers_1 = require("@huggingface/transformers");
+const faceUtils_1 = require("./faceUtils");
+const crypto_1 = __importDefault(require("crypto"));
+require("./docProcessor");
 // Configurar paths
 const storagePath = process.env.STORAGE_PATH || '../storage';
 const absoluteStoragePath = path_1.default.resolve(__dirname, '..', storagePath);
 // Configurar Redis
-const redisConnection = new ioredis_1.default({ maxRetriesPerRequest: null });
+const redisConnection = new ioredis_1.default({ host: process.env.REDIS_HOST || '127.0.0.1', maxRetriesPerRequest: null });
 // Configurar SQLite
-const dbPath = path_1.default.resolve(__dirname, '..', 'nube.db');
+const STORAGE_PATH = process.env.STORAGE_PATH || path_1.default.resolve(__dirname, '..', '..', 'storage');
+const dbPath = path_1.default.resolve(STORAGE_PATH, 'nube.db');
 const db = new better_sqlite3_1.default(dbPath);
 db.pragma('journal_mode = WAL');
 // ─── AI Models (Singleton for the worker) ─────────────────────────────
@@ -51,10 +55,11 @@ const updateFileStmt = db.prepare(`
 `);
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 const worker = new bullmq_1.Worker('image-processing', async (job) => {
-    const { fileId, savedName, originalName, mimeType } = job.data;
+    const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
     console.log(`[Worker] Empezando a procesar ${originalName} (${fileId})`);
     try {
-        let filePath = path_1.default.join(absoluteStoragePath, savedName);
+        const start = Date.now();
+        let filePath = absolutePath || path_1.default.join(absoluteStoragePath, savedName);
         let tempJpegPath = null;
         // Convertir HEIC a JPG usando sips nativo de macOS para evitar crashes de libheif
         if (originalName.toLowerCase().endsWith('.heic')) {
@@ -78,8 +83,13 @@ const worker = new bullmq_1.Worker('image-processing', async (job) => {
         }
         const image = (0, sharp_1.default)(filePath, { unlimited: true }).rotate();
         const metadata = await image.metadata();
+        // Ensure thumbnails directory exists
+        const thumbnailsDir = path_1.default.join(absoluteStoragePath, 'thumbnails');
+        if (!require('fs').existsSync(thumbnailsDir)) {
+            require('fs').mkdirSync(thumbnailsDir, { recursive: true });
+        }
         // A) Generar miniatura WebP (Max 800px)
-        const thumbnailName = `thumb-${savedName}.webp`;
+        const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
         const thumbnailPath = path_1.default.join(absoluteStoragePath, thumbnailName);
         await image.clone()
             .resize({ width: 800, withoutEnlargement: true })
@@ -87,7 +97,7 @@ const worker = new bullmq_1.Worker('image-processing', async (job) => {
             .toFile(thumbnailPath);
         // A.2) Si es HEIC, generar también una versión web de alta resolución
         if (originalName.toLowerCase().endsWith('.heic')) {
-            const webPath = path_1.default.join(absoluteStoragePath, `web-${savedName}.webp`);
+            const webPath = path_1.default.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
             await image.clone()
                 .resize({ width: 2560, withoutEnlargement: true })
                 .webp({ quality: 90 })
@@ -140,23 +150,51 @@ const worker = new bullmq_1.Worker('image-processing', async (job) => {
             latitude,
             longitude
         });
-        // F) Extraer rostros enviando a Python API (asíncrono con await, dentro del worker)
+        // F) Extraer rostros enviando al modelo local de node.js
         try {
-            const pyRes = await fetch('http://localhost:8000/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagePath: filePath }),
-                signal: AbortSignal.timeout(60000)
-            });
-            if (pyRes.ok) {
-                const data = await pyRes.json();
-                if (data.faces && data.faces.length > 0) {
-                    updateFacesStmt.run(JSON.stringify(data.faces), fileId);
+            console.log(`[Worker] Detectando rostros en miniatura de ${originalName}`);
+            const faces = await (0, faceUtils_1.detectFacesInImage)(thumbnailPath);
+            if (faces && faces.length > 0) {
+                // Almacenar info en la base de datos de manera relacional (y agrupar)
+                for (const face of faces) {
+                    const descriptorStr = JSON.stringify(face.descriptor);
+                    // Buscar si el rostro ya pertenece a alguien (Euclidean distance < 0.6)
+                    const existingFaces = db.prepare(`SELECT id, personId, descriptor FROM file_faces`).all();
+                    let matchedPersonId = null;
+                    let minDistance = 0.5; // Sweet spot for face-api.js to balance false positives and false negatives
+                    for (const ef of existingFaces) {
+                        const efDescriptor = JSON.parse(ef.descriptor);
+                        let distance = 0;
+                        for (let i = 0; i < 128; i++) {
+                            distance += Math.pow(face.descriptor[i] - efDescriptor[i], 2);
+                        }
+                        distance = Math.sqrt(distance);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            matchedPersonId = ef.personId;
+                        }
+                    }
+                    // Si no hace match, crear una nueva persona anónima
+                    if (!matchedPersonId) {
+                        matchedPersonId = crypto_1.default.randomUUID();
+                        db.prepare(`INSERT INTO people (id, name, coverFileId) VALUES (?, ?, ?)`).run(matchedPersonId, 'Desconocido', fileId);
+                    }
+                    else {
+                        // Actualizar portada si no tiene
+                        db.prepare(`UPDATE people SET coverFileId = COALESCE(coverFileId, ?) WHERE id = ?`).run(fileId, matchedPersonId);
+                    }
+                    // Guardar el rostro detectado
+                    db.prepare(`
+            INSERT INTO file_faces (id, fileId, personId, descriptor, boxX, boxY, boxW, boxH)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(crypto_1.default.randomUUID(), fileId, matchedPersonId, descriptorStr, face.box.x, face.box.y, face.box.width, face.box.height);
                 }
+                // Guardar por retrocompatibilidad en 'faces' column
+                updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
             }
         }
         catch (e) {
-            console.log(`[Worker] Python face API falló o no disponible para ${originalName}`);
+            console.log(`[Worker] Local face API falló para ${originalName}:`, e);
         }
         console.log(`[Worker] Finalizado con éxito ${originalName}`);
         if (tempJpegPath) {

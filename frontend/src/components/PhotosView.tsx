@@ -1,6 +1,6 @@
 import { useState, useCallback, memo, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil, ChevronLeft, ChevronRight, ZoomOut, Maximize } from 'lucide-react';
+import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil, ChevronLeft, ChevronRight, ZoomOut, Maximize, Download } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import TimelineScrollbar from './TimelineScrollbar';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -298,10 +298,21 @@ const PhotosView = forwardRef<PhotosViewRef, PhotosViewProps>(({ files, onDelete
         
         <div className="flex items-center gap-2">
           {renderSelectionActions ? renderSelectionActions(Array.from(selectedFiles), () => setSelectedFiles(new Set()), selectAll) : (
-            onBulkDelete && (
-              <div className="relative" ref={bulkDeleteMenuRef}>
-                <button 
-                  onClick={() => setShowBulkDeleteConfirm(!showBulkDeleteConfirm)}
+            <>
+              <button 
+                onClick={() => {
+                  const ids = Array.from(selectedFiles).join(',');
+                  window.location.href = `/api/download/zip?ids=${ids}`;
+                }}
+                className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
+                title="Descargar"
+              >
+                <Download className="w-6 h-6" />
+              </button>
+              {onBulkDelete && (
+                <div className="relative" ref={bulkDeleteMenuRef}>
+                  <button 
+                    onClick={() => setShowBulkDeleteConfirm(!showBulkDeleteConfirm)}
                   className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
                   title="Eliminar"
                 >
@@ -325,9 +336,10 @@ const PhotosView = forwardRef<PhotosViewRef, PhotosViewProps>(({ files, onDelete
                   </div>
                 )}
               </div>
-            )
-          )}
-        </div>
+            )}
+          </>
+        )}
+      </div>
       </div>
       <div className="px-4 sm:px-6 md:px-8 max-w-[2000px] mx-auto pb-32" style={paddingTop ? { paddingTop } : undefined}>
         {orderedGroups.map((group) => {

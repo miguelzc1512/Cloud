@@ -6,13 +6,7 @@ import axios from 'axios';
 import FormData from 'form-data';
 const isDev = process.env.NODE_ENV !== 'production';
 
-// Iniciar servidor backend unificado internamente
-process.env.STORAGE_PATH = path.join(app.getPath('userData'), 'cloud-storage');
-if (!fs.existsSync(process.env.STORAGE_PATH)) {
-  fs.mkdirSync(process.env.STORAGE_PATH, { recursive: true });
-}
-require('./server/server');
-
+// Cliente de Escritorio - Sin servidor local (se conecta al backend principal)
 // Configuraciones locales
 const configPath = path.join(app.getPath('userData'), 'sync-config.json');
 const statePath = path.join(app.getPath('userData'), 'sync-state.json');
@@ -71,11 +65,11 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
   });
 
   watcher.on('add', async (filePath) => {
-    // Verificar si es imagen/video básico
+    // Verificar si es imagen, video o documento soportado
     const ext = path.extname(filePath).toLowerCase();
-    const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.mp4', '.mov', '.avi'].includes(ext);
+    const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
     
-    if (isMedia && !uploadedState[filePath]) {
+    if (isSupported && !uploadedState[filePath]) {
       if (isSyncPaused) {
         if (!pendingUploads.includes(filePath)) {
           pendingUploads.push(filePath);
@@ -110,7 +104,7 @@ async function indexFile(filePath: string) {
       win.webContents.send('sync-status', { file: filePath, status: 'syncing', progress: 50 });
     });
 
-    await axios.post(`http://localhost:3001/api/index-file`, { absolutePath: filePath });
+    await axios.post(`${config.serverUrl}/api/index-file`, { absolutePath: filePath });
 
     uploadedState[filePath] = true;
     saveState();
@@ -122,6 +116,9 @@ async function indexFile(filePath: string) {
     console.log(`Indexed successfully: ${filePath}`);
   } catch (error: any) {
     console.error(`Failed to index ${filePath}:`, error.message);
+    if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+    isSyncPaused = true;
+    notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
       win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath) });
     });
@@ -162,6 +159,9 @@ async function uploadFile(filePath: string) {
     console.log(`Uploaded successfully: ${filePath}`);
   } catch (error: any) {
     console.error(`Failed to upload ${filePath}:`, error.message);
+    if (!pendingUploads.includes(filePath)) pendingUploads.push(filePath);
+    isSyncPaused = true;
+    notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
       win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath) });
     });
@@ -273,16 +273,16 @@ app.on('window-all-closed', () => {
 });
 
 // IPC Handlers
-const { updatePowerMode } = require('./server/server');
-// Initialize with loaded config
-setTimeout(() => updatePowerMode(config.powerMode), 1000);
+// IPC Handlers
+// (updatePowerMode would now go to central backend via API if needed)
 
 ipcMain.handle('get-config', () => config);
 
 ipcMain.handle('set-power-mode', (event, mode: 'eco' | 'max') => {
   config.powerMode = mode;
   saveConfig();
-  updatePowerMode(mode);
+  // Optional: Send to central server via axios if it has an endpoint
+  axios.post(`${config.serverUrl}/api/config/power-mode`, { mode }).catch(()=>{});
 });
 
 ipcMain.handle('set-server-url', (event, url) => {
@@ -342,7 +342,7 @@ ipcMain.handle('link-folder', (event, { path: folderPath, mode }) => {
     
     // Si es index, corremos scan-local una vez para asegurar todo el árbol
     if (mode === 'index') {
-      axios.post('http://localhost:3001/api/scan-local', { directoryPath: folderPath }).catch(console.error);
+      axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath }).catch(console.error);
     }
   }
   return config;

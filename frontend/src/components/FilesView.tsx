@@ -58,6 +58,8 @@ export default function FilesView({
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('name');
+  const [sortDesc, setSortDesc] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [draggedDocId, setDraggedDocId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -77,35 +79,30 @@ export default function FilesView({
         <div className="flex flex-col gap-1 w-full">
           <button 
             onClick={() => setIsCreatingFolder(true)}
-            className="hidden group-hover:flex w-full items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+            className="hidden group-hover:flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-all text-slate-700"
             title="Nueva Carpeta"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <FolderPlus className="w-4 h-4 shrink-0 text-slate-400" />
-              <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Nueva Carpeta</span>
-            </div>
+            <FolderPlus className="w-5 h-5 shrink-0 text-slate-500" />
+            <span className="font-medium text-[15px]">Nueva Carpeta</span>
           </button>
           
           <button 
             onClick={() => folderInputRef.current?.click()}
-            className="hidden group-hover:flex w-full items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 mb-2"
+            className="hidden group-hover:flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-slate-100 transition-all text-slate-700 mb-1"
             title="Subir Carpeta"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <UploadCloud className="w-4 h-4 shrink-0 text-slate-400" />
-              <span className="truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">Subir Carpeta</span>
-            </div>
+            <UploadCloud className="w-5 h-5 shrink-0 text-slate-500" />
+            <span className="font-medium text-[15px]">Subir Carpeta</span>
           </button>
           
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center font-medium h-10 w-10 group-hover:w-full rounded-full transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md"
+            className="flex items-center justify-center font-medium h-10 w-10 group-hover:w-full group-hover:justify-start group-hover:px-3.5 rounded-full group-hover:rounded-xl transition-all duration-300 shadow-sm cursor-pointer text-sm overflow-hidden whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 hover:shadow-md group-hover:h-11"
             title="Subir Archivos"
           >
-            <Plus className="w-5 h-5 shrink-0" />
-            <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden">
-              Subir Archivos
-            </span>
+            <Plus className="w-5 h-5 shrink-0 block group-hover:hidden" />
+            <FileText className="w-5 h-5 shrink-0 hidden group-hover:block" />
+            <span className="max-w-0 group-hover:max-w-[200px] ml-0 group-hover:ml-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 overflow-hidden font-medium text-[15px]">Subir Archivos</span>
           </button>
         </div>
       );
@@ -237,9 +234,32 @@ export default function FilesView({
   breadcrumbs.unshift({ id: null, name: 'Mi Nube' });
 
   // Current view items
-  const currentFolders = folders.filter(f => f.parentId === currentFolderId);
-  // Ensure we match null to null
-  const currentDocuments = documents.filter(d => (d.clusterId || null) === (currentFolderId || null));
+  let currentFolders = folders.filter(f => f.parentId === currentFolderId);
+  let currentDocuments = documents.filter(d => (d.clusterId || null) === (currentFolderId || null));
+
+  // Sorting logic
+  const sortMultiplier = sortDesc ? -1 : 1;
+  currentFolders.sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name) * sortMultiplier;
+    if (sortBy === 'date') return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * sortMultiplier;
+    return 0; // Folders don't have size
+  });
+
+  currentDocuments.sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name) * sortMultiplier;
+    if (sortBy === 'date') return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * sortMultiplier;
+    if (sortBy === 'size') return (a.size - b.size) * sortMultiplier;
+    return 0;
+  });
+
+  const toggleSort = (field: 'name' | 'date' | 'size') => {
+    if (sortBy === field) {
+      setSortDesc(!sortDesc);
+    } else {
+      setSortBy(field);
+      setSortDesc(field === 'date' || field === 'size'); // Default to desc for date/size
+    }
+  };
 
   const handleSelect = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -311,7 +331,10 @@ export default function FilesView({
           </div>
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => {/* TODO: Implement multiple download */}}
+              onClick={() => {
+                const ids = Array.from(selectedIds).join(',');
+                window.location.href = `/api/download/zip?ids=${ids}`;
+              }}
               className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
               title="Descargar"
             >
@@ -446,14 +469,23 @@ export default function FilesView({
                 {viewMode === 'list' ? (
                   <>
                     <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                      <div className="col-span-8 md:col-span-6 flex items-center gap-2 cursor-pointer hover:text-slate-800">
-                        Nombre <ChevronDown className="w-3 h-3" />
+                      <div 
+                        className="col-span-8 md:col-span-6 flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                        onClick={() => toggleSort('name')}
+                      >
+                        Nombre {sortBy === 'name' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
                       </div>
-                      <div className="col-span-3 hidden md:flex items-center gap-2 cursor-pointer hover:text-slate-800">
-                        Fecha de modificación
+                      <div 
+                        className="col-span-3 hidden md:flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                        onClick={() => toggleSort('date')}
+                      >
+                        Fecha {sortBy === 'date' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
                       </div>
-                      <div className="col-span-3 md:col-span-2 text-right cursor-pointer hover:text-slate-800">
-                        Tamaño del archivo
+                      <div 
+                        className="col-span-3 md:col-span-2 flex items-center justify-end gap-2 cursor-pointer hover:text-slate-800"
+                        onClick={() => toggleSort('size')}
+                      >
+                        Tamaño {sortBy === 'size' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
                       </div>
                       <div className="col-span-1 text-right"></div>
                     </div>

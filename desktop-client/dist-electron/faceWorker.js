@@ -1,1 +1,3765 @@
-var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=Object.getOwnPropertyNames,i=Object.getPrototypeOf,a=Object.prototype.hasOwnProperty,o=(e,t)=>()=>(t||(e((t={exports:{}}).exports,t),e=null),t.exports),s=(e,i,o,s)=>{if(i&&typeof i==`object`||typeof i==`function`)for(var c=r(i),l=0,u=c.length,d;l<u;l++)d=c[l],!a.call(e,d)&&d!==o&&t(e,d,{get:(e=>i[e]).bind(null,d),enumerable:!(s=n(i,d))||s.enumerable});return e},c=(n,r,a)=>(a=n==null?{}:e(i(n)),s(r||!n||!n.__esModule?t(a,`default`,{value:n,enumerable:!0}):a,n));let l=require("worker_threads"),u=require("@tensorflow/tfjs");u=c(u),require("@tensorflow/tfjs-backend-wasm");let d=require("sharp");d=c(d);var f=c(o(((e,t)=>{var n=Object.create,r=Object.defineProperty,i=Object.getOwnPropertyDescriptor,a=Object.getOwnPropertyNames,o=Object.getPrototypeOf,s=Object.prototype.hasOwnProperty,c=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),l=(e,t)=>{for(var n in t)r(e,n,{get:t[n],enumerable:!0})},u=(e,t,n,o)=>{if(t&&typeof t==`object`||typeof t==`function`)for(let c of a(t))!s.call(e,c)&&c!==n&&r(e,c,{get:()=>t[c],enumerable:!(o=i(t,c))||o.enumerable});return e},d=(e,t,i)=>(i=e==null?{}:n(o(e)),u(t||!e||!e.__esModule?r(i,`default`,{value:e,enumerable:!0}):i,e)),f=e=>u(r({},`__esModule`,{value:!0}),e),p=c((e,t)=>{"use strict";var n=Object.defineProperty,r=Object.getOwnPropertyDescriptor,i=Object.getOwnPropertyNames,a=Object.prototype.hasOwnProperty,o=(e,t)=>{for(var r in t)n(e,r,{get:t[r],enumerable:!0})},s=(e,t,o,s)=>{if(t&&typeof t==`object`||typeof t==`function`)for(let c of i(t))!a.call(e,c)&&c!==o&&n(e,c,{get:()=>t[c],enumerable:!(s=r(t,c))||s.enumerable});return e},c=(e,t,n)=>(s(e,t,`default`),n&&s(n,t,`default`)),l=e=>s(n({},`__esModule`,{value:!0}),e),u={};o(u,{version:()=>f}),t.exports=l(u),c(u,require("@tensorflow/tfjs"),t.exports),c(u,require("@tensorflow/tfjs-backend-wasm"),t.exports);var d=`4.22.0`,f={tfjs:d,"tfjs-core":d,"tfjs-converter":`4.22.0`,"tfjs-backend-cpu":`4.22.0`,"tfjs-backend-webgl":`4.22.0`,"tfjs-backend-wasm":`4.22.0`}}),m={};l(m,{AgeGenderNet:()=>xn,BoundingBox:()=>de,Box:()=>T,ComposableTask:()=>Hr,ComputeAllFaceDescriptorsTask:()=>Di,ComputeFaceDescriptorsTaskBase:()=>Ei,ComputeSingleFaceDescriptorTask:()=>Oi,DetectAllFaceLandmarksTask:()=>Ai,DetectAllFacesTask:()=>Ni,DetectFaceLandmarksTaskBase:()=>ki,DetectFacesTaskBase:()=>Mi,DetectSingleFaceLandmarksTask:()=>ji,DetectSingleFaceTask:()=>Pi,Dimensions:()=>y,FACE_EXPRESSION_LABELS:()=>Xt,FaceDetection:()=>E,FaceDetectionNet:()=>vr,FaceExpressionNet:()=>Qt,FaceExpressions:()=>Zt,FaceLandmark68Net:()=>Cn,FaceLandmark68TinyNet:()=>On,FaceLandmarkNet:()=>kn,FaceLandmarks:()=>D,FaceLandmarks5:()=>De,FaceLandmarks68:()=>Oe,FaceMatch:()=>ke,FaceMatcher:()=>Vi,FaceRecognitionNet:()=>Hn,Gender:()=>bn,LabeledBox:()=>Ae,LabeledFaceDescriptors:()=>je,NetInput:()=>ct,NeuralNetwork:()=>N,ObjectDetection:()=>fe,Point:()=>w,PredictedBox:()=>Me,Rect:()=>Ce,SsdMobilenetv1:()=>hr,SsdMobilenetv1Options:()=>Y,TinyFaceDetector:()=>Xr,TinyFaceDetectorOptions:()=>Vr,TinyYolov2:()=>zr,TinyYolov2Options:()=>Ir,allFaces:()=>zi,allFacesSsdMobilenetv1:()=>Li,allFacesTinyYolov2:()=>Ri,awaitMediaLoaded:()=>$e,bufferToImage:()=>et,computeFaceDescriptor:()=>ni,createCanvas:()=>nt,createCanvasFromMedia:()=>rt,createFaceDetectionNet:()=>_r,createFaceRecognitionNet:()=>Un,createSsdMobilenetv1:()=>gr,createTinyFaceDetector:()=>Hi,createTinyYolov2:()=>Br,detectAllFaces:()=>Ii,detectFaceLandmarks:()=>ei,detectFaceLandmarksTiny:()=>ti,detectLandmarks:()=>hi,detectSingleFace:()=>Fi,draw:()=>g,env:()=>k,euclideanDistance:()=>Bi,extendWithAge:()=>Kn,extendWithFaceDescriptor:()=>Wn,extendWithFaceDetection:()=>Pe,extendWithFaceExpressions:()=>en,extendWithFaceLandmarks:()=>an,extendWithGender:()=>Jn,extractFaceTensors:()=>dt,extractFaces:()=>lt,fetchImage:()=>pt,fetchJson:()=>mt,fetchNetWeights:()=>ht,fetchOrThrow:()=>ft,fetchVideo:()=>_t,getContext2dOrThrow:()=>A,getMediaDimensions:()=>tt,imageTensorToCanvas:()=>at,imageToSquare:()=>st,inverseSigmoid:()=>Se,iou:()=>pe,isMediaElement:()=>ot,isMediaLoaded:()=>Qe,isWithAge:()=>Gn,isWithFaceDetection:()=>Ne,isWithFaceExpressions:()=>$t,isWithFaceLandmarks:()=>nn,isWithGender:()=>qn,loadAgeGenderModel:()=>fi,loadFaceDetectionModel:()=>pi,loadFaceExpressionModel:()=>di,loadFaceLandmarkModel:()=>ci,loadFaceLandmarkTinyModel:()=>li,loadFaceRecognitionModel:()=>ui,loadSsdMobilenetv1Model:()=>ai,loadTinyFaceDetectorModel:()=>oi,loadTinyYolov2Model:()=>si,loadWeightMap:()=>bt,locateFaces:()=>mi,matchDimensions:()=>xt,minBbox:()=>me,nets:()=>$,nonMaxSuppression:()=>he,normalize:()=>_e,padToSquare:()=>ye,predictAgeAndGender:()=>ii,recognizeFaceExpressions:()=>ri,resizeResults:()=>Ui,resolveInput:()=>We,shuffleArray:()=>be,sigmoid:()=>xe,ssdMobilenetv1:()=>Zr,tf:()=>h,tinyFaceDetector:()=>Qr,tinyYolov2:()=>$r,toNetInput:()=>M,utils:()=>v,validateConfig:()=>Er,version:()=>Wi}),t.exports=f(m);var h=d(p()),g={};l(g,{AnchorPosition:()=>Ge,DrawBox:()=>Ye,DrawBoxOptions:()=>Je,DrawFaceLandmarks:()=>sn,DrawFaceLandmarksOptions:()=>on,DrawTextField:()=>qe,DrawTextFieldOptions:()=>Ke,drawContour:()=>_,drawDetections:()=>Xe,drawFaceExpressions:()=>tn,drawFaceLandmarks:()=>cn});function _(e,t,n=!1){if(e.beginPath(),t.slice(1).forEach(({x:n,y:r},i)=>{let a=t[i];e.moveTo(a.x,a.y),e.lineTo(n,r)}),n){let n=t[t.length-1],r=t[0];if(!n||!r)return;e.moveTo(n.x,n.y),e.lineTo(r.x,r.y)}e.stroke()}var v={};l(v,{computeReshapedDimensions:()=>ce,getCenterPoint:()=>le,isDimensions:()=>se,isEven:()=>ae,isFloat:()=>ie,isTensor:()=>b,isTensor1D:()=>te,isTensor2D:()=>ne,isTensor3D:()=>re,isTensor4D:()=>x,isValidNumber:()=>C,isValidProbablitiy:()=>ue,range:()=>S,round:()=>oe});var ee=d(p()),y=class e{constructor(e,t){if(!C(e)||!C(t))throw Error(`Dimensions.constructor - expected width and height to be valid numbers, instead have ${JSON.stringify({width:e,height:t})}`);this._width=e,this._height=t}get width(){return this._width}get height(){return this._height}reverse(){return new e(1/this.width,1/this.height)}};function b(e,t){return e instanceof ee.Tensor&&e.shape.length===t}function te(e){return b(e,1)}function ne(e){return b(e,2)}function re(e){return b(e,3)}function x(e){return b(e,4)}function ie(e){return e%1!=0}function ae(e){return e%2==0}function oe(e,t=2){let n=10**t;return Math.floor(e*n)/n}function se(e){return e&&e.width&&e.height}function ce({width:e,height:t},n){let r=n/Math.max(t,e);return new y(Math.round(e*r),Math.round(t*r))}function le(e){return e.reduce((e,t)=>e.add(t),new w(0,0)).div(new w(e.length,e.length))}function S(e,t,n){return Array(e).fill(0).map((e,r)=>t+r*n)}function C(e){return!!e&&e!==1/0&&e!==-1/0&&!Number.isNaN(e)||e===0}function ue(e){return C(e)&&e>=0&&e<=1}var w=class e{constructor(e,t){this._x=e,this._y=t}get x(){return this._x}get y(){return this._y}add(t){return new e(this.x+t.x,this.y+t.y)}sub(t){return new e(this.x-t.x,this.y-t.y)}mul(t){return new e(this.x*t.x,this.y*t.y)}div(t){return new e(this.x/t.x,this.y/t.y)}abs(){return new e(Math.abs(this.x),Math.abs(this.y))}magnitude(){return Math.sqrt(this.x**2+this.y**2)}floor(){return new e(Math.floor(this.x),Math.floor(this.y))}},T=class e{static isRect(e){return!!e&&[e.x,e.y,e.width,e.height].every(C)}static assertIsValidBox(t,n,r=!1){if(!e.isRect(t))throw Error(`${n} - invalid box: ${JSON.stringify(t)}, expected object with properties x, y, width, height`);if(!r&&(t.width<0||t.height<0))throw Error(`${n} - width (${t.width}) and height (${t.height}) must be positive numbers`)}constructor(t,n=!0){let r=t||{},i=[r.left,r.top,r.right,r.bottom].every(C),a=[r.x,r.y,r.width,r.height].every(C);if(!a&&!i)throw Error(`Box.constructor - expected box to be IBoundingBox | IRect, instead have ${JSON.stringify(r)}`);let[o,s,c,l]=a?[r.x,r.y,r.width,r.height]:[r.left,r.top,r.right-r.left,r.bottom-r.top];e.assertIsValidBox({x:o,y:s,width:c,height:l},`Box.constructor`,n),this._x=o,this._y=s,this._width=c,this._height=l}get x(){return this._x}get y(){return this._y}get width(){return this._width}get height(){return this._height}get left(){return this.x}get top(){return this.y}get right(){return this.x+this.width}get bottom(){return this.y+this.height}get area(){return this.width*this.height}get topLeft(){return new w(this.left,this.top)}get topRight(){return new w(this.right,this.top)}get bottomLeft(){return new w(this.left,this.bottom)}get bottomRight(){return new w(this.right,this.bottom)}round(){let[t,n,r,i]=[this.x,this.y,this.width,this.height].map(e=>Math.round(e));return new e({x:t,y:n,width:r,height:i})}floor(){let[t,n,r,i]=[this.x,this.y,this.width,this.height].map(e=>Math.floor(e));return new e({x:t,y:n,width:r,height:i})}toSquare(){let{x:t,y:n,width:r,height:i}=this,a=Math.abs(r-i);return r<i&&(t-=a/2,r+=a),i<r&&(n-=a/2,i+=a),new e({x:t,y:n,width:r,height:i})}rescale(t){let n=se(t)?t.width:t,r=se(t)?t.height:t;return new e({x:this.x*n,y:this.y*r,width:this.width*n,height:this.height*r})}pad(t,n){let[r,i,a,o]=[this.x-t/2,this.y-n/2,this.width+t,this.height+n];return new e({x:r,y:i,width:a,height:o})}clipAtImageBorders(t,n){let{x:r,y:i,right:a,bottom:o}=this,s=Math.max(r,0),c=Math.max(i,0),l=a-s,u=o-c,d=Math.min(l,t-s),f=Math.min(u,n-c);return new e({x:s,y:c,width:d,height:f}).floor()}shift(t,n){let{width:r,height:i}=this,a=this.x+t,o=this.y+n;return new e({x:a,y:o,width:r,height:i})}padAtBorders(e,t){let n=this.width+1,r=this.height+1,i=n,a=r,o=this.left,s=this.top,c=this.right,l=this.bottom;return c>t&&(i=-c+t+n,c=t),l>e&&(a=-l+e+r,l=e),o<1&&(a=2-o,o=1),s<1&&(a=2-s,s=1),{dy:1,edy:a,dx:1,edx:i,y:s,ey:l,x:o,ex:c,w:n,h:r}}calibrate(t){return new e({left:this.left+t.left*this.width,top:this.top+t.top*this.height,right:this.right+t.right*this.width,bottom:this.bottom+t.bottom*this.height}).toSquare().round()}},de=class extends T{constructor(e,t,n,r,i=!1){super({left:e,top:t,right:n,bottom:r},i)}},fe=class e{constructor(e,t,n,r,i){this._imageDims=new y(i.width,i.height),this._score=e,this._classScore=t,this._className=n,this._box=new T(r).rescale(this._imageDims)}get score(){return this._score}get classScore(){return this._classScore}get className(){return this._className}get box(){return this._box}get imageDims(){return this._imageDims}get imageWidth(){return this.imageDims.width}get imageHeight(){return this.imageDims.height}get relativeBox(){return new T(this._box).rescale(this.imageDims.reverse())}forSize(t,n){return new e(this.score,this.classScore,this.className,this.relativeBox,{width:t,height:n})}},E=class e extends fe{constructor(e,t,n){super(e,e,``,t,n)}forSize(t,n){let{score:r,relativeBox:i,imageDims:a}=super.forSize(t,n);return new e(r,i,a)}};function pe(e,t,n=!0){let r=Math.max(0,Math.min(e.right,t.right)-Math.max(e.left,t.left))*Math.max(0,Math.min(e.bottom,t.bottom)-Math.max(e.top,t.top));return n?r/(e.area+t.area-r):r/Math.min(e.area,t.area)}function me(e){let t=e.map(e=>e.x),n=e.map(e=>e.y);return new de(t.reduce((e,t)=>t<e?t:e,1/0),n.reduce((e,t)=>t<e?t:e,1/0),t.reduce((e,t)=>e<t?t:e,0),n.reduce((e,t)=>e<t?t:e,0))}function he(e,t,n,r=!0){let i=t.map((e,t)=>({score:e,boxIndex:t})).sort((e,t)=>e.score-t.score).map(e=>e.boxIndex),a=[];for(;i.length>0;){let t=i.pop();a.push(t);let o=i,s=[];for(let n=0;n<o.length;n++){let i=o[n],a=e[t],c=e[i];s.push(pe(a,c,r))}i=i.filter((e,t)=>s[t]<=n)}return a}var ge=d(p());function _e(e,t){return ge.tidy(()=>{let[n,r,i]=t,a=ge.fill([...e.shape.slice(0,3),1],n,`float32`),o=ge.fill([...e.shape.slice(0,3),1],r,`float32`),s=ge.fill([...e.shape.slice(0,3),1],i,`float32`),c=ge.concat([a,o,s],3);return ge.sub(e,c)})}var ve=d(p());function ye(e,t=!1){return ve.tidy(()=>{let[n,r]=e.shape.slice(1);if(n===r)return e;let i=Math.abs(n-r),a=Math.round(i*(t?.5:1)),o=n>r?2:1,s=t=>{let n=e.shape.slice();return n[o]=t,ve.fill(n,0,`float32`)},c=s(a),l=i-c.shape[o],u=[t&&l?s(l):null,e,c].filter(e=>!!e).map(e=>ve.cast(e,`float32`));return ve.concat(u,o)})}function be(e){let t=e.slice();for(let e=t.length-1;e>0;e--){let n=Math.floor(Math.random()*(e+1)),r=t[e];t[e]=t[n],t[n]=r}return t}function xe(e){return 1/(1+Math.exp(-e))}function Se(e){return Math.log(e/(1-e))}var Ce=class extends T{constructor(e,t,n,r,i=!1){super({x:e,y:t,width:n,height:r},i)}},we=.5,Te=.43,Ee=.45,D=class{constructor(e,t,n=new w(0,0)){let{width:r,height:i}=t;this._imgDims=new y(r,i),this._shift=n,this._positions=e.map(e=>e.mul(new w(r,i)).add(n))}get shift(){return new w(this._shift.x,this._shift.y)}get imageWidth(){return this._imgDims.width}get imageHeight(){return this._imgDims.height}get positions(){return this._positions}get relativePositions(){return this._positions.map(e=>e.sub(this._shift).div(new w(this.imageWidth,this.imageHeight)))}forSize(e,t){return new this.constructor(this.relativePositions,{width:e,height:t})}shiftBy(e,t){return new this.constructor(this.relativePositions,this._imgDims,new w(e,t))}shiftByPoint(e){return this.shiftBy(e.x,e.y)}align(e,t={}){if(e){let n=e instanceof E?e.box.floor():new T(e);return this.shiftBy(n.x,n.y).align(null,t)}let{useDlibAlignment:n,minBoxPadding:r}={useDlibAlignment:!1,minBoxPadding:.2,...t};return n?this.alignDlib():this.alignMinBbox(r)}alignDlib(){let e=this.getRefPointsForAlignment(),[t,n,r]=e,i=e=>r.sub(e).magnitude(),a=(i(t)+i(n))/2,o=Math.floor(a/Ee),s=le(e),c=Math.floor(Math.max(0,s.x-we*o)),l=Math.floor(Math.max(0,s.y-Te*o));return new Ce(c,l,Math.min(o,this.imageWidth+c),Math.min(o,this.imageHeight+l))}alignMinBbox(e){let t=me(this.positions);return t.pad(t.width*e,t.height*e)}getRefPointsForAlignment(){throw Error(`getRefPointsForAlignment not implemented by base class`)}},De=class extends D{getRefPointsForAlignment(){let e=this.positions;return[e[0],e[1],le([e[3],e[4]])]}},Oe=class extends D{getJawOutline(){return this.positions.slice(0,17)}getLeftEyeBrow(){return this.positions.slice(17,22)}getRightEyeBrow(){return this.positions.slice(22,27)}getNose(){return this.positions.slice(27,36)}getLeftEye(){return this.positions.slice(36,42)}getRightEye(){return this.positions.slice(42,48)}getMouth(){return this.positions.slice(48,68)}getRefPointsForAlignment(){return[this.getLeftEye(),this.getRightEye(),this.getMouth()].map(le)}},ke=class{constructor(e,t){this._label=e,this._distance=t}get label(){return this._label}get distance(){return this._distance}toString(e=!0){return`${this.label}${e?` (${oe(this.distance)})`:``}`}},Ae=class extends T{static assertIsValidLabeledBox(e,t){if(T.assertIsValidBox(e,t),!C(e.label))throw Error(`${t} - expected property label (${e.label}) to be a number`)}constructor(e,t){super(e),this._label=t}get label(){return this._label}},je=class e{constructor(e,t){if(typeof e!=`string`)throw Error(`LabeledFaceDescriptors - constructor expected label to be a string`);if(!Array.isArray(t)||t.some(e=>!(e instanceof Float32Array)))throw Error(`LabeledFaceDescriptors - constructor expected descriptors to be an array of Float32Array`);this._label=e,this._descriptors=t}get label(){return this._label}get descriptors(){return this._descriptors}toJSON(){return{label:this.label,descriptors:this.descriptors.map(e=>Array.from(e))}}static fromJSON(t){let n=t.descriptors.map(e=>new Float32Array(e));return new e(t.label,n)}},Me=class extends Ae{static assertIsValidPredictedBox(e,t){if(Ae.assertIsValidLabeledBox(e,t),!ue(e.score)||!ue(e.classScore))throw Error(`${t} - expected properties score (${e.score}) and (${e.classScore}) to be a number between [0, 1]`)}constructor(e,t,n,r){super(e,t),this._score=n,this._classScore=r}get score(){return this._score}get classScore(){return this._classScore}};function Ne(e){return e.detection instanceof E}function Pe(e,t){return{...e,detection:t}}function Fe(){let e=window.fetch;if(!e)throw Error(`fetch - missing fetch implementation for browser environment`);return{Canvas:HTMLCanvasElement,CanvasRenderingContext2D,Image:HTMLImageElement,ImageData,Video:HTMLVideoElement,createCanvasElement:()=>document.createElement(`canvas`),createImageElement:()=>document.createElement(`img`),createVideoElement:()=>document.createElement(`video`),fetch:e,readFile:()=>{throw Error(`readFile - filesystem not available for browser environment`)}}}function Ie(){return typeof global==`object`&&typeof process<`u`&&process.versions!=null&&process.versions.node!=null}function Le(e){let t=``;if(!e&&Ie())try{e=require("fs")}catch(e){t=e.toString()}return{readFile:e?t=>new Promise((n,r)=>{e.readFile(t,(e,t)=>e?r(e):n(t))}):()=>{throw Error(`readFile - failed to require fs in nodejs environment with error: ${t}`)}}}function Re(){let e=global.Canvas||global.HTMLCanvasElement,t=global.Image||global.HTMLImageElement,n=global.Video||global.HTMLVideoElement,r=()=>{if(e)return new e;throw Error(`createCanvasElement - missing Canvas implementation for nodejs environment`)},i=()=>{if(t)return new t;throw Error(`createImageElement - missing Image implementation for nodejs environment`)},a=()=>{if(n)return new n;throw Error(`createVideoElement - missing Video implementation for nodejs environment`)},o=global.fetch,s=Le();return{Canvas:e||class{},CanvasRenderingContext2D:global.CanvasRenderingContext2D||class{},Image:t||class{},ImageData:global.ImageData||class{},Video:global.HTMLVideoElement||class{},createCanvasElement:r,createImageElement:i,createVideoElement:a,fetch:o,...s}}function ze(){return typeof window==`object`&&typeof document<`u`&&typeof HTMLImageElement<`u`&&typeof HTMLCanvasElement<`u`&&typeof HTMLVideoElement<`u`&&typeof ImageData<`u`&&typeof CanvasRenderingContext2D<`u`}var O;function Be(){if(!O)throw Error(`getEnv - environment is not defined, check isNodejs() and isBrowser()`);return O}function Ve(e){O=e}function He(){return ze()?Ve(Fe()):Ie()?Ve(Re()):null}function Ue(e){if(O||He(),!O)throw Error(`monkeyPatch - environment is not defined, check isNodejs() and isBrowser()`);let{Canvas:t=O.Canvas,Image:n=O.Image}=e;O.Canvas=t,O.Image=n,O.createCanvasElement=e.createCanvasElement||(()=>new t),O.createImageElement=e.createImageElement||(()=>new n),O.ImageData=e.ImageData||O.ImageData,O.Video=e.Video||O.Video,O.fetch=e.fetch||O.fetch,O.readFile=e.readFile||O.readFile}var k={getEnv:Be,setEnv:Ve,initialize:He,createBrowserEnv:Fe,createFileSystem:Le,createNodejsEnv:Re,monkeyPatch:Ue,isBrowser:ze,isNodejs:Ie};He();function We(e){return!k.isNodejs()&&typeof e==`string`?document.getElementById(e):e}function A(e){let{Canvas:t,CanvasRenderingContext2D:n}=k.getEnv();if(e instanceof n)return e;let r=We(e);if(!(r instanceof t))throw Error(`resolveContext2d - expected canvas to be of instance of Canvas`);let i=r.getContext(`2d`,{willReadFrequently:!0});if(!i)throw Error(`resolveContext2d - canvas 2d context is null`);return i}var Ge=(e=>(e.TOP_LEFT=`TOP_LEFT`,e.TOP_RIGHT=`TOP_RIGHT`,e.BOTTOM_LEFT=`BOTTOM_LEFT`,e.BOTTOM_RIGHT=`BOTTOM_RIGHT`,e))(Ge||{}),Ke=class{constructor(e={}){let{anchorPosition:t,backgroundColor:n,fontColor:r,fontSize:i,fontStyle:a,padding:o}=e;this.anchorPosition=t||`TOP_LEFT`,this.backgroundColor=n||`rgba(0, 0, 0, 0.5)`,this.fontColor=r||`rgba(255, 255, 255, 1)`,this.fontSize=i||14,this.fontStyle=a||`Georgia`,this.padding=o||4}},qe=class e{constructor(t,n,r={}){this.text=typeof t==`string`?[t]:t instanceof e?t.text:t,this.anchor=n,this.options=new Ke(r)}measureWidth(e){let{padding:t}=this.options;return this.text.map(t=>e.measureText(t).width).reduce((e,t)=>e<t?t:e,0)+2*t}measureHeight(){let{fontSize:e,padding:t}=this.options;return this.text.length*e+2*t}getUpperLeft(e,t){let{anchorPosition:n}=this.options,r=n===`BOTTOM_RIGHT`||n===`TOP_RIGHT`,i=n===`BOTTOM_LEFT`||n===`BOTTOM_RIGHT`,a=this.measureWidth(e),o=this.measureHeight(),s=r?this.anchor.x-a:this.anchor.x,c=i?this.anchor.y-o:this.anchor.y;if(t){let{width:e,height:n}=t;return{x:Math.max(Math.min(s,e-a),0),y:Math.max(Math.min(c,n-o),0)}}return{x:s,y:c}}draw(e){let t=We(e),n=A(t),{backgroundColor:r,fontColor:i,fontSize:a,fontStyle:o,padding:s}=this.options;n.font=`${a}px ${o}`;let c=this.measureWidth(n),l=this.measureHeight();n.fillStyle=r;let u=this.getUpperLeft(n,t);n.fillRect(u.x,u.y,c,l),n.fillStyle=i,this.text.forEach((e,t)=>{let r=s+u.x,i=s+u.y+(t+1)*a;n.fillText(e,r,i)})}},Je=class{constructor(e={}){let{boxColor:t,lineWidth:n,label:r,drawLabelOptions:i}=e;this.boxColor=t||`rgba(0, 0, 255, 1)`,this.lineWidth=n||2,this.label=r;let a={anchorPosition:`BOTTOM_LEFT`,backgroundColor:this.boxColor};this.drawLabelOptions=new Ke({...a,...i})}},Ye=class{constructor(e,t={}){this.box=new T(e),this.options=new Je(t)}draw(e){let t=A(e),{boxColor:n,lineWidth:r}=this.options,{x:i,y:a,width:o,height:s}=this.box;t.strokeStyle=n,t.lineWidth=r,t.strokeRect(i,a,o,s);let{label:c}=this.options;c&&new qe([c],{x:i-r/2,y:a},this.options.drawLabelOptions).draw(e)}};function Xe(e,t){(Array.isArray(t)?t:[t]).forEach(t=>{let n=t instanceof E?t.score:Ne(t)?t.detection.score:void 0;new Ye(t instanceof E?t.box:Ne(t)?t.detection.box:new T(t),{label:n?`${oe(n)}`:void 0}).draw(e)})}var Ze=d(p());function Qe(e){let{Image:t,Video:n}=k.getEnv();return e instanceof t&&e.complete||e instanceof n&&e.readyState>=3}function $e(e){return new Promise((t,n)=>{if(e instanceof k.getEnv().Canvas||Qe(e)){t(null);return}function r(e){e.currentTarget&&(e.currentTarget.removeEventListener(`load`,i),e.currentTarget.removeEventListener(`error`,r),n(e))}function i(e){e.currentTarget&&(e.currentTarget.removeEventListener(`load`,i),e.currentTarget.removeEventListener(`error`,r),t(e))}e.addEventListener(`load`,i),e.addEventListener(`error`,r)})}function et(e){return new Promise((t,n)=>{e instanceof Blob||n(Error(`bufferToImage - expected buf to be of type: Blob`));let r=new FileReader;r.onload=()=>{typeof r.result!=`string`&&n(Error(`bufferToImage - expected reader.result to be a string, in onload`));let e=k.getEnv().createImageElement();e.onload=()=>t(e),e.onerror=n,e.src=r.result},r.onerror=n,r.readAsDataURL(e)})}function tt(e){let{Image:t,Video:n}=k.getEnv();return e instanceof t?new y(e.naturalWidth,e.naturalHeight):e instanceof n?new y(e.videoWidth,e.videoHeight):new y(e.width,e.height)}function nt({width:e,height:t}){let{createCanvasElement:n}=k.getEnv(),r=n();return r.width=e,r.height=t,r}function rt(e,t){let{ImageData:n}=k.getEnv();if(!(e instanceof n)&&!Qe(e))throw Error(`createCanvasFromMedia - media has not finished loading yet`);let{width:r,height:i}=t||tt(e),a=nt({width:r,height:i});return e instanceof n?A(a).putImageData(e,0,0):A(a).drawImage(e,0,0,r,i),a}var it=d(p());async function at(e,t){let n=t||k.getEnv().createCanvasElement(),[r,i,a]=e.shape.slice(+!!x(e)),o=it.tidy(()=>e.as3D(r,i,a).toInt());return await it.browser.toPixels(o,n),o.dispose(),n}function ot(e){let{Image:t,Canvas:n,Video:r}=k.getEnv();return e instanceof t||e instanceof n||e instanceof r}var j=d(p());function st(e,t,n=!1){let{Image:r,Canvas:i}=k.getEnv();if(!(e instanceof r||e instanceof i))throw Error(`imageToSquare - expected arg0 to be HTMLImageElement | HTMLCanvasElement`);if(t<=0)return nt({width:1,height:1});let a=tt(e),o=t/Math.max(a.height,a.width),s=o*a.width,c=o*a.height,l=nt({width:t,height:t}),u=e instanceof i?e:rt(e),d=Math.abs(s-c)/2,f=n&&s<c?d:0,p=n&&c<s?d:0;return u.width>0&&u.height>0&&A(l).drawImage(u,f,p,s,c),l}var ct=class{constructor(e,t=!1){if(this._imageTensors=[],this._canvases=[],this._treatAsBatchInput=!1,this._inputDimensions=[],this._inputSize=0,!Array.isArray(e))throw Error(`NetInput.constructor - expected inputs to be an Array of TResolvedNetInput or to be instanceof tf.Tensor4D, instead have ${e}`);this._treatAsBatchInput=t,this._batchSize=e.length,e.forEach((e,t)=>{if(re(e)){this._imageTensors[t]=e,this._inputDimensions[t]=e.shape;return}if(x(e)){let n=e.shape[0];if(n!==1)throw Error(`NetInput - tf.Tensor4D with batchSize ${n} passed, but not supported in input array`);this._imageTensors[t]=e,this._inputDimensions[t]=e.shape.slice(1);return}let n=e instanceof k.getEnv().Canvas?e:rt(e);this._canvases[t]=n,this._inputDimensions[t]=[n.height,n.width,3]})}get imageTensors(){return this._imageTensors}get canvases(){return this._canvases}get isBatchInput(){return this.batchSize>1||this._treatAsBatchInput}get batchSize(){return this._batchSize}get inputDimensions(){return this._inputDimensions}get inputSize(){return this._inputSize}get reshapedInputDimensions(){return S(this.batchSize,0,1).map((e,t)=>this.getReshapedInputDimensions(t))}getInput(e){return this.canvases[e]||this.imageTensors[e]}getInputDimensions(e){return this._inputDimensions[e]}getInputHeight(e){return this._inputDimensions[e][0]}getInputWidth(e){return this._inputDimensions[e][1]}getReshapedInputDimensions(e){if(typeof this.inputSize!=`number`)throw Error(`getReshapedInputDimensions - inputSize not set, toBatchTensor has not been called yet`);return ce({width:this.getInputWidth(e),height:this.getInputHeight(e)},this.inputSize)}toBatchTensor(e,t=!0){return this._inputSize=e,j.tidy(()=>{let n=S(this.batchSize,0,1).map(n=>{let r=this.getInput(n);if(r instanceof j.Tensor){let n=x(r)?r:j.expandDims(r);return n=ye(n,t),(n.shape[1]!==e||n.shape[2]!==e)&&(n=j.image.resizeBilinear(n,[e,e],!1,!1)),n.as3D(e,e,3)}if(r instanceof k.getEnv().Canvas)return j.browser.fromPixels(st(r,e,t));throw Error(`toBatchTensor - at batchIdx ${n}, expected input to be instanceof tf.Tensor or instanceof HTMLCanvasElement, instead have ${r}`)});return j.stack(n.map(e=>j.cast(e,`float32`))).as4D(this.batchSize,e,e,3)})}};async function M(e){if(e instanceof ct)return e;let t=Array.isArray(e)?e:[e];if(!t.length)throw Error(`toNetInput - empty array passed as input`);let n=t=>Array.isArray(e)?` at input index ${t}:`:``,r=t.map(We);return r.forEach((e,r)=>{if(!ot(e)&&!re(e)&&!x(e))throw typeof t[r]==`string`?Error(`toNetInput -${n(r)} string passed, but could not resolve HTMLElement for element id ${t[r]}`):Error(`toNetInput -${n(r)} expected media to be of type HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | tf.Tensor3D, or to be an element id`);if(x(e)){let t=e.shape[0];if(t!==1)throw Error(`toNetInput -${n(r)} tf.Tensor4D with batchSize ${t} passed, but not supported in input array`)}}),await Promise.all(r.map(e=>ot(e)&&$e(e))),new ct(r,Array.isArray(e))}async function lt(e,t){let{Canvas:n}=k.getEnv(),r=e;if(!(e instanceof n)){let t=await M(e);if(t.batchSize>1)throw Error(`extractFaces - batchSize > 1 not supported`);let i=t.getInput(0);r=i instanceof n?i:await at(i)}let i=A(r);return t.map(e=>e instanceof E?e.forSize(r.width,r.height).box.floor():e).map(e=>e.clipAtImageBorders(r.width,r.height)).map(({x:e,y:t,width:n,height:r})=>{let a=nt({width:n,height:r});return n>0&&r>0&&A(a).putImageData(i.getImageData(e,t,n,r),0,0),a})}var ut=d(p());async function dt(e,t){if(!re(e)&&!x(e))throw Error(`extractFaceTensors - expected image tensor to be 3D or 4D`);if(x(e)&&e.shape[0]>1)throw Error(`extractFaceTensors - batchSize > 1 not supported`);return ut.tidy(()=>{let[n,r,i]=e.shape.slice(+!!x(e));return t.map(e=>e instanceof E?e.forSize(r,n).box:e).map(e=>e.clipAtImageBorders(r,n)).filter(e=>e.width>0&&e.height>0).map(({x:t,y:a,width:o,height:s})=>ut.slice3d(e.as3D(n,r,i),[a,t,0],[s,o,i]))})}async function ft(e,t){let{fetch:n}=k.getEnv(),r=await n(e,t);if(!(r.status<400))throw Error(`failed to fetch: (${r.status}) ${r.statusText}, from url: ${r.url}`);return r}async function pt(e){let t=await ft(e),n=await t.blob();if(!n.type.startsWith(`image/`))throw Error(`fetchImage - expected blob type to be of type image/*, instead have: ${n.type}, for url: ${t.url}`);return et(n)}async function mt(e){return(await ft(e)).json()}async function ht(e){return new Float32Array(await(await ft(e)).arrayBuffer())}function gt(e){return new Promise((t,n)=>{e instanceof Blob||n(Error(`bufferToVideo - expected buf to be of type: Blob`));let r=k.getEnv().createVideoElement();r.oncanplay=()=>t(r),r.onerror=n,r.playsInline=!0,r.muted=!0,r.src=URL.createObjectURL(e),r.play()})}async function _t(e){let t=await ft(e),n=await t.blob();if(!n.type.startsWith(`video/`))throw Error(`fetchVideo - expected blob type to be of type video/*, instead have: ${n.type}, for url: ${t.url}`);return gt(n)}var vt=d(p());function yt(e,t){let n=`${t}-weights_manifest.json`;if(!e)return{modelBaseUri:``,manifestUri:n};if(e===`/`)return{modelBaseUri:`/`,manifestUri:`/${n}`};let r=e.startsWith(`http://`)?`http://`:e.startsWith(`https://`)?`https://`:``;e=e.replace(r,``);let i=e.split(`/`).filter(e=>e),a=e.endsWith(`.json`)?i[i.length-1]:n,o=r+(e.endsWith(`.json`)?i.slice(0,i.length-1):i).join(`/`);return o=e.startsWith(`/`)?`/${o}`:o,{modelBaseUri:o,manifestUri:o===`/`?`/${a}`:`${o}/${a}`}}async function bt(e,t){let{manifestUri:n,modelBaseUri:r}=yt(e,t),i=await mt(n);return vt.io.loadWeights(i,r)}function xt(e,t,n=!1){let{width:r,height:i}=n?tt(t):t;return e.width=r,e.height=i,{width:r,height:i}}var St=d(p()),Ct=d(p()),N=class{constructor(e){this._params=void 0,this._paramMappings=[],this._name=e}get params(){return this._params}get paramMappings(){return this._paramMappings}get isLoaded(){return!!this.params}getParamFromPath(e){let{obj:t,objProp:n}=this.traversePropertyPath(e);return t[n]}reassignParamFromPath(e,t){let{obj:n,objProp:r}=this.traversePropertyPath(e);n[r].dispose(),n[r]=t}getParamList(){return this._paramMappings.map(({paramPath:e})=>({path:e,tensor:this.getParamFromPath(e)}))}getTrainableParams(){return this.getParamList().filter(e=>e.tensor instanceof Ct.Variable)}getFrozenParams(){return this.getParamList().filter(e=>!(e.tensor instanceof Ct.Variable))}variable(){this.getFrozenParams().forEach(({path:e,tensor:t})=>{this.reassignParamFromPath(e,t.variable())})}freeze(){this.getTrainableParams().forEach(({path:e,tensor:t})=>{let n=Ct.tensor(t.dataSync());t.dispose(),this.reassignParamFromPath(e,n)})}dispose(e=!0){this.getParamList().forEach(t=>{if(e&&t.tensor.isDisposed)throw Error(`param tensor has already been disposed for path ${t.path}`);t.tensor.dispose()}),this._params=void 0}serializeParams(){return new Float32Array(this.getParamList().map(({tensor:e})=>Array.from(e.dataSync())).reduce((e,t)=>e.concat(t)))}async load(e){if(e instanceof Float32Array){this.extractWeights(e);return}await this.loadFromUri(e)}async loadFromUri(e){if(e&&typeof e!=`string`)throw Error(`${this._name}.loadFromUri - expected model uri`);let t=await bt(e,this.getDefaultModelName());this.loadFromWeightMap(t)}async loadFromDisk(e){if(e&&typeof e!=`string`)throw Error(`${this._name}.loadFromDisk - expected model file path`);let{readFile:t}=k.getEnv(),{manifestUri:n,modelBaseUri:r}=yt(e,this.getDefaultModelName()),i=await Ct.io.weightsLoaderFactory(e=>Promise.all(e.map(e=>t(e).then(e=>typeof e==`string`?Buffer.from(e):e.buffer))))(JSON.parse((await t(n)).toString()),r);this.loadFromWeightMap(i)}loadFromWeightMap(e){let{paramMappings:t,params:n}=this.extractParamsFromWeightMap(e);this._paramMappings=t,this._params=n}extractWeights(e){let{paramMappings:t,params:n}=this.extractParams(e);this._paramMappings=t,this._params=n}traversePropertyPath(e){if(!this.params)throw Error(`traversePropertyPath - model has no loaded params`);let{obj:t,objProp:n}=e.split(`/`).reduce((t,n)=>{if(!t.nextObj.hasOwnProperty(n))throw Error(`traversePropertyPath - object does not have property ${n}, for path ${e}`);return{obj:t.nextObj,objProp:n,nextObj:t.nextObj[n]}},{nextObj:this.params});if(!t||!n||!(t[n]instanceof Ct.Tensor))throw Error(`traversePropertyPath - parameter is not a tensor, for path ${e}`);return{obj:t,objProp:n}}},P=d(p()),wt=d(p());function F(e,t,n){return wt.tidy(()=>{let r=wt.separableConv2d(e,t.depthwise_filter,t.pointwise_filter,n,`same`);return r=wt.add(r,t.bias),r})}function Tt(e,t,n=!1){return P.tidy(()=>{let r=P.relu(n?P.add(P.conv2d(e,t.conv0.filters,[2,2],`same`),t.conv0.bias):F(e,t.conv0,[2,2])),i=F(r,t.conv1,[1,1]),a=F(P.relu(P.add(r,i)),t.conv2,[1,1]);return P.relu(P.add(r,P.add(i,a)))})}function Et(e,t,n=!1,r=!0){return P.tidy(()=>{let i=P.relu(n?P.add(P.conv2d(e,t.conv0.filters,r?[2,2]:[1,1],`same`),t.conv0.bias):F(e,t.conv0,r?[2,2]:[1,1])),a=F(i,t.conv1,[1,1]),o=F(P.relu(P.add(i,a)),t.conv2,[1,1]),s=F(P.relu(P.add(i,P.add(a,o))),t.conv3,[1,1]);return P.relu(P.add(i,P.add(a,P.add(o,s))))})}var Dt=d(p());function Ot(e,t,n=`same`,r=!1){return Dt.tidy(()=>{let i=Dt.add(Dt.conv2d(e,t.filters,[1,1],n),t.bias);return r?Dt.relu(i):i})}function I(e,t){Object.keys(e).forEach(n=>{t.some(e=>e.originalPath===n)||e[n].dispose()})}var kt=d(p());function At(e,t){return(n,r,i,a)=>{let o=kt.tensor4d(e(n*r*i*i),[i,i,n,r]),s=kt.tensor1d(e(r));return t.push({paramPath:`${a}/filters`},{paramPath:`${a}/bias`}),{filters:o,bias:s}}}var jt=d(p());function Mt(e,t){return(n,r,i)=>{let a=jt.tensor2d(e(n*r),[n,r]),o=jt.tensor1d(e(r));return t.push({paramPath:`${i}/weights`},{paramPath:`${i}/bias`}),{weights:a,bias:o}}}var Nt=d(p()),Pt=class{constructor(e,t,n){this.depthwise_filter=e,this.pointwise_filter=t,this.bias=n}};function Ft(e,t){return(n,r,i)=>{let a=Nt.tensor4d(e(9*n),[3,3,n,1]),o=Nt.tensor4d(e(n*r),[1,1,n,r]),s=Nt.tensor1d(e(r));return t.push({paramPath:`${i}/depthwise_filter`},{paramPath:`${i}/pointwise_filter`},{paramPath:`${i}/bias`}),new Pt(a,o,s)}}function It(e){return t=>new Pt(e(`${t}/depthwise_filter`,4),e(`${t}/pointwise_filter`,4),e(`${t}/bias`,1))}function L(e,t){return(n,r,i)=>{let a=e[n];if(!b(a,r))throw Error(`expected weightMap[${n}] to be a Tensor${r}D, instead have ${a}`);return t.push({originalPath:n,paramPath:i||n}),a}}function R(e){let t=e;function n(e){let n=t.slice(0,e);return t=t.slice(e),n}function r(){return t}return{extractWeights:n,getRemainingWeights:r}}function Lt(e,t){let n=At(e,t),r=Ft(e,t);function i(e,t,i,a=!1){return{conv0:a?n(e,t,3,`${i}/conv0`):r(e,t,`${i}/conv0`),conv1:r(t,t,`${i}/conv1`),conv2:r(t,t,`${i}/conv2`)}}function a(e,t,n,a=!1){let{conv0:o,conv1:s,conv2:c}=i(e,t,n,a);return{conv0:o,conv1:s,conv2:c,conv3:r(t,t,`${n}/conv3`)}}return{extractDenseBlock3Params:i,extractDenseBlock4Params:a}}function Rt(e){let t=[],{extractWeights:n,getRemainingWeights:r}=R(e),{extractDenseBlock4Params:i}=Lt(n,t),a=i(3,32,`dense0`,!0),o=i(32,64,`dense1`),s=i(64,128,`dense2`),c=i(128,256,`dense3`);if(r().length!==0)throw Error(`weights remaing after extract: ${r().length}`);return{paramMappings:t,params:{dense0:a,dense1:o,dense2:s,dense3:c}}}function zt(e){return t=>({filters:e(`${t}/filters`,4),bias:e(`${t}/bias`,1)})}function Bt(e,t){let n=L(e,t),r=zt(n),i=It(n);function a(e,t=!1){return{conv0:t?r(`${e}/conv0`):i(`${e}/conv0`),conv1:i(`${e}/conv1`),conv2:i(`${e}/conv2`)}}function o(e,t=!1){return{conv0:t?r(`${e}/conv0`):i(`${e}/conv0`),conv1:i(`${e}/conv1`),conv2:i(`${e}/conv2`),conv3:i(`${e}/conv3`)}}return{extractDenseBlock3Params:a,extractDenseBlock4Params:o}}function Vt(e){let t=[],{extractDenseBlock4Params:n}=Bt(e,t),r={dense0:n(`dense0`,!0),dense1:n(`dense1`),dense2:n(`dense2`),dense3:n(`dense3`)};return I(e,t),{params:r,paramMappings:t}}var Ht=class extends N{constructor(){super(`FaceFeatureExtractor`)}forwardInput(e){let{params:t}=this;if(!t)throw Error(`FaceFeatureExtractor - load model before inference`);return St.tidy(()=>{let n=Et(_e(St.cast(e.toBatchTensor(112,!0),`float32`),[122.782,117.001,104.298]).div(255),t.dense0,!0);return n=Et(n,t.dense1),n=Et(n,t.dense2),n=Et(n,t.dense3),n=St.avgPool(n,[7,7],[2,2],`valid`),n})}async forward(e){return this.forwardInput(await M(e))}getDefaultModelName(){return`face_feature_extractor_model`}extractParamsFromWeightMap(e){return Vt(e)}extractParams(e){return Rt(e)}},Ut=d(p()),Wt=d(p());function Gt(e,t){return Wt.tidy(()=>Wt.add(Wt.matMul(e,t.weights),t.bias))}function Kt(e,t,n){let r=[],{extractWeights:i,getRemainingWeights:a}=R(e),o=Mt(i,r)(t,n,`fc`);if(a().length!==0)throw Error(`weights remaing after extract: ${a().length}`);return{paramMappings:r,params:{fc:o}}}function qt(e){let t=[],n=L(e,t);function r(e){return{weights:n(`${e}/weights`,2),bias:n(`${e}/bias`,1)}}let i={fc:r(`fc`)};return I(e,t),{params:i,paramMappings:t}}function Jt(e){let t={},n={};return Object.keys(e).forEach(r=>{let i=r.startsWith(`fc`)?n:t;i[r]=e[r]}),{featureExtractorMap:t,classifierMap:n}}var Yt=class extends N{constructor(e,t){super(e),this._faceFeatureExtractor=t}get faceFeatureExtractor(){return this._faceFeatureExtractor}runNet(e){let{params:t}=this;if(!t)throw Error(`${this._name} - load model before inference`);return Ut.tidy(()=>{let n=e instanceof ct?this.faceFeatureExtractor.forwardInput(e):e;return Gt(n.as2D(n.shape[0],-1),t.fc)})}dispose(e=!0){this.faceFeatureExtractor.dispose(e),super.dispose(e)}loadClassifierParams(e){let{params:t,paramMappings:n}=this.extractClassifierParams(e);this._params=t,this._paramMappings=n}extractClassifierParams(e){return Kt(e,this.getClassifierChannelsIn(),this.getClassifierChannelsOut())}extractParamsFromWeightMap(e){let{featureExtractorMap:t,classifierMap:n}=Jt(e);return this.faceFeatureExtractor.loadFromWeightMap(t),qt(n)}extractParams(e){let t=this.getClassifierChannelsIn(),n=this.getClassifierChannelsOut(),r=n*t+n,i=e.slice(0,e.length-r),a=e.slice(e.length-r);return this.faceFeatureExtractor.extractWeights(i),this.extractClassifierParams(a)}},Xt=[`neutral`,`happy`,`sad`,`angry`,`fearful`,`disgusted`,`surprised`],Zt=class{constructor(e){if(this.neutral=0,this.happy=0,this.sad=0,this.angry=0,this.fearful=0,this.disgusted=0,this.surprised=0,e.length!==7)throw Error(`FaceExpressions.constructor - expected probabilities.length to be 7, have: ${e.length}`);Xt.forEach((t,n)=>{this[t]=e[n]})}asSortedArray(){return Xt.map(e=>({expression:e,probability:this[e]})).sort((e,t)=>t.probability-e.probability)}},Qt=class extends Yt{constructor(e=new Ht){super(`FaceExpressionNet`,e)}forwardInput(e){return Ze.tidy(()=>Ze.softmax(this.runNet(e)))}async forward(e){return this.forwardInput(await M(e))}async predictExpressions(e){let t=await M(e),n=await this.forwardInput(t),r=await Promise.all(Ze.unstack(n).map(async e=>{let t=e.dataSync();return e.dispose(),t}));n.dispose();let i=r.map(e=>new Zt(e));return t.isBatchInput?i:i[0]}getDefaultModelName(){return`face_expression_model`}getClassifierChannelsIn(){return 256}getClassifierChannelsOut(){return 7}};function $t(e){return e.expressions instanceof Zt}function en(e,t){return{...e,expressions:t}}function tn(e,t,n=.1,r){(Array.isArray(t)?t:[t]).forEach(t=>{let i=t instanceof Zt?t:$t(t)?t.expressions:void 0;if(!i)throw Error(`drawFaceExpressions - expected faceExpressions to be FaceExpressions | WithFaceExpressions<{}> or array thereof`);let a=i.asSortedArray().filter(e=>e.probability>n),o=Ne(t)?t.detection.box.bottomLeft:r||new w(0,0);new qe(a.map(e=>`${e.expression} (${oe(e.probability)})`),o).draw(e)})}function nn(e){return Ne(e)&&e.landmarks instanceof D&&e.unshiftedLandmarks instanceof D&&e.alignedRect instanceof E}function rn(e){let t=e=>e*180/Math.PI,n=(e,t)=>Math.sqrt((e.x-t.x)**2+(e.y-t.y)**2),r={roll:void 0,pitch:void 0,yaw:void 0},i=(e,t,n)=>Math.floor(e.x-t.x)-Math.floor(t.x-n.x),a=(e,n)=>{let r=Math.hypot(n.x-e.x,n.y-e.y),i=n.y-e.y,a=Math.asin(i/r),o=t(a);return Math.floor(90-o)*(n.x-e.x<0?-1:1)},o=(e,r,i)=>{let a=n(e,i),o=new w((e.x+i.x)/2,(e.y+i.y)/2),s=n(r,o),c=Math.atan(s/a);return Math.floor(t(c))*(o.y-r.y<0?-1:1)};if(!e||!e.positions||e.positions.length!==68)return r;let s=e.positions;return r.roll=a(s[27],s[66]),r.pitch=o(s[14],s[30],s[2]),r.yaw=i(s[14],s[33],s[2]),r}function an(e,t){let{box:n}=e.detection,r=t.shiftBy(n.x,n.y),i=r.align(),{imageDims:a}=e.detection,o=new E(e.detection.score,i.rescale(a.reverse()),a),s=rn(t);return{...e,landmarks:r,unshiftedLandmarks:t,alignedRect:o,angle:s}}var on=class{constructor(e={}){let{drawLines:t=!0,drawPoints:n=!0,lineWidth:r,lineColor:i,pointSize:a,pointColor:o}=e;this.drawLines=t,this.drawPoints=n,this.lineWidth=r||1,this.pointSize=a||2,this.lineColor=i||`rgba(0, 255, 255, 1)`,this.pointColor=o||`rgba(255, 0, 255, 1)`}},sn=class{constructor(e,t={}){this.faceLandmarks=e,this.options=new on(t)}draw(e){let t=A(e),{drawLines:n,drawPoints:r,lineWidth:i,lineColor:a,pointSize:o,pointColor:s}=this.options;n&&this.faceLandmarks instanceof Oe&&(t.strokeStyle=a,t.lineWidth=i,_(t,this.faceLandmarks.getJawOutline()),_(t,this.faceLandmarks.getLeftEyeBrow()),_(t,this.faceLandmarks.getRightEyeBrow()),_(t,this.faceLandmarks.getNose()),_(t,this.faceLandmarks.getLeftEye(),!0),_(t,this.faceLandmarks.getRightEye(),!0),_(t,this.faceLandmarks.getMouth(),!0)),r&&(t.strokeStyle=s,t.fillStyle=s,this.faceLandmarks.positions.forEach(e=>{t.beginPath(),t.arc(e.x,e.y,o,0,2*Math.PI),t.fill()}))}};function cn(e,t){(Array.isArray(t)?t:[t]).forEach(t=>{let n=t instanceof D?t:nn(t)?t.landmarks:void 0;if(!n)throw Error(`drawFaceLandmarks - expected faceExpressions to be FaceLandmarks | WithFaceLandmarks<WithFaceDetection<{}>> or array thereof`);new sn(n).draw(e)})}var ln=`1.7.15`,z=d(p()),B=d(p());function un(e,t){let n=At(e,t),r=Ft(e,t);function i(e,t,i){return{separable_conv0:r(e,t,`${i}/separable_conv0`),separable_conv1:r(t,t,`${i}/separable_conv1`),expansion_conv:n(e,t,1,`${i}/expansion_conv`)}}function a(e,t){return{separable_conv0:r(e,e,`${t}/separable_conv0`),separable_conv1:r(e,e,`${t}/separable_conv1`),separable_conv2:r(e,e,`${t}/separable_conv2`)}}return{extractConvParams:n,extractSeparableConvParams:r,extractReductionBlockParams:i,extractMainBlockParams:a}}function dn(e,t){let n=[],{extractWeights:r,getRemainingWeights:i}=R(e),{extractConvParams:a,extractSeparableConvParams:o,extractReductionBlockParams:s,extractMainBlockParams:c}=un(r,n),l={conv_in:a(3,32,3,`entry_flow/conv_in`),reduction_block_0:s(32,64,`entry_flow/reduction_block_0`),reduction_block_1:s(64,128,`entry_flow/reduction_block_1`)},u={};S(t,0,1).forEach(e=>{u[`main_block_${e}`]=c(128,`middle_flow/main_block_${e}`)});let d={reduction_block:s(128,256,`exit_flow/reduction_block`),separable_conv:o(256,512,`exit_flow/separable_conv`)};if(i().length!==0)throw Error(`weights remaing after extract: ${i().length}`);return{paramMappings:n,params:{entry_flow:l,middle_flow:u,exit_flow:d}}}function fn(e,t){let n=L(e,t),r=zt(n),i=It(n);function a(e){return{separable_conv0:i(`${e}/separable_conv0`),separable_conv1:i(`${e}/separable_conv1`),expansion_conv:r(`${e}/expansion_conv`)}}function o(e){return{separable_conv0:i(`${e}/separable_conv0`),separable_conv1:i(`${e}/separable_conv1`),separable_conv2:i(`${e}/separable_conv2`)}}return{extractConvParams:r,extractSeparableConvParams:i,extractReductionBlockParams:a,extractMainBlockParams:o}}function pn(e,t){let n=[],{extractConvParams:r,extractSeparableConvParams:i,extractReductionBlockParams:a,extractMainBlockParams:o}=fn(e,n),s={conv_in:r(`entry_flow/conv_in`),reduction_block_0:a(`entry_flow/reduction_block_0`),reduction_block_1:a(`entry_flow/reduction_block_1`)},c={};S(t,0,1).forEach(e=>{c[`main_block_${e}`]=o(`middle_flow/main_block_${e}`)});let l={reduction_block:a(`exit_flow/reduction_block`),separable_conv:i(`exit_flow/separable_conv`)};return I(e,n),{params:{entry_flow:s,middle_flow:c,exit_flow:l},paramMappings:n}}function mn(e,t,n){return B.add(B.conv2d(e,t.filters,n,`same`),t.bias)}function hn(e,t,n=!0){let r=n?B.relu(e):e;return r=F(r,t.separable_conv0,[1,1]),r=F(B.relu(r),t.separable_conv1,[1,1]),r=B.maxPool(r,[3,3],[2,2],`same`),r=B.add(r,mn(e,t.expansion_conv,[2,2])),r}function gn(e,t){let n=F(B.relu(e),t.separable_conv0,[1,1]);return n=F(B.relu(n),t.separable_conv1,[1,1]),n=F(B.relu(n),t.separable_conv2,[1,1]),n=B.add(n,e),n}var _n=class extends N{constructor(e){super(`TinyXception`),this._numMainBlocks=e}forwardInput(e){let{params:t}=this;if(!t)throw Error(`TinyXception - load model before inference`);return B.tidy(()=>{let n=_e(B.cast(e.toBatchTensor(112,!0),`float32`),[122.782,117.001,104.298]).div(255),r=B.relu(mn(n,t.entry_flow.conv_in,[2,2]));return r=hn(r,t.entry_flow.reduction_block_0,!1),r=hn(r,t.entry_flow.reduction_block_1),S(this._numMainBlocks,0,1).forEach(e=>{r=gn(r,t.middle_flow[`main_block_${e}`])}),r=hn(r,t.exit_flow.reduction_block),r=B.relu(F(r,t.exit_flow.separable_conv,[1,1])),r})}async forward(e){return this.forwardInput(await M(e))}getDefaultModelName(){return`tiny_xception_model`}extractParamsFromWeightMap(e){return pn(e,this._numMainBlocks)}extractParams(e){return dn(e,this._numMainBlocks)}};function vn(e){let t=[],{extractWeights:n,getRemainingWeights:r}=R(e),i=Mt(n,t),a=i(512,1,`fc/age`),o=i(512,2,`fc/gender`);if(r().length!==0)throw Error(`weights remaing after extract: ${r().length}`);return{paramMappings:t,params:{fc:{age:a,gender:o}}}}function yn(e){let t=[],n=L(e,t);function r(e){return{weights:n(`${e}/weights`,2),bias:n(`${e}/bias`,1)}}let i={fc:{age:r(`fc/age`),gender:r(`fc/gender`)}};return I(e,t),{params:i,paramMappings:t}}var bn=(e=>(e.FEMALE=`female`,e.MALE=`male`,e))(bn||{}),xn=class extends N{constructor(e=new _n(2)){super(`AgeGenderNet`),this._faceFeatureExtractor=e}get faceFeatureExtractor(){return this._faceFeatureExtractor}runNet(e){let{params:t}=this;if(!t)throw Error(`${this._name} - load model before inference`);return z.tidy(()=>{let n=e instanceof ct?this.faceFeatureExtractor.forwardInput(e):e,r=z.avgPool(n,[7,7],[2,2],`valid`).as2D(n.shape[0],-1);return{age:Gt(r,t.fc.age).as1D(),gender:Gt(r,t.fc.gender)}})}forwardInput(e){return z.tidy(()=>{let{age:t,gender:n}=this.runNet(e);return{age:t,gender:z.softmax(n)}})}async forward(e){return this.forwardInput(await M(e))}async predictAgeAndGender(e){let t=await M(e),n=await this.forwardInput(t),r=z.unstack(n.age),i=z.unstack(n.gender),a=r.map((e,t)=>({ageTensor:e,genderTensor:i[t]})),o=await Promise.all(a.map(async({ageTensor:e,genderTensor:t})=>{let n=e.dataSync()[0],r=t.dataSync()[0],i=r>.5,a=i?`male`:`female`,o=i?r:1-r;return e.dispose(),t.dispose(),{age:n,gender:a,genderProbability:o}}));return n.age.dispose(),n.gender.dispose(),t.isBatchInput?o:o[0]}getDefaultModelName(){return`age_gender_model`}dispose(e=!0){this.faceFeatureExtractor.dispose(e),super.dispose(e)}loadClassifierParams(e){let{params:t,paramMappings:n}=this.extractClassifierParams(e);this._params=t,this._paramMappings=n}extractClassifierParams(e){return vn(e)}extractParamsFromWeightMap(e){let{featureExtractorMap:t,classifierMap:n}=Jt(e);return this.faceFeatureExtractor.loadFromWeightMap(t),yn(n)}extractParams(e){let t=e.slice(0,e.length-1539),n=e.slice(e.length-1539);return this.faceFeatureExtractor.extractWeights(t),this.extractClassifierParams(n)}},V=d(p()),Sn=class extends Yt{postProcess(e,t,n){let r=n.map(({width:e,height:n})=>{let r=t/Math.max(n,e);return{width:e*r,height:n*r}}),i=r.length;return V.tidy(()=>{let n=(e,t)=>V.stack([V.fill([68],e,`float32`),V.fill([68],t,`float32`)],1).as2D(1,136).as1D(),a=(e,t)=>{let{width:n,height:i}=r[e];return t(n,i)?Math.abs(n-i)/2:0},o=e=>a(e,(e,t)=>e<t),s=e=>a(e,(e,t)=>t<e);return e.mul(V.fill([i,136],t,`float32`)).sub(V.stack(Array.from(Array(i),(e,t)=>n(o(t),s(t))))).div(V.stack(Array.from(Array(i),(e,t)=>n(r[t].width,r[t].height))))})}forwardInput(e){return V.tidy(()=>{let t=this.runNet(e);return this.postProcess(t,e.inputSize,e.inputDimensions.map(([e,t])=>({height:e,width:t})))})}async forward(e){return this.forwardInput(await M(e))}async detectLandmarks(e){let t=await M(e),n=V.tidy(()=>V.unstack(this.forwardInput(t))),r=await Promise.all(n.map(async(e,n)=>{let r=Array.from(e.dataSync()),i=r.filter((e,t)=>ae(t)),a=r.filter((e,t)=>!ae(t));return new Oe(Array(68).fill(0).map((e,t)=>new w(i[t],a[t])),{height:t.getInputHeight(n),width:t.getInputWidth(n)})}));return n.forEach(e=>e.dispose()),t.isBatchInput?r:r[0]}getClassifierChannelsOut(){return 136}},Cn=class extends Sn{constructor(e=new Ht){super(`FaceLandmark68Net`,e)}getDefaultModelName(){return`face_landmark_68_model`}getClassifierChannelsIn(){return 256}},wn=d(p());function Tn(e){let t=[],{extractDenseBlock3Params:n}=Bt(e,t),r={dense0:n(`dense0`,!0),dense1:n(`dense1`),dense2:n(`dense2`)};return I(e,t),{params:r,paramMappings:t}}function En(e){let t=[],{extractWeights:n,getRemainingWeights:r}=R(e),{extractDenseBlock3Params:i}=Lt(n,t),a=i(3,32,`dense0`,!0),o=i(32,64,`dense1`),s=i(64,128,`dense2`);if(r().length!==0)throw Error(`weights remaing after extract: ${r().length}`);return{paramMappings:t,params:{dense0:a,dense1:o,dense2:s}}}var Dn=class extends N{constructor(){super(`TinyFaceFeatureExtractor`)}forwardInput(e){let{params:t}=this;if(!t)throw Error(`TinyFaceFeatureExtractor - load model before inference`);return wn.tidy(()=>{let n=Tt(_e(wn.cast(e.toBatchTensor(112,!0),`float32`),[122.782,117.001,104.298]).div(255),t.dense0,!0);return n=Tt(n,t.dense1),n=Tt(n,t.dense2),n=wn.avgPool(n,[14,14],[2,2],`valid`),n})}async forward(e){return this.forwardInput(await M(e))}getDefaultModelName(){return`face_feature_extractor_tiny_model`}extractParamsFromWeightMap(e){return Tn(e)}extractParams(e){return En(e)}},On=class extends Sn{constructor(e=new Dn){super(`FaceLandmark68TinyNet`,e)}getDefaultModelName(){return`face_landmark_68_tiny_model`}getClassifierChannelsIn(){return 128}},kn=class extends Cn{},H=d(p()),An=d(p()),jn=d(p());function Mn(e,t){return jn.add(jn.mul(e,t.weights),t.biases)}function Nn(e,t,n,r,i=`same`){let{filters:a,bias:o}=t.conv,s=An.conv2d(e,a,n,i);return s=An.add(s,o),s=Mn(s,t.scale),r?An.relu(s):s}function Pn(e,t){return Nn(e,t,[1,1],!0)}function Fn(e,t){return Nn(e,t,[1,1],!1)}function In(e,t){return Nn(e,t,[2,2],!0,`valid`)}var U=d(p());function Ln(e,t){function n(t,n,r){let i=e(t),a=i.length/(n*r*r);if(ie(a))throw Error(`depth has to be an integer: ${a}, weights.length: ${i.length}, numFilters: ${n}, filterSize: ${r}`);return U.tidy(()=>U.transpose(U.tensor4d(i,[n,a,r,r]),[2,3,1,0]))}function r(r,i,a,o){let s=n(r,i,a),c=U.tensor1d(e(i));return t.push({paramPath:`${o}/filters`},{paramPath:`${o}/bias`}),{filters:s,bias:c}}function i(n,r){let i=U.tensor1d(e(n)),a=U.tensor1d(e(n));return t.push({paramPath:`${r}/weights`},{paramPath:`${r}/biases`}),{weights:i,biases:a}}function a(e,t,n,a){return{conv:r(e,t,n,`${a}/conv`),scale:i(t,`${a}/scale`)}}function o(e,t,n,r,i=!1){return{conv1:a((i?.5:1)*e,t,n,`${r}/conv1`),conv2:a(e,t,n,`${r}/conv2`)}}return{extractConvLayerParams:a,extractResidualLayerParams:o}}function Rn(e){let{extractWeights:t,getRemainingWeights:n}=R(e),r=[],{extractConvLayerParams:i,extractResidualLayerParams:a}=Ln(t,r),o=i(4704,32,7,`conv32_down`),s=a(9216,32,3,`conv32_1`),c=a(9216,32,3,`conv32_2`),l=a(9216,32,3,`conv32_3`),u=a(36864,64,3,`conv64_down`,!0),d=a(36864,64,3,`conv64_1`),f=a(36864,64,3,`conv64_2`),p=a(36864,64,3,`conv64_3`),m=a(147456,128,3,`conv128_down`,!0),h=a(147456,128,3,`conv128_1`),g=a(147456,128,3,`conv128_2`),_=a(589824,256,3,`conv256_down`,!0),v=a(589824,256,3,`conv256_1`),ee=a(589824,256,3,`conv256_2`),y=a(589824,256,3,`conv256_down_out`),b=U.tidy(()=>U.transpose(U.tensor2d(t(256*128),[128,256]),[1,0]));if(r.push({paramPath:`fc`}),n().length!==0)throw Error(`weights remaing after extract: ${n().length}`);return{params:{conv32_down:o,conv32_1:s,conv32_2:c,conv32_3:l,conv64_down:u,conv64_1:d,conv64_2:f,conv64_3:p,conv128_down:m,conv128_1:h,conv128_2:g,conv256_down:_,conv256_1:v,conv256_2:ee,conv256_down_out:y,fc:b},paramMappings:r}}function zn(e,t){let n=L(e,t);function r(e){return{weights:n(`${e}/scale/weights`,1),biases:n(`${e}/scale/biases`,1)}}function i(e){let t=n(`${e}/conv/filters`,4),i=n(`${e}/conv/bias`,1),a=r(e);return{conv:{filters:t,bias:i},scale:a}}function a(e){return{conv1:i(`${e}/conv1`),conv2:i(`${e}/conv2`)}}return{extractConvLayerParams:i,extractResidualLayerParams:a}}function Bn(e){let t=[],{extractConvLayerParams:n,extractResidualLayerParams:r}=zn(e,t),i=n(`conv32_down`),a=r(`conv32_1`),o=r(`conv32_2`),s=r(`conv32_3`),c=r(`conv64_down`),l=r(`conv64_1`),u=r(`conv64_2`),d=r(`conv64_3`),f=r(`conv128_down`),p=r(`conv128_1`),m=r(`conv128_2`),h=r(`conv256_down`),g=r(`conv256_1`),_=r(`conv256_2`),v=r(`conv256_down_out`),{fc:ee}=e;if(t.push({originalPath:`fc`,paramPath:`fc`}),!ne(ee))throw Error(`expected weightMap[fc] to be a Tensor2D, instead have ${ee}`);let y={conv32_down:i,conv32_1:a,conv32_2:o,conv32_3:s,conv64_down:c,conv64_1:l,conv64_2:u,conv64_3:d,conv128_down:f,conv128_1:p,conv128_2:m,conv256_down:h,conv256_1:g,conv256_2:_,conv256_down_out:v,fc:ee};return I(e,t),{params:y,paramMappings:t}}var W=d(p());function G(e,t){let n=Pn(e,t.conv1);return n=Fn(n,t.conv2),n=W.add(n,e),n=W.relu(n),n}function Vn(e,t){let n=In(e,t.conv1);n=Fn(n,t.conv2);let r=W.avgPool(e,2,2,`valid`),i=W.zeros(r.shape),a=r.shape[3]!==n.shape[3];if(r.shape[1]!==n.shape[1]||r.shape[2]!==n.shape[2]){let e=[...n.shape];e[1]=1;let t=W.zeros(e);n=W.concat([n,t],1);let r=[...n.shape];r[2]=1;let i=W.zeros(r);n=W.concat([n,i],2)}return r=a?W.concat([r,i],3):r,n=W.add(r,n),n=W.relu(n),n}var Hn=class extends N{constructor(){super(`FaceRecognitionNet`)}forwardInput(e){let{params:t}=this;if(!t)throw Error(`FaceRecognitionNet - load model before inference`);return H.tidy(()=>{let n=In(_e(H.cast(e.toBatchTensor(150,!0),`float32`),[122.782,117.001,104.298]).div(255),t.conv32_down);n=H.maxPool(n,3,2,`valid`),n=G(n,t.conv32_1),n=G(n,t.conv32_2),n=G(n,t.conv32_3),n=Vn(n,t.conv64_down),n=G(n,t.conv64_1),n=G(n,t.conv64_2),n=G(n,t.conv64_3),n=Vn(n,t.conv128_down),n=G(n,t.conv128_1),n=G(n,t.conv128_2),n=Vn(n,t.conv256_down),n=G(n,t.conv256_1),n=G(n,t.conv256_2),n=Vn(n,t.conv256_down_out);let r=n.mean([1,2]);return H.matMul(r,t.fc)})}async forward(e){return this.forwardInput(await M(e))}async computeFaceDescriptor(e){var t;if((t=e?.shape)!=null&&t.some(e=>e<=0))return new Float32Array(128);let n=await M(e),r=H.tidy(()=>H.unstack(this.forwardInput(n))),i=await Promise.all(r.map(e=>e.data()));return r.forEach(e=>e.dispose()),n.isBatchInput?i:i[0]}getDefaultModelName(){return`face_recognition_model`}extractParamsFromWeightMap(e){return Bn(e)}extractParams(e){return Rn(e)}};function Un(e){let t=new Hn;return t.extractWeights(e),t}function Wn(e,t){return{...e,descriptor:t}}function Gn(e){return typeof e.age==`number`}function Kn(e,t){return{...e,age:t}}function qn(e){return(e.gender===`male`||e.gender===`female`)&&ue(e.genderProbability)}function Jn(e,t,n){return{...e,gender:t,genderProbability:n}}var Yn=d(p()),K=d(p());function Xn(e,t){function n(n,r){let i=K.tensor4d(e(9*n),[3,3,n,1]),a=K.tensor1d(e(n)),o=K.tensor1d(e(n)),s=K.tensor1d(e(n)),c=K.tensor1d(e(n));return t.push({paramPath:`${r}/filters`},{paramPath:`${r}/batch_norm_scale`},{paramPath:`${r}/batch_norm_offset`},{paramPath:`${r}/batch_norm_mean`},{paramPath:`${r}/batch_norm_variance`}),{filters:i,batch_norm_scale:a,batch_norm_offset:o,batch_norm_mean:s,batch_norm_variance:c}}function r(n,r,i,a,o){let s=K.tensor4d(e(n*r*i*i),[i,i,n,r]),c=K.tensor1d(e(r));return t.push({paramPath:`${a}/filters`},{paramPath:`${a}/${o?`batch_norm_offset`:`bias`}`}),{filters:s,bias:c}}function i(e,t,n,i){let{filters:a,bias:o}=r(e,t,n,i,!0);return{filters:a,batch_norm_offset:o}}function a(e,t,r){return{depthwise_conv:n(e,`${r}/depthwise_conv`),pointwise_conv:i(e,t,1,`${r}/pointwise_conv`)}}function o(){return{conv_0:i(3,32,3,`mobilenetv1/conv_0`),conv_1:a(32,64,`mobilenetv1/conv_1`),conv_2:a(64,128,`mobilenetv1/conv_2`),conv_3:a(128,128,`mobilenetv1/conv_3`),conv_4:a(128,256,`mobilenetv1/conv_4`),conv_5:a(256,256,`mobilenetv1/conv_5`),conv_6:a(256,512,`mobilenetv1/conv_6`),conv_7:a(512,512,`mobilenetv1/conv_7`),conv_8:a(512,512,`mobilenetv1/conv_8`),conv_9:a(512,512,`mobilenetv1/conv_9`),conv_10:a(512,512,`mobilenetv1/conv_10`),conv_11:a(512,512,`mobilenetv1/conv_11`),conv_12:a(512,1024,`mobilenetv1/conv_12`),conv_13:a(1024,1024,`mobilenetv1/conv_13`)}}function s(){let e=i(1024,256,1,`prediction_layer/conv_0`),t=i(256,512,3,`prediction_layer/conv_1`),n=i(512,128,1,`prediction_layer/conv_2`),a=i(128,256,3,`prediction_layer/conv_3`),o=i(256,128,1,`prediction_layer/conv_4`),s=i(128,256,3,`prediction_layer/conv_5`),c=i(256,64,1,`prediction_layer/conv_6`),l=i(64,128,3,`prediction_layer/conv_7`),u=r(512,12,1,`prediction_layer/box_predictor_0/box_encoding_predictor`),d=r(512,9,1,`prediction_layer/box_predictor_0/class_predictor`),f=r(1024,24,1,`prediction_layer/box_predictor_1/box_encoding_predictor`),p=r(1024,18,1,`prediction_layer/box_predictor_1/class_predictor`),m=r(512,24,1,`prediction_layer/box_predictor_2/box_encoding_predictor`),h=r(512,18,1,`prediction_layer/box_predictor_2/class_predictor`),g=r(256,24,1,`prediction_layer/box_predictor_3/box_encoding_predictor`),_=r(256,18,1,`prediction_layer/box_predictor_3/class_predictor`),v=r(256,24,1,`prediction_layer/box_predictor_4/box_encoding_predictor`),ee=r(256,18,1,`prediction_layer/box_predictor_4/class_predictor`),y=r(128,24,1,`prediction_layer/box_predictor_5/box_encoding_predictor`),b=r(128,18,1,`prediction_layer/box_predictor_5/class_predictor`);return{conv_0:e,conv_1:t,conv_2:n,conv_3:a,conv_4:o,conv_5:s,conv_6:c,conv_7:l,box_predictor_0:{box_encoding_predictor:u,class_predictor:d},box_predictor_1:{box_encoding_predictor:f,class_predictor:p},box_predictor_2:{box_encoding_predictor:m,class_predictor:h},box_predictor_3:{box_encoding_predictor:g,class_predictor:_},box_predictor_4:{box_encoding_predictor:v,class_predictor:ee},box_predictor_5:{box_encoding_predictor:y,class_predictor:b}}}return{extractMobilenetV1Params:o,extractPredictionLayerParams:s}}function Zn(e){let t=[],{extractWeights:n,getRemainingWeights:r}=R(e),{extractMobilenetV1Params:i,extractPredictionLayerParams:a}=Xn(n,t),o=i(),s=a(),c={extra_dim:K.tensor3d(n(5118*4),[1,5118,4])};if(t.push({paramPath:`output_layer/extra_dim`}),r().length!==0)throw Error(`weights remaing after extract: ${r().length}`);return{params:{mobilenetv1:o,prediction_layer:s,output_layer:c},paramMappings:t}}function Qn(e,t){let n=L(e,t);function r(e,t,r){return{filters:n(`${e}/Conv2d_${t}_pointwise/weights`,4,`${r}/filters`),batch_norm_offset:n(`${e}/Conv2d_${t}_pointwise/convolution_bn_offset`,1,`${r}/batch_norm_offset`)}}function i(e){let t=`mobilenetv1/conv_${e}`,i=`MobilenetV1/Conv2d_${e}_depthwise`,a=`${t}/depthwise_conv`,o=`${t}/pointwise_conv`;return{depthwise_conv:{filters:n(`${i}/depthwise_weights`,4,`${a}/filters`),batch_norm_scale:n(`${i}/BatchNorm/gamma`,1,`${a}/batch_norm_scale`),batch_norm_offset:n(`${i}/BatchNorm/beta`,1,`${a}/batch_norm_offset`),batch_norm_mean:n(`${i}/BatchNorm/moving_mean`,1,`${a}/batch_norm_mean`),batch_norm_variance:n(`${i}/BatchNorm/moving_variance`,1,`${a}/batch_norm_variance`)},pointwise_conv:r(`MobilenetV1`,e,o)}}function a(){return{conv_0:r(`MobilenetV1`,0,`mobilenetv1/conv_0`),conv_1:i(1),conv_2:i(2),conv_3:i(3),conv_4:i(4),conv_5:i(5),conv_6:i(6),conv_7:i(7),conv_8:i(8),conv_9:i(9),conv_10:i(10),conv_11:i(11),conv_12:i(12),conv_13:i(13)}}function o(e,t){return{filters:n(`${e}/weights`,4,`${t}/filters`),bias:n(`${e}/biases`,1,`${t}/bias`)}}function s(e){return{box_encoding_predictor:o(`Prediction/BoxPredictor_${e}/BoxEncodingPredictor`,`prediction_layer/box_predictor_${e}/box_encoding_predictor`),class_predictor:o(`Prediction/BoxPredictor_${e}/ClassPredictor`,`prediction_layer/box_predictor_${e}/class_predictor`)}}function c(){return{conv_0:r(`Prediction`,0,`prediction_layer/conv_0`),conv_1:r(`Prediction`,1,`prediction_layer/conv_1`),conv_2:r(`Prediction`,2,`prediction_layer/conv_2`),conv_3:r(`Prediction`,3,`prediction_layer/conv_3`),conv_4:r(`Prediction`,4,`prediction_layer/conv_4`),conv_5:r(`Prediction`,5,`prediction_layer/conv_5`),conv_6:r(`Prediction`,6,`prediction_layer/conv_6`),conv_7:r(`Prediction`,7,`prediction_layer/conv_7`),box_predictor_0:s(0),box_predictor_1:s(1),box_predictor_2:s(2),box_predictor_3:s(3),box_predictor_4:s(4),box_predictor_5:s(5)}}return{extractMobilenetV1Params:a,extractPredictionLayerParams:c}}function $n(e){let t=[],{extractMobilenetV1Params:n,extractPredictionLayerParams:r}=Qn(e,t),i=e[`Output/extra_dim`];if(t.push({originalPath:`Output/extra_dim`,paramPath:`output_layer/extra_dim`}),!re(i))throw Error(`expected weightMap['Output/extra_dim'] to be a Tensor3D, instead have ${i}`);let a={mobilenetv1:n(),prediction_layer:r(),output_layer:{extra_dim:i}};return I(e,t),{params:a,paramMappings:t}}var er=d(p()),tr=d(p());function q(e,t,n){return tr.tidy(()=>{let r=tr.conv2d(e,t.filters,n,`same`);return r=tr.add(r,t.batch_norm_offset),tr.clipByValue(r,0,6)})}var nr=.0010000000474974513;function rr(e,t,n){return er.tidy(()=>{let r=er.depthwiseConv2d(e,t.filters,n,`same`);return r=er.batchNorm(r,t.batch_norm_mean,t.batch_norm_variance,t.batch_norm_offset,t.batch_norm_scale,nr),er.clipByValue(r,0,6)})}function ir(e){return[2,4,6,12].some(t=>t===e)?[2,2]:[1,1]}function ar(e,t){return er.tidy(()=>{let n,r=q(e,t.conv_0,[2,2]);if([t.conv_1,t.conv_2,t.conv_3,t.conv_4,t.conv_5,t.conv_6,t.conv_7,t.conv_8,t.conv_9,t.conv_10,t.conv_11,t.conv_12,t.conv_13].forEach((e,t)=>{let i=t+1,a=ir(i);r=rr(r,e.depthwise_conv,a),r=q(r,e.pointwise_conv,[1,1]),i===11&&(n=r)}),n===null)throw Error(`mobileNetV1 - output of conv layer 11 is null`);return{out:r,conv11:n}})}function or(e,t,n){let r=e.arraySync(),i=Math.min(r[t][0],r[t][2]),a=Math.min(r[t][1],r[t][3]),o=Math.max(r[t][0],r[t][2]),s=Math.max(r[t][1],r[t][3]),c=Math.min(r[n][0],r[n][2]),l=Math.min(r[n][1],r[n][3]),u=Math.max(r[n][0],r[n][2]),d=Math.max(r[n][1],r[n][3]),f=(o-i)*(s-a),p=(u-c)*(d-l);if(f<=0||p<=0)return 0;let m=Math.max(i,c),h=Math.max(a,l),g=Math.min(o,u),_=Math.min(s,d),v=Math.max(g-m,0)*Math.max(_-h,0);return v/(f+p-v)}function sr(e,t,n,r,i){let a=e.shape[0],o=Math.min(n,a),s=t.map((e,t)=>({score:e,boxIndex:t})).filter(e=>e.score>i).sort((e,t)=>t.score-e.score),c=e=>+(e<=r),l=[];return s.forEach(t=>{if(l.length>=o)return;let n=t.score;for(let n=l.length-1;n>=0;--n){let r=or(e,t.boxIndex,l[n]);if(r!==0&&(t.score*=c(r),t.score<=i))break}n===t.score&&l.push(t.boxIndex)}),l}var J=d(p());function cr(e){let t=J.unstack(J.transpose(e,[1,0])),n=[J.sub(t[2],t[0]),J.sub(t[3],t[1])];return{sizes:n,centers:[J.add(t[0],J.div(n[0],2)),J.add(t[1],J.div(n[1],2))]}}function lr(e,t){let{sizes:n,centers:r}=cr(e),i=J.unstack(J.transpose(t,[1,0])),a=J.div(J.mul(J.exp(J.div(i[2],5)),n[0]),2),o=J.add(J.mul(J.div(i[0],10),n[0]),r[0]),s=J.div(J.mul(J.exp(J.div(i[3],5)),n[1]),2),c=J.add(J.mul(J.div(i[1],10),n[1]),r[1]);return J.transpose(J.stack([J.sub(o,a),J.sub(c,s),J.add(o,a),J.add(c,s)]),[1,0])}function ur(e,t,n){return J.tidy(()=>{let r=e.shape[0],i=lr(J.reshape(J.tile(n.extra_dim,[r,1,1]),[-1,4]),J.reshape(e,[-1,4]));i=J.reshape(i,[r,i.shape[0]/r,4]);let a=J.sigmoid(J.slice(t,[0,0,1],[-1,-1,-1])),o=J.slice(a,[0,0,0],[-1,-1,1]);return o=J.reshape(o,[r,o.shape[1]]),{boxes:J.unstack(i),scores:J.unstack(o)}})}var dr=d(p()),fr=d(p());function pr(e,t){return fr.tidy(()=>{let n=e.shape[0];return{boxPredictionEncoding:fr.reshape(Ot(e,t.box_encoding_predictor),[n,-1,1,4]),classPrediction:fr.reshape(Ot(e,t.class_predictor),[n,-1,3])}})}function mr(e,t,n){return dr.tidy(()=>{let r=q(q(e,n.conv_0,[1,1]),n.conv_1,[2,2]),i=q(q(r,n.conv_2,[1,1]),n.conv_3,[2,2]),a=q(q(i,n.conv_4,[1,1]),n.conv_5,[2,2]),o=q(q(a,n.conv_6,[1,1]),n.conv_7,[2,2]),s=pr(t,n.box_predictor_0),c=pr(e,n.box_predictor_1),l=pr(r,n.box_predictor_2),u=pr(i,n.box_predictor_3),d=pr(a,n.box_predictor_4),f=pr(o,n.box_predictor_5);return{boxPredictions:dr.concat([s.boxPredictionEncoding,c.boxPredictionEncoding,l.boxPredictionEncoding,u.boxPredictionEncoding,d.boxPredictionEncoding,f.boxPredictionEncoding],1),classPredictions:dr.concat([s.classPrediction,c.classPrediction,l.classPrediction,u.classPrediction,d.classPrediction,f.classPrediction],1)}})}var Y=class{constructor({minConfidence:e,maxResults:t}={}){if(this._name=`SsdMobilenetv1Options`,this._minConfidence=e||.5,this._maxResults=t||100,typeof this._minConfidence!=`number`||this._minConfidence<=0||this._minConfidence>=1)throw Error(`${this._name} - expected minConfidence to be a number between 0 and 1`);if(typeof this._maxResults!=`number`)throw Error(`${this._name} - expected maxResults to be a number`)}get minConfidence(){return this._minConfidence}get maxResults(){return this._maxResults}},hr=class extends N{constructor(){super(`SsdMobilenetv1`)}forwardInput(e){let{params:t}=this;if(!t)throw Error(`SsdMobilenetv1 - load model before inference`);return Yn.tidy(()=>{let n=Yn.cast(e.toBatchTensor(512,!1),`float32`),r=ar(Yn.sub(Yn.div(n,127.5),1),t.mobilenetv1),{boxPredictions:i,classPredictions:a}=mr(r.out,r.conv11,t.prediction_layer);return ur(i,a,t.output_layer)})}async forward(e){return this.forwardInput(await M(e))}async locateFaces(e,t={}){let{maxResults:n,minConfidence:r}=new Y(t),i=await M(e),{boxes:a,scores:o}=this.forwardInput(i),s=a[0],c=o[0];for(let e=1;e<a.length;e++)a[e].dispose(),o[e].dispose();let l=Array.from(c.dataSync()),u=sr(s,l,n,.5,r),d=i.getReshapedInputDimensions(0),f=i.inputSize,p=f/d.width,m=f/d.height,h=s.arraySync(),g=u.map(e=>{let[t,n]=[Math.max(0,h[e][0]),Math.min(1,h[e][2])].map(e=>e*m),[r,a]=[Math.max(0,h[e][1]),Math.min(1,h[e][3])].map(e=>e*p);return new E(l[e],new Ce(r,t,a-r,n-t),{height:i.getInputHeight(0),width:i.getInputWidth(0)})});return s.dispose(),c.dispose(),g}getDefaultModelName(){return`ssd_mobilenetv1_model`}extractParamsFromWeightMap(e){return $n(e)}extractParams(e){return Zn(e)}};function gr(e){let t=new hr;return t.extractWeights(e),t}function _r(e){return gr(e)}var vr=class extends hr{},yr=.4,br=[new w(.738768,.874946),new w(2.42204,2.65704),new w(4.30971,7.04493),new w(10.246,4.59428),new w(12.6868,11.8741)],xr=[new w(1.603231,2.094468),new w(6.041143,7.080126),new w(2.882459,3.518061),new w(4.266906,5.178857),new w(9.041765,10.66308)],Sr=[117.001,114.697,97.404],Cr=`tiny_yolov2_model`,wr=`tiny_yolov2_separable_conv_model`,X=d(p()),Tr=e=>typeof e==`number`;function Er(e){if(!e)throw Error(`invalid config: ${e}`);if(typeof e.withSeparableConvs!=`boolean`)throw Error(`config.withSeparableConvs has to be a boolean, have: ${e.withSeparableConvs}`);if(!Tr(e.iouThreshold)||e.iouThreshold<0||e.iouThreshold>1)throw Error(`config.iouThreshold has to be a number between [0, 1], have: ${e.iouThreshold}`);if(!Array.isArray(e.classes)||!e.classes.length||!e.classes.every(e=>typeof e==`string`))throw Error(`config.classes has to be an array class names: string[], have: ${JSON.stringify(e.classes)}`);if(!Array.isArray(e.anchors)||!e.anchors.length||!e.anchors.map(e=>e||{}).every(e=>Tr(e.x)&&Tr(e.y)))throw Error(`config.anchors has to be an array of { x: number, y: number }, have: ${JSON.stringify(e.anchors)}`);if(e.meanRgb&&(!Array.isArray(e.meanRgb)||e.meanRgb.length!==3||!e.meanRgb.every(Tr)))throw Error(`config.meanRgb has to be an array of shape [number, number, number], have: ${JSON.stringify(e.meanRgb)}`)}var Dr=d(p()),Or=d(p());function kr(e){return Or.tidy(()=>{let t=Or.mul(e,Or.scalar(.10000000149011612));return Or.add(Or.relu(Or.sub(e,t)),t)})}function Z(e,t){return Dr.tidy(()=>{let n=Dr.pad(e,[[0,0],[1,1],[1,1],[0,0]]);return n=Dr.conv2d(n,t.conv.filters,[1,1],`valid`),n=Dr.sub(n,t.bn.sub),n=Dr.mul(n,t.bn.truediv),n=Dr.add(n,t.conv.bias),kr(n)})}var Ar=d(p());function Q(e,t){return Ar.tidy(()=>{let n=Ar.pad(e,[[0,0],[1,1],[1,1],[0,0]]);return n=Ar.separableConv2d(n,t.depthwise_filter,t.pointwise_filter,[1,1],`valid`),n=Ar.add(n,t.bias),kr(n)})}var jr=d(p());function Mr(e,t){let n=At(e,t);function r(n,r){let i=jr.tensor1d(e(n)),a=jr.tensor1d(e(n));return t.push({paramPath:`${r}/sub`},{paramPath:`${r}/truediv`}),{sub:i,truediv:a}}function i(e,t,i){return{conv:n(e,t,3,`${i}/conv`),bn:r(t,`${i}/bn`)}}return{extractConvParams:n,extractConvWithBatchNormParams:i,extractSeparableConvParams:Ft(e,t)}}function Nr(e,t,n,r){let{extractWeights:i,getRemainingWeights:a}=R(e),o=[],{extractConvParams:s,extractConvWithBatchNormParams:c,extractSeparableConvParams:l}=Mr(i,o),u;if(t.withSeparableConvs){let[e,i,a,o,c,d,f,p,m]=r;u={conv0:t.isFirstLayerConv2d?s(e,i,3,`conv0`):l(e,i,`conv0`),conv1:l(i,a,`conv1`),conv2:l(a,o,`conv2`),conv3:l(o,c,`conv3`),conv4:l(c,d,`conv4`),conv5:l(d,f,`conv5`),conv6:p?l(f,p,`conv6`):void 0,conv7:m?l(p,m,`conv7`):void 0,conv8:s(m||p||f,5*n,1,`conv8`)}}else{let[e,t,i,a,o,l,d,f,p]=r;u={conv0:c(e,t,`conv0`),conv1:c(t,i,`conv1`),conv2:c(i,a,`conv2`),conv3:c(a,o,`conv3`),conv4:c(o,l,`conv4`),conv5:c(l,d,`conv5`),conv6:c(d,f,`conv6`),conv7:c(f,p,`conv7`),conv8:s(p,5*n,1,`conv8`)}}if(a().length!==0)throw Error(`weights remaing after extract: ${a().length}`);return{params:u,paramMappings:o}}function Pr(e,t){let n=L(e,t);function r(e){return{sub:n(`${e}/sub`,1),truediv:n(`${e}/truediv`,1)}}function i(e){return{filters:n(`${e}/filters`,4),bias:n(`${e}/bias`,1)}}function a(e){return{conv:i(`${e}/conv`),bn:r(`${e}/bn`)}}return{extractConvParams:i,extractConvWithBatchNormParams:a,extractSeparableConvParams:It(n)}}function Fr(e,t){let n=[],{extractConvParams:r,extractConvWithBatchNormParams:i,extractSeparableConvParams:a}=Pr(e,n),o;if(t.withSeparableConvs){let e=t.filterSizes&&t.filterSizes.length||9;o={conv0:t.isFirstLayerConv2d?r(`conv0`):a(`conv0`),conv1:a(`conv1`),conv2:a(`conv2`),conv3:a(`conv3`),conv4:a(`conv4`),conv5:a(`conv5`),conv6:e>7?a(`conv6`):void 0,conv7:e>8?a(`conv7`):void 0,conv8:r(`conv8`)}}else o={conv0:i(`conv0`),conv1:i(`conv1`),conv2:i(`conv2`),conv3:i(`conv3`),conv4:i(`conv4`),conv5:i(`conv5`),conv6:i(`conv6`),conv7:i(`conv7`),conv8:r(`conv8`)};return I(e,n),{params:o,paramMappings:n}}var Ir=class{constructor({inputSize:e,scoreThreshold:t}={}){if(this._name=`TinyYolov2Options`,this._inputSize=e||416,this._scoreThreshold=t||.5,typeof this._inputSize!=`number`||this._inputSize%32!=0)throw Error(`${this._name} - expected inputSize to be a number divisible by 32`);if(typeof this._scoreThreshold!=`number`||this._scoreThreshold<=0||this._scoreThreshold>=1)throw Error(`${this._name} - expected scoreThreshold to be a number between 0 and 1`)}get inputSize(){return this._inputSize}get scoreThreshold(){return this._scoreThreshold}},Lr=class e extends N{constructor(e){super(`TinyYolov2`),Er(e),this._config=e}get config(){return this._config}get withClassScores(){return this.config.withClassScores||this.config.classes.length>1}get boxEncodingSize(){return 5+(this.withClassScores?this.config.classes.length:0)}runTinyYolov2(e,t){let n=Z(e,t.conv0);return n=X.maxPool(n,[2,2],[2,2],`same`),n=Z(n,t.conv1),n=X.maxPool(n,[2,2],[2,2],`same`),n=Z(n,t.conv2),n=X.maxPool(n,[2,2],[2,2],`same`),n=Z(n,t.conv3),n=X.maxPool(n,[2,2],[2,2],`same`),n=Z(n,t.conv4),n=X.maxPool(n,[2,2],[2,2],`same`),n=Z(n,t.conv5),n=X.maxPool(n,[2,2],[1,1],`same`),n=Z(n,t.conv6),n=Z(n,t.conv7),Ot(n,t.conv8,`valid`,!1)}runMobilenet(e,t){let n=this.config.isFirstLayerConv2d?kr(Ot(e,t.conv0,`valid`,!1)):Q(e,t.conv0);return n=X.maxPool(n,[2,2],[2,2],`same`),n=Q(n,t.conv1),n=X.maxPool(n,[2,2],[2,2],`same`),n=Q(n,t.conv2),n=X.maxPool(n,[2,2],[2,2],`same`),n=Q(n,t.conv3),n=X.maxPool(n,[2,2],[2,2],`same`),n=Q(n,t.conv4),n=X.maxPool(n,[2,2],[2,2],`same`),n=Q(n,t.conv5),n=X.maxPool(n,[2,2],[1,1],`same`),n=t.conv6?Q(n,t.conv6):n,n=t.conv7?Q(n,t.conv7):n,Ot(n,t.conv8,`valid`,!1)}forwardInput(e,t){let{params:n}=this;if(!n)throw Error(`TinyYolov2 - load model before inference`);return X.tidy(()=>{let r=X.cast(e.toBatchTensor(t,!1),`float32`);return r=this.config.meanRgb?_e(r,this.config.meanRgb):r,r=r.div(255),this.config.withSeparableConvs?this.runMobilenet(r,n):this.runTinyYolov2(r,n)})}async forward(e,t){return this.forwardInput(await M(e),t)}async detect(e,t={}){let{inputSize:n,scoreThreshold:r}=new Ir(t),i=await M(e),a=await this.forwardInput(i,n),o=X.tidy(()=>X.unstack(a)[0].expandDims()),s={width:i.getInputWidth(0),height:i.getInputHeight(0)},c=await this.extractBoxes(o,i.getReshapedInputDimensions(0),r);a.dispose(),o.dispose();let l=c.map(e=>e.box),u=c.map(e=>e.score),d=c.map(e=>e.classScore),f=c.map(e=>this.config.classes[e.label]);return he(l.map(e=>e.rescale(n)),u,this.config.iouThreshold,!0).map(e=>new fe(u[e],d[e],f[e],l[e],s))}getDefaultModelName(){return``}extractParamsFromWeightMap(e){return Fr(e,this.config)}extractParams(t){let n=this.config.filterSizes||e.DEFAULT_FILTER_SIZES,r=n?n.length:void 0;if(r!==7&&r!==8&&r!==9)throw Error(`TinyYolov2 - expected 7 | 8 | 9 convolutional filters, but found ${r} filterSizes in config`);return Nr(t,this.config,this.boxEncodingSize,n)}async extractBoxes(e,t,n){let{width:r,height:i}=t,a=Math.max(r,i),o=a/r,s=a/i,c=e.shape[1],l=this.config.anchors.length,[u,d,f]=X.tidy(()=>{let t=e.reshape([c,c,l,this.boxEncodingSize]);return[t.slice([0,0,0,0],[c,c,l,4]),t.slice([0,0,0,4],[c,c,l,1]),this.withClassScores?X.softmax(t.slice([0,0,0,5],[c,c,l,this.config.classes.length]),3):X.scalar(0)]}),p=[],m=await d.array(),h=await u.array();for(let e=0;e<c;e++)for(let t=0;t<c;t++)for(let r=0;r<l;r++){let i=xe(m[e][t][r][0]);if(!n||i>n){let n=(t+xe(h[e][t][r][0]))/c*o,a=(e+xe(h[e][t][r][1]))/c*s,l=Math.exp(h[e][t][r][2])*this.config.anchors[r].x/c*o,u=Math.exp(h[e][t][r][3])*this.config.anchors[r].y/c*s,d=n-l/2,m=a-u/2,g={row:e,col:t,anchor:r},{classScore:_,label:v}=this.withClassScores?await this.extractPredictedClass(f,g):{classScore:1,label:0};p.push({box:new de(d,m,d+l,m+u),score:i,classScore:i*_,label:v,...g})}}return u.dispose(),d.dispose(),f.dispose(),p}async extractPredictedClass(e,t){let{row:n,col:r,anchor:i}=t,a=await e.array();return Array(this.config.classes.length).fill(0).map((e,t)=>a[n][r][i][t]).map((e,t)=>({classScore:e,label:t})).reduce((e,t)=>e.classScore>t.classScore?e:t)}};Lr.DEFAULT_FILTER_SIZES=[3,16,32,64,128,256,512,1024,1024];var Rr=Lr,zr=class extends Rr{constructor(e=!0){let t={withSeparableConvs:e,iouThreshold:yr,classes:[`face`],...e?{anchors:xr,meanRgb:Sr}:{anchors:br,withClassScores:!0}};super(t)}get withSeparableConvs(){return this.config.withSeparableConvs}get anchors(){return this.config.anchors}async locateFaces(e,t){return(await this.detect(e,t)).map(e=>new E(e.score,e.relativeBox,{width:e.imageWidth,height:e.imageHeight}))}getDefaultModelName(){return this.withSeparableConvs?wr:Cr}extractParamsFromWeightMap(e){return super.extractParamsFromWeightMap(e)}};function Br(e,t=!0){let n=new zr(t);return n.extractWeights(e),n}var Vr=class extends Ir{constructor(){super(...arguments),this._name=`TinyFaceDetectorOptions`}},Hr=class{async then(e){return e(await this.run())}async run(){throw Error(`ComposableTask - run is not implemented`)}},Ur=d(p()),Wr=d(p());async function Gr(e,t,n,r,i=({alignedRect:e})=>e){let a=e.map(e=>nn(e)?i(e):e.detection),o=r||(t instanceof Wr.Tensor?await dt(t,a):await lt(t,a)),s=await n(o);return o.forEach(e=>e instanceof Wr.Tensor&&e.dispose()),s}async function Kr(e,t,n,r,i){return Gr([e],t,async e=>n(e[0]),r,i)}var qr=.4,Jr=[new w(1.603231,2.094468),new w(6.041143,7.080126),new w(2.882459,3.518061),new w(4.266906,5.178857),new w(9.041765,10.66308)],Yr=[117.001,114.697,97.404],Xr=class extends Rr{constructor(){super({withSeparableConvs:!0,iouThreshold:qr,classes:[`face`],anchors:Jr,meanRgb:Yr,isFirstLayerConv2d:!0,filterSizes:[3,16,32,64,128,256,512]})}get anchors(){return this.config.anchors}async locateFaces(e,t){return(await this.detect(e,t)).map(e=>new E(e.score,e.relativeBox,{width:e.imageWidth,height:e.imageHeight}))}getDefaultModelName(){return`tiny_face_detector_model`}extractParamsFromWeightMap(e){return super.extractParamsFromWeightMap(e)}},$={ssdMobilenetv1:new hr,tinyFaceDetector:new Xr,tinyYolov2:new zr,faceLandmark68Net:new Cn,faceLandmark68TinyNet:new On,faceRecognitionNet:new Hn,faceExpressionNet:new Qt,ageGenderNet:new xn},Zr=(e,t)=>$.ssdMobilenetv1.locateFaces(e,t),Qr=(e,t)=>$.tinyFaceDetector.locateFaces(e,t),$r=(e,t)=>$.tinyYolov2.locateFaces(e,t),ei=e=>$.faceLandmark68Net.detectLandmarks(e),ti=e=>$.faceLandmark68TinyNet.detectLandmarks(e),ni=e=>$.faceRecognitionNet.computeFaceDescriptor(e),ri=e=>$.faceExpressionNet.predictExpressions(e),ii=e=>$.ageGenderNet.predictAgeAndGender(e),ai=e=>$.ssdMobilenetv1.load(e),oi=e=>$.tinyFaceDetector.load(e),si=e=>$.tinyYolov2.load(e),ci=e=>$.faceLandmark68Net.load(e),li=e=>$.faceLandmark68TinyNet.load(e),ui=e=>$.faceRecognitionNet.load(e),di=e=>$.faceExpressionNet.load(e),fi=e=>$.ageGenderNet.load(e),pi=ai,mi=Zr,hi=ei,gi=class extends Hr{constructor(e,t,n){super(),this.parentTask=e,this.input=t,this.extractedFaces=n}},_i=class extends gi{async run(){let e=await this.parentTask,t=await Gr(e,this.input,async e=>Promise.all(e.map(e=>$.faceExpressionNet.predictExpressions(e))),this.extractedFaces);return e.map((e,n)=>en(e,t[n]))}withAgeAndGender(){return new Si(this,this.input)}},vi=class extends gi{async run(){let e=await this.parentTask;if(e)return en(e,await Kr(e,this.input,e=>$.faceExpressionNet.predictExpressions(e),this.extractedFaces))}withAgeAndGender(){return new Ci(this,this.input)}},yi=class extends _i{withAgeAndGender(){return new wi(this,this.input)}withFaceDescriptors(){return new Di(this,this.input)}},bi=class extends vi{withAgeAndGender(){return new Ti(this,this.input)}withFaceDescriptor(){return new Oi(this,this.input)}},xi=class extends Hr{constructor(e,t,n){super(),this.parentTask=e,this.input=t,this.extractedFaces=n}},Si=class extends xi{async run(){let e=await this.parentTask,t=await Gr(e,this.input,async e=>Promise.all(e.map(e=>$.ageGenderNet.predictAgeAndGender(e))),this.extractedFaces);return e.map((e,n)=>{let{age:r,gender:i,genderProbability:a}=t[n];return Kn(Jn(e,i,a),r)})}withFaceExpressions(){return new _i(this,this.input)}},Ci=class extends xi{async run(){let e=await this.parentTask;if(!e)return;let{age:t,gender:n,genderProbability:r}=await Kr(e,this.input,e=>$.ageGenderNet.predictAgeAndGender(e),this.extractedFaces);return Kn(Jn(e,n,r),t)}withFaceExpressions(){return new vi(this,this.input)}},wi=class extends Si{withFaceExpressions(){return new yi(this,this.input)}withFaceDescriptors(){return new Di(this,this.input)}},Ti=class extends Ci{withFaceExpressions(){return new bi(this,this.input)}withFaceDescriptor(){return new Oi(this,this.input)}},Ei=class extends Hr{constructor(e,t){super(),this.parentTask=e,this.input=t}},Di=class extends Ei{async run(){let e=await this.parentTask;return(await Gr(e,this.input,e=>Promise.all(e.map(e=>$.faceRecognitionNet.computeFaceDescriptor(e))),null,e=>e.landmarks.align(null,{useDlibAlignment:!0}))).map((t,n)=>Wn(e[n],t))}withFaceExpressions(){return new yi(this,this.input)}withAgeAndGender(){return new wi(this,this.input)}},Oi=class extends Ei{async run(){let e=await this.parentTask;if(e)return Wn(e,await Kr(e,this.input,e=>$.faceRecognitionNet.computeFaceDescriptor(e),null,e=>e.landmarks.align(null,{useDlibAlignment:!0})))}withFaceExpressions(){return new bi(this,this.input)}withAgeAndGender(){return new Ti(this,this.input)}},ki=class extends Hr{constructor(e,t,n){super(),this.parentTask=e,this.input=t,this.useTinyLandmarkNet=n}get landmarkNet(){return this.useTinyLandmarkNet?$.faceLandmark68TinyNet:$.faceLandmark68Net}},Ai=class extends ki{async run(){let e=await this.parentTask,t=e.map(e=>e.detection),n=this.input instanceof Ur.Tensor?await dt(this.input,t):await lt(this.input,t),r=await Promise.all(n.map(e=>this.landmarkNet.detectLandmarks(e)));return n.forEach(e=>e instanceof Ur.Tensor&&e.dispose()),e.filter((e,t)=>r[t]).map((e,t)=>an(e,r[t]))}withFaceExpressions(){return new yi(this,this.input)}withAgeAndGender(){return new wi(this,this.input)}withFaceDescriptors(){return new Di(this,this.input)}},ji=class extends ki{async run(){let e=await this.parentTask;if(!e)return;let{detection:t}=e,n=this.input instanceof Ur.Tensor?await dt(this.input,[t]):await lt(this.input,[t]),r=await this.landmarkNet.detectLandmarks(n[0]);return n.forEach(e=>e instanceof Ur.Tensor&&e.dispose()),an(e,r)}withFaceExpressions(){return new bi(this,this.input)}withAgeAndGender(){return new Ti(this,this.input)}withFaceDescriptor(){return new Oi(this,this.input)}},Mi=class extends Hr{constructor(e,t=new Y){super(),this.input=e,this.options=t}},Ni=class extends Mi{async run(){let{input:e,options:t}=this,n;if(t instanceof Vr)n=$.tinyFaceDetector.locateFaces(e,t);else if(t instanceof Y)n=$.ssdMobilenetv1.locateFaces(e,t);else if(t instanceof Ir)n=$.tinyYolov2.locateFaces(e,t);else throw Error(`detectFaces - expected options to be instance of TinyFaceDetectorOptions | SsdMobilenetv1Options | TinyYolov2Options`);return n}runAndExtendWithFaceDetections(){return new Promise((e,t)=>{this.run().then(t=>e(t.map(e=>Pe({},e)))).catch(e=>t(e))})}withFaceLandmarks(e=!1){return new Ai(this.runAndExtendWithFaceDetections(),this.input,e)}withFaceExpressions(){return new _i(this.runAndExtendWithFaceDetections(),this.input)}withAgeAndGender(){return new Si(this.runAndExtendWithFaceDetections(),this.input)}},Pi=class extends Mi{async run(){let e=await new Ni(this.input,this.options),t=e[0];return e.forEach(e=>{e.score>t.score&&(t=e)}),t}runAndExtendWithFaceDetection(){return new Promise(async e=>{let t=await this.run();e(t?Pe({},t):void 0)})}withFaceLandmarks(e=!1){return new ji(this.runAndExtendWithFaceDetection(),this.input,e)}withFaceExpressions(){return new vi(this.runAndExtendWithFaceDetection(),this.input)}withAgeAndGender(){return new Ci(this.runAndExtendWithFaceDetection(),this.input)}};function Fi(e,t=new Y){return new Pi(e,t)}function Ii(e,t=new Y){return new Ni(e,t)}async function Li(e,t){return Ii(e,new Y(t?{minConfidence:t}:{})).withFaceLandmarks().withFaceDescriptors()}async function Ri(e,t={}){return Ii(e,new Ir(t)).withFaceLandmarks().withFaceDescriptors()}var zi=Li;function Bi(e,t){if(e.length!==t.length)throw Error(`euclideanDistance: arr1.length !== arr2.length`);let n=Array.from(e),r=Array.from(t);return Math.sqrt(n.map((e,t)=>e-r[t]).reduce((e,t)=>e+t*t,0))}var Vi=class e{constructor(e,t=.6){this._distanceThreshold=t;let n=Array.isArray(e)?e:[e];if(!n.length)throw Error(`FaceRecognizer.constructor - expected atleast one input`);let r=1,i=()=>`person ${r++}`;this._labeledDescriptors=n.map(e=>{if(e instanceof je)return e;if(e instanceof Float32Array)return new je(i(),[e]);if(e.descriptor&&e.descriptor instanceof Float32Array)return new je(i(),[e.descriptor]);throw Error(`FaceRecognizer.constructor - expected inputs to be of type LabeledFaceDescriptors | WithFaceDescriptor<any> | Float32Array | Array<LabeledFaceDescriptors | WithFaceDescriptor<any> | Float32Array>`)})}get labeledDescriptors(){return this._labeledDescriptors}get distanceThreshold(){return this._distanceThreshold}computeMeanDistance(e,t){return t.map(t=>Bi(t,e)).reduce((e,t)=>e+t,0)/(t.length||1)}matchDescriptor(e){return this.labeledDescriptors.map(({descriptors:t,label:n})=>new ke(n,this.computeMeanDistance(e,t))).reduce((e,t)=>e.distance<t.distance?e:t)}findBestMatch(e){let t=this.matchDescriptor(e);return t.distance<this._distanceThreshold?t:new ke(`unknown`,t.distance)}toJSON(){return{distanceThreshold:this._distanceThreshold,labeledDescriptors:this._labeledDescriptors.map(e=>e.toJSON())}}static fromJSON(t){let n=t.labeledDescriptors.map(e=>je.fromJSON(e));return new e(n,t.distanceThreshold)}};function Hi(e){let t=new Xr;return t.extractWeights(e),t}function Ui(e,t){let{width:n,height:r}=new y(t.width,t.height);if(n<=0||r<=0)throw Error(`resizeResults - invalid dimensions: ${JSON.stringify({width:n,height:r})}`);if(Array.isArray(e))return e.map(e=>Ui(e,{width:n,height:r}));if(nn(e)){let t=e.detection.forSize(n,r),i=e.unshiftedLandmarks.forSize(t.box.width,t.box.height);return an(Pe(e,t),i)}return Ne(e)?Pe(e,e.detection.forSize(n,r)):e instanceof D||e instanceof E?e.forSize(n,r):e}var Wi=ln;0&&(t.exports={AgeGenderNet,BoundingBox,Box,ComposableTask,ComputeAllFaceDescriptorsTask,ComputeFaceDescriptorsTaskBase,ComputeSingleFaceDescriptorTask,DetectAllFaceLandmarksTask,DetectAllFacesTask,DetectFaceLandmarksTaskBase,DetectFacesTaskBase,DetectSingleFaceLandmarksTask,DetectSingleFaceTask,Dimensions,FACE_EXPRESSION_LABELS,FaceDetection,FaceDetectionNet,FaceExpressionNet,FaceExpressions,FaceLandmark68Net,FaceLandmark68TinyNet,FaceLandmarkNet,FaceLandmarks,FaceLandmarks5,FaceLandmarks68,FaceMatch,FaceMatcher,FaceRecognitionNet,Gender,LabeledBox,LabeledFaceDescriptors,NetInput,NeuralNetwork,ObjectDetection,Point,PredictedBox,Rect,SsdMobilenetv1,SsdMobilenetv1Options,TinyFaceDetector,TinyFaceDetectorOptions,TinyYolov2,TinyYolov2Options,allFaces,allFacesSsdMobilenetv1,allFacesTinyYolov2,awaitMediaLoaded,bufferToImage,computeFaceDescriptor,createCanvas,createCanvasFromMedia,createFaceDetectionNet,createFaceRecognitionNet,createSsdMobilenetv1,createTinyFaceDetector,createTinyYolov2,detectAllFaces,detectFaceLandmarks,detectFaceLandmarksTiny,detectLandmarks,detectSingleFace,draw,env,euclideanDistance,extendWithAge,extendWithFaceDescriptor,extendWithFaceDetection,extendWithFaceExpressions,extendWithFaceLandmarks,extendWithGender,extractFaceTensors,extractFaces,fetchImage,fetchJson,fetchNetWeights,fetchOrThrow,fetchVideo,getContext2dOrThrow,getMediaDimensions,imageTensorToCanvas,imageToSquare,inverseSigmoid,iou,isMediaElement,isMediaLoaded,isWithAge,isWithFaceDetection,isWithFaceExpressions,isWithFaceLandmarks,isWithGender,loadAgeGenderModel,loadFaceDetectionModel,loadFaceExpressionModel,loadFaceLandmarkModel,loadFaceLandmarkTinyModel,loadFaceRecognitionModel,loadSsdMobilenetv1Model,loadTinyFaceDetectorModel,loadTinyYolov2Model,loadWeightMap,locateFaces,matchDimensions,minBbox,nets,nonMaxSuppression,normalize,padToSquare,predictAgeAndGender,recognizeFaceExpressions,resizeResults,resolveInput,shuffleArray,sigmoid,ssdMobilenetv1,tf,tinyFaceDetector,tinyYolov2,toNetInput,utils,validateConfig,version})}))());async function p(){let{modelPath:e}=l.workerData;await u.setBackend(`cpu`),await u.ready(),await f.nets.ssdMobilenetv1.loadFromDisk(e),await f.nets.faceLandmark68Net.loadFromDisk(e),await f.nets.faceRecognitionNet.loadFromDisk(e),l.parentPort.postMessage({type:`ready`}),l.parentPort.on(`message`,async({requestId:e,imagePath:t})=>{try{let{data:n,info:r}=await(0,d.default)(t).raw().ensureAlpha().toBuffer({resolveWithObject:!0}),i=new Uint8Array(r.width*r.height*3);for(let e=0;e<r.width*r.height;e++)i[e*3]=n[e*4],i[e*3+1]=n[e*4+1],i[e*3+2]=n[e*4+2];let a=u.tensor3d(i,[r.height,r.width,3],`int32`),o=await f.detectAllFaces(a).withFaceLandmarks().withFaceDescriptors();a.dispose(),l.parentPort.postMessage({type:`result`,requestId:e,result:o.map(e=>({descriptor:Array.from(e.descriptor),box:{x:e.detection.box.x,y:e.detection.box.y,width:e.detection.box.width,height:e.detection.box.height}}))})}catch(t){l.parentPort.postMessage({type:`result`,requestId:e,result:[],error:t.message})}})}p().catch(e=>{l.parentPort.postMessage({type:`error`,error:e.message}),process.exit(1)});
+//#region \0rolldown/runtime.js
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+//#endregion
+let worker_threads = require("worker_threads");
+let _tensorflow_tfjs = require("@tensorflow/tfjs");
+_tensorflow_tfjs = __toESM(_tensorflow_tfjs);
+require("@tensorflow/tfjs-backend-wasm");
+let sharp = require("sharp");
+sharp = __toESM(sharp);
+//#endregion
+//#region electron/server/faceWorker.ts
+/**
+* faceWorker.ts
+* Runs inside a Node.js Worker Thread.
+* TensorFlow blocks this thread, but NOT the main event loop.
+* The main thread can call worker.terminate() to kill it at any time.
+*/
+var import_face_api_node_wasm = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports, module) => {
+	var dn = Object.create;
+	var tr = Object.defineProperty;
+	var hn = Object.getOwnPropertyDescriptor;
+	var bn = Object.getOwnPropertyNames;
+	var gn = Object.getPrototypeOf;
+	var xn = Object.prototype.hasOwnProperty;
+	var vn = (o, t) => () => (t || o((t = { exports: {} }).exports, t), t.exports);
+	var Wr = (o, t) => {
+		for (var e in t) tr(o, e, {
+			get: t[e],
+			enumerable: !0
+		});
+	};
+	var _o = (o, t, e, r) => {
+		if (t && typeof t == "object" || typeof t == "function") for (let n of bn(t)) !xn.call(o, n) && n !== e && tr(o, n, {
+			get: () => t[n],
+			enumerable: !(r = hn(t, n)) || r.enumerable
+		});
+		return o;
+	};
+	var v = (o, t, e) => (e = o != null ? dn(gn(o)) : {}, _o(t || !o || !o.__esModule ? tr(e, "default", {
+		value: o,
+		enumerable: !0
+	}) : e, o));
+	var yn = (o) => _o(tr({}, "__esModule", { value: !0 }), o);
+	var x = vn((Ya, rr) => {
+		"use strict";
+		var Br = Object.defineProperty, _n = Object.getOwnPropertyDescriptor, Tn = Object.getOwnPropertyNames, Pn = Object.prototype.hasOwnProperty, wn = (o, t) => {
+			for (var e in t) Br(o, e, {
+				get: t[e],
+				enumerable: !0
+			});
+		}, kr = (o, t, e, r) => {
+			if (t && typeof t == "object" || typeof t == "function") for (let n of Tn(t)) !Pn.call(o, n) && n !== e && Br(o, n, {
+				get: () => t[n],
+				enumerable: !(r = _n(t, n)) || r.enumerable
+			});
+			return o;
+		}, Po = (o, t, e) => (kr(o, t, "default"), e && kr(e, t, "default")), Fn = (o) => kr(Br({}, "__esModule", { value: !0 }), o), er = {};
+		wn(er, { version: () => In });
+		rr.exports = Fn(er);
+		Po(er, require("@tensorflow/tfjs"), rr.exports);
+		Po(er, require("@tensorflow/tfjs-backend-wasm"), rr.exports);
+		var To = "4.22.0", In = {
+			tfjs: To,
+			"tfjs-core": To,
+			"tfjs-converter": "4.22.0",
+			"tfjs-backend-cpu": "4.22.0",
+			"tfjs-backend-webgl": "4.22.0",
+			"tfjs-backend-wasm": "4.22.0"
+		};
+	});
+	var Ba = {};
+	Wr(Ba, {
+		AgeGenderNet: () => He,
+		BoundingBox: () => Ot,
+		Box: () => L,
+		ComposableTask: () => J,
+		ComputeAllFaceDescriptorsTask: () => _t,
+		ComputeFaceDescriptorsTaskBase: () => Ue,
+		ComputeSingleFaceDescriptorTask: () => Tt,
+		DetectAllFaceLandmarksTask: () => qe,
+		DetectAllFacesTask: () => Ie,
+		DetectFaceLandmarksTaskBase: () => Je,
+		DetectFacesTaskBase: () => Ke,
+		DetectSingleFaceLandmarksTask: () => Ze,
+		DetectSingleFaceTask: () => Qe,
+		Dimensions: () => R,
+		FACE_EXPRESSION_LABELS: () => so,
+		FaceDetection: () => M,
+		FaceDetectionNet: () => lo,
+		FaceExpressionNet: () => Oe,
+		FaceExpressions: () => gt,
+		FaceLandmark68Net: () => Zt,
+		FaceLandmark68TinyNet: () => ze,
+		FaceLandmarkNet: () => po,
+		FaceLandmarks: () => H,
+		FaceLandmarks5: () => jr,
+		FaceLandmarks68: () => Yt,
+		FaceMatch: () => me,
+		FaceMatcher: () => vo,
+		FaceRecognitionNet: () => Kt,
+		Gender: () => Pr,
+		LabeledBox: () => pe,
+		LabeledFaceDescriptors: () => Et,
+		NetInput: () => ut,
+		NeuralNetwork: () => A,
+		ObjectDetection: () => Ht,
+		Point: () => _,
+		PredictedBox: () => Ur,
+		Rect: () => zt,
+		SsdMobilenetv1: () => It,
+		SsdMobilenetv1Options: () => X,
+		TinyFaceDetector: () => re,
+		TinyFaceDetectorOptions: () => je,
+		TinyYolov2: () => te,
+		TinyYolov2Options: () => st,
+		allFaces: () => Sa,
+		allFacesSsdMobilenetv1: () => fn,
+		allFacesTinyYolov2: () => La,
+		awaitMediaLoaded: () => to,
+		bufferToImage: () => eo,
+		computeFaceDescriptor: () => xa,
+		createCanvas: () => Xt,
+		createCanvasFromMedia: () => We,
+		createFaceDetectionNet: () => ua,
+		createFaceRecognitionNet: () => ta,
+		createSsdMobilenetv1: () => qo,
+		createTinyFaceDetector: () => Aa,
+		createTinyYolov2: () => da,
+		detectAllFaces: () => Ar,
+		detectFaceLandmarks: () => pn,
+		detectFaceLandmarksTiny: () => ga,
+		detectLandmarks: () => Ia,
+		detectSingleFace: () => Na,
+		draw: () => co,
+		env: () => w,
+		euclideanDistance: () => xo,
+		extendWithAge: () => Mr,
+		extendWithFaceDescriptor: () => Er,
+		extendWithFaceDetection: () => Vt,
+		extendWithFaceExpressions: () => vr,
+		extendWithFaceLandmarks: () => Pe,
+		extendWithGender: () => Cr,
+		extractFaceTensors: () => le,
+		extractFaces: () => fe,
+		fetchImage: () => On,
+		fetchJson: () => no,
+		fetchNetWeights: () => Hn,
+		fetchOrThrow: () => ht,
+		fetchVideo: () => zn,
+		getContext2dOrThrow: () => $,
+		getMediaDimensions: () => Ut,
+		imageTensorToCanvas: () => ro,
+		imageToSquare: () => oo,
+		inverseSigmoid: () => Sn,
+		iou: () => zr,
+		isMediaElement: () => cr,
+		isMediaLoaded: () => Ae,
+		isWithAge: () => ea,
+		isWithFaceDetection: () => pt,
+		isWithFaceExpressions: () => io,
+		isWithFaceLandmarks: () => qt,
+		isWithGender: () => ra,
+		loadAgeGenderModel: () => Ea,
+		loadFaceDetectionModel: () => Ma,
+		loadFaceExpressionModel: () => Da,
+		loadFaceLandmarkModel: () => Pa,
+		loadFaceLandmarkTinyModel: () => wa,
+		loadFaceRecognitionModel: () => Fa,
+		loadSsdMobilenetv1Model: () => un,
+		loadTinyFaceDetectorModel: () => _a,
+		loadTinyYolov2Model: () => Ta,
+		loadWeightMap: () => ao,
+		locateFaces: () => Ca,
+		matchDimensions: () => Yn,
+		minBbox: () => Yr,
+		nets: () => F,
+		nonMaxSuppression: () => Vr,
+		normalize: () => rt,
+		padToSquare: () => Gr,
+		predictAgeAndGender: () => ya,
+		recognizeFaceExpressions: () => va,
+		resizeResults: () => ln,
+		resolveInput: () => Gt,
+		shuffleArray: () => Ln,
+		sigmoid: () => Ne,
+		ssdMobilenetv1: () => mn,
+		tf: () => Wa,
+		tinyFaceDetector: () => ha,
+		tinyYolov2: () => ba,
+		toNetInput: () => D,
+		utils: () => Hr,
+		validateConfig: () => ho,
+		version: () => ka
+	});
+	module.exports = yn(Ba);
+	var Wa = v(x());
+	var co = {};
+	Wr(co, {
+		AnchorPosition: () => Qr,
+		DrawBox: () => Se,
+		DrawBoxOptions: () => sr,
+		DrawFaceLandmarks: () => _r,
+		DrawFaceLandmarksOptions: () => yr,
+		DrawTextField: () => jt,
+		DrawTextFieldOptions: () => ue,
+		drawContour: () => lt,
+		drawDetections: () => $n,
+		drawFaceExpressions: () => Vn,
+		drawFaceLandmarks: () => jn
+	});
+	function lt(o, t, e = !1) {
+		if (o.beginPath(), t.slice(1).forEach(({ x: r, y: n }, s) => {
+			let a = t[s];
+			o.moveTo(a.x, a.y), o.lineTo(r, n);
+		}), e) {
+			let r = t[t.length - 1], n = t[0];
+			if (!r || !n) return;
+			o.moveTo(r.x, r.y), o.lineTo(n.x, n.y);
+		}
+		o.stroke();
+	}
+	var Hr = {};
+	Wr(Hr, {
+		computeReshapedDimensions: () => Or,
+		getCenterPoint: () => $t,
+		isDimensions: () => nr,
+		isEven: () => or,
+		isFloat: () => $r,
+		isTensor: () => Bt,
+		isTensor1D: () => Nn,
+		isTensor2D: () => Rr,
+		isTensor3D: () => dt,
+		isTensor4D: () => U,
+		isValidNumber: () => et,
+		isValidProbablitiy: () => ce,
+		range: () => ct,
+		round: () => Rt
+	});
+	var wo = v(x());
+	var R = class o {
+		constructor(t, e) {
+			if (!et(t) || !et(e)) throw new Error(`Dimensions.constructor - expected width and height to be valid numbers, instead have ${JSON.stringify({
+				width: t,
+				height: e
+			})}`);
+			this._width = t, this._height = e;
+		}
+		get width() {
+			return this._width;
+		}
+		get height() {
+			return this._height;
+		}
+		reverse() {
+			return new o(1 / this.width, 1 / this.height);
+		}
+	};
+	function Bt(o, t) {
+		return o instanceof wo.Tensor && o.shape.length === t;
+	}
+	function Nn(o) {
+		return Bt(o, 1);
+	}
+	function Rr(o) {
+		return Bt(o, 2);
+	}
+	function dt(o) {
+		return Bt(o, 3);
+	}
+	function U(o) {
+		return Bt(o, 4);
+	}
+	function $r(o) {
+		return o % 1 !== 0;
+	}
+	function or(o) {
+		return o % 2 === 0;
+	}
+	function Rt(o, t = 2) {
+		let e = 10 ** t;
+		return Math.floor(o * e) / e;
+	}
+	function nr(o) {
+		return o && o.width && o.height;
+	}
+	function Or({ width: o, height: t }, e) {
+		let r = e / Math.max(t, o);
+		return new R(Math.round(o * r), Math.round(t * r));
+	}
+	function $t(o) {
+		return o.reduce((t, e) => t.add(e), new _(0, 0)).div(new _(o.length, o.length));
+	}
+	function ct(o, t, e) {
+		return Array(o).fill(0).map((r, n) => t + n * e);
+	}
+	function et(o) {
+		return !!o && o !== Infinity && o !== -Infinity && !Number.isNaN(o) || o === 0;
+	}
+	function ce(o) {
+		return et(o) && o >= 0 && o <= 1;
+	}
+	var _ = class o {
+		constructor(t, e) {
+			this._x = t, this._y = e;
+		}
+		get x() {
+			return this._x;
+		}
+		get y() {
+			return this._y;
+		}
+		add(t) {
+			return new o(this.x + t.x, this.y + t.y);
+		}
+		sub(t) {
+			return new o(this.x - t.x, this.y - t.y);
+		}
+		mul(t) {
+			return new o(this.x * t.x, this.y * t.y);
+		}
+		div(t) {
+			return new o(this.x / t.x, this.y / t.y);
+		}
+		abs() {
+			return new o(Math.abs(this.x), Math.abs(this.y));
+		}
+		magnitude() {
+			return Math.sqrt(this.x ** 2 + this.y ** 2);
+		}
+		floor() {
+			return new o(Math.floor(this.x), Math.floor(this.y));
+		}
+	};
+	var L = class o {
+		static isRect(t) {
+			return !!t && [
+				t.x,
+				t.y,
+				t.width,
+				t.height
+			].every(et);
+		}
+		static assertIsValidBox(t, e, r = !1) {
+			if (!o.isRect(t)) throw new Error(`${e} - invalid box: ${JSON.stringify(t)}, expected object with properties x, y, width, height`);
+			if (!r && (t.width < 0 || t.height < 0)) throw new Error(`${e} - width (${t.width}) and height (${t.height}) must be positive numbers`);
+		}
+		constructor(t, e = !0) {
+			let r = t || {}, n = [
+				r.left,
+				r.top,
+				r.right,
+				r.bottom
+			].every(et), s = [
+				r.x,
+				r.y,
+				r.width,
+				r.height
+			].every(et);
+			if (!s && !n) throw new Error(`Box.constructor - expected box to be IBoundingBox | IRect, instead have ${JSON.stringify(r)}`);
+			let [a, i, c, m] = s ? [
+				r.x,
+				r.y,
+				r.width,
+				r.height
+			] : [
+				r.left,
+				r.top,
+				r.right - r.left,
+				r.bottom - r.top
+			];
+			o.assertIsValidBox({
+				x: a,
+				y: i,
+				width: c,
+				height: m
+			}, "Box.constructor", e), this._x = a, this._y = i, this._width = c, this._height = m;
+		}
+		get x() {
+			return this._x;
+		}
+		get y() {
+			return this._y;
+		}
+		get width() {
+			return this._width;
+		}
+		get height() {
+			return this._height;
+		}
+		get left() {
+			return this.x;
+		}
+		get top() {
+			return this.y;
+		}
+		get right() {
+			return this.x + this.width;
+		}
+		get bottom() {
+			return this.y + this.height;
+		}
+		get area() {
+			return this.width * this.height;
+		}
+		get topLeft() {
+			return new _(this.left, this.top);
+		}
+		get topRight() {
+			return new _(this.right, this.top);
+		}
+		get bottomLeft() {
+			return new _(this.left, this.bottom);
+		}
+		get bottomRight() {
+			return new _(this.right, this.bottom);
+		}
+		round() {
+			let [t, e, r, n] = [
+				this.x,
+				this.y,
+				this.width,
+				this.height
+			].map((s) => Math.round(s));
+			return new o({
+				x: t,
+				y: e,
+				width: r,
+				height: n
+			});
+		}
+		floor() {
+			let [t, e, r, n] = [
+				this.x,
+				this.y,
+				this.width,
+				this.height
+			].map((s) => Math.floor(s));
+			return new o({
+				x: t,
+				y: e,
+				width: r,
+				height: n
+			});
+		}
+		toSquare() {
+			let { x: t, y: e, width: r, height: n } = this, s = Math.abs(r - n);
+			return r < n && (t -= s / 2, r += s), n < r && (e -= s / 2, n += s), new o({
+				x: t,
+				y: e,
+				width: r,
+				height: n
+			});
+		}
+		rescale(t) {
+			let e = nr(t) ? t.width : t, r = nr(t) ? t.height : t;
+			return new o({
+				x: this.x * e,
+				y: this.y * r,
+				width: this.width * e,
+				height: this.height * r
+			});
+		}
+		pad(t, e) {
+			let [r, n, s, a] = [
+				this.x - t / 2,
+				this.y - e / 2,
+				this.width + t,
+				this.height + e
+			];
+			return new o({
+				x: r,
+				y: n,
+				width: s,
+				height: a
+			});
+		}
+		clipAtImageBorders(t, e) {
+			let { x: r, y: n, right: s, bottom: a } = this, i = Math.max(r, 0), c = Math.max(n, 0), m = s - i, p = a - c, u = Math.min(m, t - i), f = Math.min(p, e - c);
+			return new o({
+				x: i,
+				y: c,
+				width: u,
+				height: f
+			}).floor();
+		}
+		shift(t, e) {
+			let { width: r, height: n } = this, s = this.x + t, a = this.y + e;
+			return new o({
+				x: s,
+				y: a,
+				width: r,
+				height: n
+			});
+		}
+		padAtBorders(t, e) {
+			let r = this.width + 1, n = this.height + 1, s = 1, a = 1, i = r, c = n, m = this.left, p = this.top, u = this.right, f = this.bottom;
+			return u > e && (i = -u + e + r, u = e), f > t && (c = -f + t + n, f = t), m < 1 && (c = 2 - m, m = 1), p < 1 && (c = 2 - p, p = 1), {
+				dy: a,
+				edy: c,
+				dx: s,
+				edx: i,
+				y: p,
+				ey: f,
+				x: m,
+				ex: u,
+				w: r,
+				h: n
+			};
+		}
+		calibrate(t) {
+			return new o({
+				left: this.left + t.left * this.width,
+				top: this.top + t.top * this.height,
+				right: this.right + t.right * this.width,
+				bottom: this.bottom + t.bottom * this.height
+			}).toSquare().round();
+		}
+	};
+	var Ot = class extends L {
+		constructor(t, e, r, n, s = !1) {
+			super({
+				left: t,
+				top: e,
+				right: r,
+				bottom: n
+			}, s);
+		}
+	};
+	var Ht = class o {
+		constructor(t, e, r, n, s) {
+			this._imageDims = new R(s.width, s.height), this._score = t, this._classScore = e, this._className = r, this._box = new L(n).rescale(this._imageDims);
+		}
+		get score() {
+			return this._score;
+		}
+		get classScore() {
+			return this._classScore;
+		}
+		get className() {
+			return this._className;
+		}
+		get box() {
+			return this._box;
+		}
+		get imageDims() {
+			return this._imageDims;
+		}
+		get imageWidth() {
+			return this.imageDims.width;
+		}
+		get imageHeight() {
+			return this.imageDims.height;
+		}
+		get relativeBox() {
+			return new L(this._box).rescale(this.imageDims.reverse());
+		}
+		forSize(t, e) {
+			return new o(this.score, this.classScore, this.className, this.relativeBox, {
+				width: t,
+				height: e
+			});
+		}
+	};
+	var M = class o extends Ht {
+		constructor(t, e, r) {
+			super(t, t, "", e, r);
+		}
+		forSize(t, e) {
+			let { score: r, relativeBox: n, imageDims: s } = super.forSize(t, e);
+			return new o(r, n, s);
+		}
+	};
+	function zr(o, t, e = !0) {
+		let s = Math.max(0, Math.min(o.right, t.right) - Math.max(o.left, t.left)) * Math.max(0, Math.min(o.bottom, t.bottom) - Math.max(o.top, t.top));
+		return e ? s / (o.area + t.area - s) : s / Math.min(o.area, t.area);
+	}
+	function Yr(o) {
+		let t = o.map((i) => i.x), e = o.map((i) => i.y);
+		return new Ot(t.reduce((i, c) => c < i ? c : i, Infinity), e.reduce((i, c) => c < i ? c : i, Infinity), t.reduce((i, c) => i < c ? c : i, 0), e.reduce((i, c) => i < c ? c : i, 0));
+	}
+	function Vr(o, t, e, r = !0) {
+		let n = t.map((a, i) => ({
+			score: a,
+			boxIndex: i
+		})).sort((a, i) => a.score - i.score).map((a) => a.boxIndex), s = [];
+		for (; n.length > 0;) {
+			let a = n.pop();
+			s.push(a);
+			let i = n, c = [];
+			for (let m = 0; m < i.length; m++) {
+				let p = i[m], u = o[a], f = o[p];
+				c.push(zr(u, f, r));
+			}
+			n = n.filter((m, p) => c[p] <= e);
+		}
+		return s;
+	}
+	var mt = v(x());
+	function rt(o, t) {
+		return mt.tidy(() => {
+			let [e, r, n] = t, s = mt.fill([...o.shape.slice(0, 3), 1], e, "float32"), a = mt.fill([...o.shape.slice(0, 3), 1], r, "float32"), i = mt.fill([...o.shape.slice(0, 3), 1], n, "float32"), c = mt.concat([
+				s,
+				a,
+				i
+			], 3);
+			return mt.sub(o, c);
+		});
+	}
+	var Dt = v(x());
+	function Gr(o, t = !1) {
+		return Dt.tidy(() => {
+			let [e, r] = o.shape.slice(1);
+			if (e === r) return o;
+			let n = Math.abs(e - r), s = Math.round(n * (t ? .5 : 1)), a = e > r ? 2 : 1, i = (f) => {
+				let l = o.shape.slice();
+				return l[a] = f, Dt.fill(l, 0, "float32");
+			}, c = i(s), m = n - c.shape[a], u = [
+				t && m ? i(m) : null,
+				o,
+				c
+			].filter((f) => !!f).map((f) => Dt.cast(f, "float32"));
+			return Dt.concat(u, a);
+		});
+	}
+	function Ln(o) {
+		let t = o.slice();
+		for (let e = t.length - 1; e > 0; e--) {
+			let r = Math.floor(Math.random() * (e + 1)), n = t[e];
+			t[e] = t[r], t[r] = n;
+		}
+		return t;
+	}
+	function Ne(o) {
+		return 1 / (1 + Math.exp(-o));
+	}
+	function Sn(o) {
+		return Math.log(o / (1 - o));
+	}
+	var zt = class extends L {
+		constructor(t, e, r, n, s = !1) {
+			super({
+				x: t,
+				y: e,
+				width: r,
+				height: n
+			}, s);
+		}
+	};
+	var An = .5;
+	var Wn = .43;
+	var kn = .45;
+	var H = class {
+		constructor(t, e, r = new _(0, 0)) {
+			let { width: n, height: s } = e;
+			this._imgDims = new R(n, s), this._shift = r, this._positions = t.map((a) => a.mul(new _(n, s)).add(r));
+		}
+		get shift() {
+			return new _(this._shift.x, this._shift.y);
+		}
+		get imageWidth() {
+			return this._imgDims.width;
+		}
+		get imageHeight() {
+			return this._imgDims.height;
+		}
+		get positions() {
+			return this._positions;
+		}
+		get relativePositions() {
+			return this._positions.map((t) => t.sub(this._shift).div(new _(this.imageWidth, this.imageHeight)));
+		}
+		forSize(t, e) {
+			return new this.constructor(this.relativePositions, {
+				width: t,
+				height: e
+			});
+		}
+		shiftBy(t, e) {
+			return new this.constructor(this.relativePositions, this._imgDims, new _(t, e));
+		}
+		shiftByPoint(t) {
+			return this.shiftBy(t.x, t.y);
+		}
+		align(t, e = {}) {
+			if (t) {
+				let s = t instanceof M ? t.box.floor() : new L(t);
+				return this.shiftBy(s.x, s.y).align(null, e);
+			}
+			let { useDlibAlignment: r, minBoxPadding: n } = {
+				useDlibAlignment: !1,
+				minBoxPadding: .2,
+				...e
+			};
+			return r ? this.alignDlib() : this.alignMinBbox(n);
+		}
+		alignDlib() {
+			let t = this.getRefPointsForAlignment(), [e, r, n] = t, s = (u) => n.sub(u).magnitude(), a = (s(e) + s(r)) / 2, i = Math.floor(a / kn), c = $t(t), m = Math.floor(Math.max(0, c.x - An * i)), p = Math.floor(Math.max(0, c.y - Wn * i));
+			return new zt(m, p, Math.min(i, this.imageWidth + m), Math.min(i, this.imageHeight + p));
+		}
+		alignMinBbox(t) {
+			let e = Yr(this.positions);
+			return e.pad(e.width * t, e.height * t);
+		}
+		getRefPointsForAlignment() {
+			throw new Error("getRefPointsForAlignment not implemented by base class");
+		}
+	};
+	var jr = class extends H {
+		getRefPointsForAlignment() {
+			let t = this.positions;
+			return [
+				t[0],
+				t[1],
+				$t([t[3], t[4]])
+			];
+		}
+	};
+	var Yt = class extends H {
+		getJawOutline() {
+			return this.positions.slice(0, 17);
+		}
+		getLeftEyeBrow() {
+			return this.positions.slice(17, 22);
+		}
+		getRightEyeBrow() {
+			return this.positions.slice(22, 27);
+		}
+		getNose() {
+			return this.positions.slice(27, 36);
+		}
+		getLeftEye() {
+			return this.positions.slice(36, 42);
+		}
+		getRightEye() {
+			return this.positions.slice(42, 48);
+		}
+		getMouth() {
+			return this.positions.slice(48, 68);
+		}
+		getRefPointsForAlignment() {
+			return [
+				this.getLeftEye(),
+				this.getRightEye(),
+				this.getMouth()
+			].map($t);
+		}
+	};
+	var me = class {
+		constructor(t, e) {
+			this._label = t, this._distance = e;
+		}
+		get label() {
+			return this._label;
+		}
+		get distance() {
+			return this._distance;
+		}
+		toString(t = !0) {
+			return `${this.label}${t ? ` (${Rt(this.distance)})` : ""}`;
+		}
+	};
+	var pe = class extends L {
+		static assertIsValidLabeledBox(t, e) {
+			if (L.assertIsValidBox(t, e), !et(t.label)) throw new Error(`${e} - expected property label (${t.label}) to be a number`);
+		}
+		constructor(t, e) {
+			super(t), this._label = e;
+		}
+		get label() {
+			return this._label;
+		}
+	};
+	var Et = class o {
+		constructor(t, e) {
+			if (typeof t != "string") throw new Error("LabeledFaceDescriptors - constructor expected label to be a string");
+			if (!Array.isArray(e) || e.some((r) => !(r instanceof Float32Array))) throw new Error("LabeledFaceDescriptors - constructor expected descriptors to be an array of Float32Array");
+			this._label = t, this._descriptors = e;
+		}
+		get label() {
+			return this._label;
+		}
+		get descriptors() {
+			return this._descriptors;
+		}
+		toJSON() {
+			return {
+				label: this.label,
+				descriptors: this.descriptors.map((t) => Array.from(t))
+			};
+		}
+		static fromJSON(t) {
+			let e = t.descriptors.map((r) => new Float32Array(r));
+			return new o(t.label, e);
+		}
+	};
+	var Ur = class extends pe {
+		static assertIsValidPredictedBox(t, e) {
+			if (pe.assertIsValidLabeledBox(t, e), !ce(t.score) || !ce(t.classScore)) throw new Error(`${e} - expected properties score (${t.score}) and (${t.classScore}) to be a number between [0, 1]`);
+		}
+		constructor(t, e, r, n) {
+			super(t, e), this._score = r, this._classScore = n;
+		}
+		get score() {
+			return this._score;
+		}
+		get classScore() {
+			return this._classScore;
+		}
+	};
+	function pt(o) {
+		return o.detection instanceof M;
+	}
+	function Vt(o, t) {
+		return {
+			...o,
+			detection: t
+		};
+	}
+	function Xr() {
+		let o = window.fetch;
+		if (!o) throw new Error("fetch - missing fetch implementation for browser environment");
+		return {
+			Canvas: HTMLCanvasElement,
+			CanvasRenderingContext2D,
+			Image: HTMLImageElement,
+			ImageData,
+			Video: HTMLVideoElement,
+			createCanvasElement: () => document.createElement("canvas"),
+			createImageElement: () => document.createElement("img"),
+			createVideoElement: () => document.createElement("video"),
+			fetch: o,
+			readFile: () => {
+				throw new Error("readFile - filesystem not available for browser environment");
+			}
+		};
+	}
+	function Le() {
+		return typeof global == "object" && typeof process != "undefined" && process.versions != null && process.versions.node != null;
+	}
+	function ar(o) {
+		let t = "";
+		if (!o && Le()) try {
+			o = require("fs");
+		} catch (r) {
+			t = r.toString();
+		}
+		return { readFile: o ? (r) => new Promise((n, s) => {
+			o.readFile(r, (a, i) => a ? s(a) : n(i));
+		}) : () => {
+			throw new Error(`readFile - failed to require fs in nodejs environment with error: ${t}`);
+		} };
+	}
+	function Jr() {
+		let o = global.Canvas || global.HTMLCanvasElement, t = global.Image || global.HTMLImageElement, e = global.Video || global.HTMLVideoElement, r = () => {
+			if (o) return new o();
+			throw new Error("createCanvasElement - missing Canvas implementation for nodejs environment");
+		}, n = () => {
+			if (t) return new t();
+			throw new Error("createImageElement - missing Image implementation for nodejs environment");
+		}, s = () => {
+			if (e) return new e();
+			throw new Error("createVideoElement - missing Video implementation for nodejs environment");
+		}, a = global.fetch, i = ar();
+		return {
+			Canvas: o || class {},
+			CanvasRenderingContext2D: global.CanvasRenderingContext2D || class {},
+			Image: t || class {},
+			ImageData: global.ImageData || class {},
+			Video: global.HTMLVideoElement || class {},
+			createCanvasElement: r,
+			createImageElement: n,
+			createVideoElement: s,
+			fetch: a,
+			...i
+		};
+	}
+	function qr() {
+		return typeof window == "object" && typeof document != "undefined" && typeof HTMLImageElement != "undefined" && typeof HTMLCanvasElement != "undefined" && typeof HTMLVideoElement != "undefined" && typeof ImageData != "undefined" && typeof CanvasRenderingContext2D != "undefined";
+	}
+	var S;
+	function Bn() {
+		if (!S) throw new Error("getEnv - environment is not defined, check isNodejs() and isBrowser()");
+		return S;
+	}
+	function Zr(o) {
+		S = o;
+	}
+	function Kr() {
+		return qr() ? Zr(Xr()) : Le() ? Zr(Jr()) : null;
+	}
+	function Rn(o) {
+		if (S || Kr(), !S) throw new Error("monkeyPatch - environment is not defined, check isNodejs() and isBrowser()");
+		let { Canvas: t = S.Canvas, Image: e = S.Image } = o;
+		S.Canvas = t, S.Image = e, S.createCanvasElement = o.createCanvasElement || (() => new t()), S.createImageElement = o.createImageElement || (() => new e()), S.ImageData = o.ImageData || S.ImageData, S.Video = o.Video || S.Video, S.fetch = o.fetch || S.fetch, S.readFile = o.readFile || S.readFile;
+	}
+	var w = {
+		getEnv: Bn,
+		setEnv: Zr,
+		initialize: Kr,
+		createBrowserEnv: Xr,
+		createFileSystem: ar,
+		createNodejsEnv: Jr,
+		monkeyPatch: Rn,
+		isBrowser: qr,
+		isNodejs: Le
+	};
+	Kr();
+	function Gt(o) {
+		return !w.isNodejs() && typeof o == "string" ? document.getElementById(o) : o;
+	}
+	function $(o) {
+		let { Canvas: t, CanvasRenderingContext2D: e } = w.getEnv();
+		if (o instanceof e) return o;
+		let r = Gt(o);
+		if (!(r instanceof t)) throw new Error("resolveContext2d - expected canvas to be of instance of Canvas");
+		let n = r.getContext("2d", { willReadFrequently: !0 });
+		if (!n) throw new Error("resolveContext2d - canvas 2d context is null");
+		return n;
+	}
+	var Qr = ((n) => (n.TOP_LEFT = "TOP_LEFT", n.TOP_RIGHT = "TOP_RIGHT", n.BOTTOM_LEFT = "BOTTOM_LEFT", n.BOTTOM_RIGHT = "BOTTOM_RIGHT", n))(Qr || {});
+	var ue = class {
+		constructor(t = {}) {
+			let { anchorPosition: e, backgroundColor: r, fontColor: n, fontSize: s, fontStyle: a, padding: i } = t;
+			this.anchorPosition = e || "TOP_LEFT", this.backgroundColor = r || "rgba(0, 0, 0, 0.5)", this.fontColor = n || "rgba(255, 255, 255, 1)", this.fontSize = s || 14, this.fontStyle = a || "Georgia", this.padding = i || 4;
+		}
+	};
+	var jt = class o {
+		constructor(t, e, r = {}) {
+			this.text = typeof t == "string" ? [t] : t instanceof o ? t.text : t, this.anchor = e, this.options = new ue(r);
+		}
+		measureWidth(t) {
+			let { padding: e } = this.options;
+			return this.text.map((r) => t.measureText(r).width).reduce((r, n) => r < n ? n : r, 0) + 2 * e;
+		}
+		measureHeight() {
+			let { fontSize: t, padding: e } = this.options;
+			return this.text.length * t + 2 * e;
+		}
+		getUpperLeft(t, e) {
+			let { anchorPosition: r } = this.options, n = r === "BOTTOM_RIGHT" || r === "TOP_RIGHT", s = r === "BOTTOM_LEFT" || r === "BOTTOM_RIGHT", a = this.measureWidth(t), i = this.measureHeight(), c = n ? this.anchor.x - a : this.anchor.x, m = s ? this.anchor.y - i : this.anchor.y;
+			if (e) {
+				let { width: p, height: u } = e;
+				return {
+					x: Math.max(Math.min(c, p - a), 0),
+					y: Math.max(Math.min(m, u - i), 0)
+				};
+			}
+			return {
+				x: c,
+				y: m
+			};
+		}
+		draw(t) {
+			let e = Gt(t), r = $(e), { backgroundColor: n, fontColor: s, fontSize: a, fontStyle: i, padding: c } = this.options;
+			r.font = `${a}px ${i}`;
+			let m = this.measureWidth(r), p = this.measureHeight();
+			r.fillStyle = n;
+			let u = this.getUpperLeft(r, e);
+			r.fillRect(u.x, u.y, m, p), r.fillStyle = s, this.text.forEach((f, l) => {
+				let b = c + u.x, T = c + u.y + (l + 1) * a;
+				r.fillText(f, b, T);
+			});
+		}
+	};
+	var sr = class {
+		constructor(t = {}) {
+			let { boxColor: e, lineWidth: r, label: n, drawLabelOptions: s } = t;
+			this.boxColor = e || "rgba(0, 0, 255, 1)", this.lineWidth = r || 2, this.label = n;
+			let a = {
+				anchorPosition: "BOTTOM_LEFT",
+				backgroundColor: this.boxColor
+			};
+			this.drawLabelOptions = new ue({
+				...a,
+				...s
+			});
+		}
+	};
+	var Se = class {
+		constructor(t, e = {}) {
+			this.box = new L(t), this.options = new sr(e);
+		}
+		draw(t) {
+			let e = $(t), { boxColor: r, lineWidth: n } = this.options, { x: s, y: a, width: i, height: c } = this.box;
+			e.strokeStyle = r, e.lineWidth = n, e.strokeRect(s, a, i, c);
+			let { label: m } = this.options;
+			m && new jt([m], {
+				x: s - n / 2,
+				y: a
+			}, this.options.drawLabelOptions).draw(t);
+		}
+	};
+	function $n(o, t) {
+		(Array.isArray(t) ? t : [t]).forEach((r) => {
+			let n = r instanceof M ? r.score : pt(r) ? r.detection.score : void 0;
+			new Se(r instanceof M ? r.box : pt(r) ? r.detection.box : new L(r), { label: n ? `${Rt(n)}` : void 0 }).draw(o);
+		});
+	}
+	var Te = v(x());
+	function Ae(o) {
+		let { Image: t, Video: e } = w.getEnv();
+		return o instanceof t && o.complete || o instanceof e && o.readyState >= 3;
+	}
+	function to(o) {
+		return new Promise((t, e) => {
+			if (o instanceof w.getEnv().Canvas || Ae(o)) {
+				t(null);
+				return;
+			}
+			function r(s) {
+				s.currentTarget && (s.currentTarget.removeEventListener("load", n), s.currentTarget.removeEventListener("error", r), e(s));
+			}
+			function n(s) {
+				s.currentTarget && (s.currentTarget.removeEventListener("load", n), s.currentTarget.removeEventListener("error", r), t(s));
+			}
+			o.addEventListener("load", n), o.addEventListener("error", r);
+		});
+	}
+	function eo(o) {
+		return new Promise((t, e) => {
+			o instanceof Blob || e(/* @__PURE__ */ new Error("bufferToImage - expected buf to be of type: Blob"));
+			let r = new FileReader();
+			r.onload = () => {
+				typeof r.result != "string" && e(/* @__PURE__ */ new Error("bufferToImage - expected reader.result to be a string, in onload"));
+				let n = w.getEnv().createImageElement();
+				n.onload = () => t(n), n.onerror = e, n.src = r.result;
+			}, r.onerror = e, r.readAsDataURL(o);
+		});
+	}
+	function Ut(o) {
+		let { Image: t, Video: e } = w.getEnv();
+		return o instanceof t ? new R(o.naturalWidth, o.naturalHeight) : o instanceof e ? new R(o.videoWidth, o.videoHeight) : new R(o.width, o.height);
+	}
+	function Xt({ width: o, height: t }) {
+		let { createCanvasElement: e } = w.getEnv(), r = e();
+		return r.width = o, r.height = t, r;
+	}
+	function We(o, t) {
+		let { ImageData: e } = w.getEnv();
+		if (!(o instanceof e) && !Ae(o)) throw new Error("createCanvasFromMedia - media has not finished loading yet");
+		let { width: r, height: n } = t || Ut(o), s = Xt({
+			width: r,
+			height: n
+		});
+		return o instanceof e ? $(s).putImageData(o, 0, 0) : $(s).drawImage(o, 0, 0, r, n), s;
+	}
+	var ir = v(x());
+	async function ro(o, t) {
+		let e = t || w.getEnv().createCanvasElement(), [r, n, s] = o.shape.slice(U(o) ? 1 : 0), a = ir.tidy(() => o.as3D(r, n, s).toInt());
+		return await ir.browser.toPixels(a, e), a.dispose(), e;
+	}
+	function cr(o) {
+		let { Image: t, Canvas: e, Video: r } = w.getEnv();
+		return o instanceof t || o instanceof e || o instanceof r;
+	}
+	var z = v(x());
+	function oo(o, t, e = !1) {
+		let { Image: r, Canvas: n } = w.getEnv();
+		if (!(o instanceof r || o instanceof n)) throw new Error("imageToSquare - expected arg0 to be HTMLImageElement | HTMLCanvasElement");
+		if (t <= 0) return Xt({
+			width: 1,
+			height: 1
+		});
+		let s = Ut(o), a = t / Math.max(s.height, s.width), i = a * s.width, c = a * s.height, m = Xt({
+			width: t,
+			height: t
+		}), p = o instanceof n ? o : We(o), u = Math.abs(i - c) / 2, f = e && i < c ? u : 0, l = e && c < i ? u : 0;
+		return p.width > 0 && p.height > 0 && $(m).drawImage(p, f, l, i, c), m;
+	}
+	var ut = class {
+		constructor(t, e = !1) {
+			this._imageTensors = [];
+			this._canvases = [];
+			this._treatAsBatchInput = !1;
+			this._inputDimensions = [];
+			this._inputSize = 0;
+			if (!Array.isArray(t)) throw new Error(`NetInput.constructor - expected inputs to be an Array of TResolvedNetInput or to be instanceof tf.Tensor4D, instead have ${t}`);
+			this._treatAsBatchInput = e, this._batchSize = t.length, t.forEach((r, n) => {
+				if (dt(r)) {
+					this._imageTensors[n] = r, this._inputDimensions[n] = r.shape;
+					return;
+				}
+				if (U(r)) {
+					let a = r.shape[0];
+					if (a !== 1) throw new Error(`NetInput - tf.Tensor4D with batchSize ${a} passed, but not supported in input array`);
+					this._imageTensors[n] = r, this._inputDimensions[n] = r.shape.slice(1);
+					return;
+				}
+				let s = r instanceof w.getEnv().Canvas ? r : We(r);
+				this._canvases[n] = s, this._inputDimensions[n] = [
+					s.height,
+					s.width,
+					3
+				];
+			});
+		}
+		get imageTensors() {
+			return this._imageTensors;
+		}
+		get canvases() {
+			return this._canvases;
+		}
+		get isBatchInput() {
+			return this.batchSize > 1 || this._treatAsBatchInput;
+		}
+		get batchSize() {
+			return this._batchSize;
+		}
+		get inputDimensions() {
+			return this._inputDimensions;
+		}
+		get inputSize() {
+			return this._inputSize;
+		}
+		get reshapedInputDimensions() {
+			return ct(this.batchSize, 0, 1).map((t, e) => this.getReshapedInputDimensions(e));
+		}
+		getInput(t) {
+			return this.canvases[t] || this.imageTensors[t];
+		}
+		getInputDimensions(t) {
+			return this._inputDimensions[t];
+		}
+		getInputHeight(t) {
+			return this._inputDimensions[t][0];
+		}
+		getInputWidth(t) {
+			return this._inputDimensions[t][1];
+		}
+		getReshapedInputDimensions(t) {
+			if (typeof this.inputSize != "number") throw new Error("getReshapedInputDimensions - inputSize not set, toBatchTensor has not been called yet");
+			return Or({
+				width: this.getInputWidth(t),
+				height: this.getInputHeight(t)
+			}, this.inputSize);
+		}
+		toBatchTensor(t, e = !0) {
+			return this._inputSize = t, z.tidy(() => {
+				let r = ct(this.batchSize, 0, 1).map((s) => {
+					let a = this.getInput(s);
+					if (a instanceof z.Tensor) {
+						let i = U(a) ? a : z.expandDims(a);
+						return i = Gr(i, e), (i.shape[1] !== t || i.shape[2] !== t) && (i = z.image.resizeBilinear(i, [t, t], !1, !1)), i.as3D(t, t, 3);
+					}
+					if (a instanceof w.getEnv().Canvas) return z.browser.fromPixels(oo(a, t, e));
+					throw new Error(`toBatchTensor - at batchIdx ${s}, expected input to be instanceof tf.Tensor or instanceof HTMLCanvasElement, instead have ${a}`);
+				});
+				return z.stack(r.map((s) => z.cast(s, "float32"))).as4D(this.batchSize, t, t, 3);
+			});
+		}
+	};
+	async function D(o) {
+		if (o instanceof ut) return o;
+		let t = Array.isArray(o) ? o : [o];
+		if (!t.length) throw new Error("toNetInput - empty array passed as input");
+		let e = (n) => Array.isArray(o) ? ` at input index ${n}:` : "", r = t.map(Gt);
+		return r.forEach((n, s) => {
+			if (!cr(n) && !dt(n) && !U(n)) throw typeof t[s] == "string" ? /* @__PURE__ */ new Error(`toNetInput -${e(s)} string passed, but could not resolve HTMLElement for element id ${t[s]}`) : /* @__PURE__ */ new Error(`toNetInput -${e(s)} expected media to be of type HTMLImageElement | HTMLVideoElement | HTMLCanvasElement | tf.Tensor3D, or to be an element id`);
+			if (U(n)) {
+				let a = n.shape[0];
+				if (a !== 1) throw new Error(`toNetInput -${e(s)} tf.Tensor4D with batchSize ${a} passed, but not supported in input array`);
+			}
+		}), await Promise.all(r.map((n) => cr(n) && to(n))), new ut(r, Array.isArray(o));
+	}
+	async function fe(o, t) {
+		let { Canvas: e } = w.getEnv(), r = o;
+		if (!(o instanceof e)) {
+			let a = await D(o);
+			if (a.batchSize > 1) throw new Error("extractFaces - batchSize > 1 not supported");
+			let i = a.getInput(0);
+			r = i instanceof e ? i : await ro(i);
+		}
+		let n = $(r);
+		return t.map((a) => a instanceof M ? a.forSize(r.width, r.height).box.floor() : a).map((a) => a.clipAtImageBorders(r.width, r.height)).map(({ x: a, y: i, width: c, height: m }) => {
+			let p = Xt({
+				width: c,
+				height: m
+			});
+			return c > 0 && m > 0 && $(p).putImageData(n.getImageData(a, i, c, m), 0, 0), p;
+		});
+	}
+	var mr = v(x());
+	async function le(o, t) {
+		if (!dt(o) && !U(o)) throw new Error("extractFaceTensors - expected image tensor to be 3D or 4D");
+		if (U(o) && o.shape[0] > 1) throw new Error("extractFaceTensors - batchSize > 1 not supported");
+		return mr.tidy(() => {
+			let [e, r, n] = o.shape.slice(U(o) ? 1 : 0);
+			return t.map((i) => i instanceof M ? i.forSize(r, e).box : i).map((i) => i.clipAtImageBorders(r, e)).filter((i) => i.width > 0 && i.height > 0).map(({ x: i, y: c, width: m, height: p }) => mr.slice3d(o.as3D(e, r, n), [
+				c,
+				i,
+				0
+			], [
+				p,
+				m,
+				n
+			]));
+		});
+	}
+	async function ht(o, t) {
+		let { fetch: e } = w.getEnv(), r = await e(o, t);
+		if (!(r.status < 400)) throw new Error(`failed to fetch: (${r.status}) ${r.statusText}, from url: ${r.url}`);
+		return r;
+	}
+	async function On(o) {
+		let t = await ht(o), e = await t.blob();
+		if (!e.type.startsWith("image/")) throw new Error(`fetchImage - expected blob type to be of type image/*, instead have: ${e.type}, for url: ${t.url}`);
+		return eo(e);
+	}
+	async function no(o) {
+		return (await ht(o)).json();
+	}
+	async function Hn(o) {
+		return new Float32Array(await (await ht(o)).arrayBuffer());
+	}
+	function Fo(o) {
+		return new Promise((t, e) => {
+			o instanceof Blob || e(/* @__PURE__ */ new Error("bufferToVideo - expected buf to be of type: Blob"));
+			let r = w.getEnv().createVideoElement();
+			r.oncanplay = () => t(r), r.onerror = e, r.playsInline = !0, r.muted = !0, r.src = URL.createObjectURL(o), r.play();
+		});
+	}
+	async function zn(o) {
+		let t = await ht(o), e = await t.blob();
+		if (!e.type.startsWith("video/")) throw new Error(`fetchVideo - expected blob type to be of type video/*, instead have: ${e.type}, for url: ${t.url}`);
+		return Fo(e);
+	}
+	var Do = v(x());
+	function pr(o, t) {
+		let e = `${t}-weights_manifest.json`;
+		if (!o) return {
+			modelBaseUri: "",
+			manifestUri: e
+		};
+		if (o === "/") return {
+			modelBaseUri: "/",
+			manifestUri: `/${e}`
+		};
+		let r = o.startsWith("http://") ? "http://" : o.startsWith("https://") ? "https://" : "";
+		o = o.replace(r, "");
+		let n = o.split("/").filter((i) => i), s = o.endsWith(".json") ? n[n.length - 1] : e, a = r + (o.endsWith(".json") ? n.slice(0, n.length - 1) : n).join("/");
+		return a = o.startsWith("/") ? `/${a}` : a, {
+			modelBaseUri: a,
+			manifestUri: a === "/" ? `/${s}` : `${a}/${s}`
+		};
+	}
+	async function ao(o, t) {
+		let { manifestUri: e, modelBaseUri: r } = pr(o, t), n = await no(e);
+		return Do.io.loadWeights(n, r);
+	}
+	function Yn(o, t, e = !1) {
+		let { width: r, height: n } = e ? Ut(t) : t;
+		return o.width = r, o.height = n, {
+			width: r,
+			height: n
+		};
+	}
+	var ve = v(x());
+	var bt = v(x());
+	var A = class {
+		constructor(t) {
+			this._params = void 0;
+			this._paramMappings = [];
+			this._name = t;
+		}
+		get params() {
+			return this._params;
+		}
+		get paramMappings() {
+			return this._paramMappings;
+		}
+		get isLoaded() {
+			return !!this.params;
+		}
+		getParamFromPath(t) {
+			let { obj: e, objProp: r } = this.traversePropertyPath(t);
+			return e[r];
+		}
+		reassignParamFromPath(t, e) {
+			let { obj: r, objProp: n } = this.traversePropertyPath(t);
+			r[n].dispose(), r[n] = e;
+		}
+		getParamList() {
+			return this._paramMappings.map(({ paramPath: t }) => ({
+				path: t,
+				tensor: this.getParamFromPath(t)
+			}));
+		}
+		getTrainableParams() {
+			return this.getParamList().filter((t) => t.tensor instanceof bt.Variable);
+		}
+		getFrozenParams() {
+			return this.getParamList().filter((t) => !(t.tensor instanceof bt.Variable));
+		}
+		variable() {
+			this.getFrozenParams().forEach(({ path: t, tensor: e }) => {
+				this.reassignParamFromPath(t, e.variable());
+			});
+		}
+		freeze() {
+			this.getTrainableParams().forEach(({ path: t, tensor: e }) => {
+				let r = bt.tensor(e.dataSync());
+				e.dispose(), this.reassignParamFromPath(t, r);
+			});
+		}
+		dispose(t = !0) {
+			this.getParamList().forEach((e) => {
+				if (t && e.tensor.isDisposed) throw new Error(`param tensor has already been disposed for path ${e.path}`);
+				e.tensor.dispose();
+			}), this._params = void 0;
+		}
+		serializeParams() {
+			return new Float32Array(this.getParamList().map(({ tensor: t }) => Array.from(t.dataSync())).reduce((t, e) => t.concat(e)));
+		}
+		async load(t) {
+			if (t instanceof Float32Array) {
+				this.extractWeights(t);
+				return;
+			}
+			await this.loadFromUri(t);
+		}
+		async loadFromUri(t) {
+			if (t && typeof t != "string") throw new Error(`${this._name}.loadFromUri - expected model uri`);
+			let e = await ao(t, this.getDefaultModelName());
+			this.loadFromWeightMap(e);
+		}
+		async loadFromDisk(t) {
+			if (t && typeof t != "string") throw new Error(`${this._name}.loadFromDisk - expected model file path`);
+			let { readFile: e } = w.getEnv(), { manifestUri: r, modelBaseUri: n } = pr(t, this.getDefaultModelName()), s = (m) => Promise.all(m.map((p) => e(p).then((u) => typeof u == "string" ? Buffer.from(u) : u.buffer))), c = await bt.io.weightsLoaderFactory(s)(JSON.parse((await e(r)).toString()), n);
+			this.loadFromWeightMap(c);
+		}
+		loadFromWeightMap(t) {
+			let { paramMappings: e, params: r } = this.extractParamsFromWeightMap(t);
+			this._paramMappings = e, this._params = r;
+		}
+		extractWeights(t) {
+			let { paramMappings: e, params: r } = this.extractParams(t);
+			this._paramMappings = e, this._params = r;
+		}
+		traversePropertyPath(t) {
+			if (!this.params) throw new Error("traversePropertyPath - model has no loaded params");
+			let { obj: r, objProp: n } = t.split("/").reduce((s, a) => {
+				if (!s.nextObj.hasOwnProperty(a)) throw new Error(`traversePropertyPath - object does not have property ${a}, for path ${t}`);
+				return {
+					obj: s.nextObj,
+					objProp: a,
+					nextObj: s.nextObj[a]
+				};
+			}, { nextObj: this.params });
+			if (!r || !n || !(r[n] instanceof bt.Tensor)) throw new Error(`traversePropertyPath - parameter is not a tensor, for path ${t}`);
+			return {
+				obj: r,
+				objProp: n
+			};
+		}
+	};
+	var E = v(x());
+	var de = v(x());
+	function O(o, t, e) {
+		return de.tidy(() => {
+			let r = de.separableConv2d(o, t.depthwise_filter, t.pointwise_filter, e, "same");
+			return r = de.add(r, t.bias), r;
+		});
+	}
+	function ur(o, t, e = !1) {
+		return E.tidy(() => {
+			let r = E.relu(e ? E.add(E.conv2d(o, t.conv0.filters, [2, 2], "same"), t.conv0.bias) : O(o, t.conv0, [2, 2])), n = O(r, t.conv1, [1, 1]), a = O(E.relu(E.add(r, n)), t.conv2, [1, 1]);
+			return E.relu(E.add(r, E.add(n, a)));
+		});
+	}
+	function ke(o, t, e = !1, r = !0) {
+		return E.tidy(() => {
+			let n = E.relu(e ? E.add(E.conv2d(o, t.conv0.filters, r ? [2, 2] : [1, 1], "same"), t.conv0.bias) : O(o, t.conv0, r ? [2, 2] : [1, 1])), s = O(n, t.conv1, [1, 1]), i = O(E.relu(E.add(n, s)), t.conv2, [1, 1]), m = O(E.relu(E.add(n, E.add(s, i))), t.conv3, [1, 1]);
+			return E.relu(E.add(n, E.add(s, E.add(i, m))));
+		});
+	}
+	var Mt = v(x());
+	function Jt(o, t, e = "same", r = !1) {
+		return Mt.tidy(() => {
+			let n = Mt.add(Mt.conv2d(o, t.filters, [1, 1], e), t.bias);
+			return r ? Mt.relu(n) : n;
+		});
+	}
+	function W(o, t) {
+		Object.keys(o).forEach((e) => {
+			t.some((r) => r.originalPath === e) || o[e].dispose();
+		});
+	}
+	var fr = v(x());
+	function he(o, t) {
+		return (e, r, n, s) => {
+			let a = fr.tensor4d(o(e * r * n * n), [
+				n,
+				n,
+				e,
+				r
+			]), i = fr.tensor1d(o(r));
+			return t.push({ paramPath: `${s}/filters` }, { paramPath: `${s}/bias` }), {
+				filters: a,
+				bias: i
+			};
+		};
+	}
+	var lr = v(x());
+	function dr(o, t) {
+		return (e, r, n) => {
+			let s = lr.tensor2d(o(e * r), [e, r]), a = lr.tensor1d(o(r));
+			return t.push({ paramPath: `${n}/weights` }, { paramPath: `${n}/bias` }), {
+				weights: s,
+				bias: a
+			};
+		};
+	}
+	var Re = v(x());
+	var Be = class {
+		constructor(t, e, r) {
+			this.depthwise_filter = t;
+			this.pointwise_filter = e;
+			this.bias = r;
+		}
+	};
+	function be(o, t) {
+		return (e, r, n) => {
+			let s = Re.tensor4d(o(9 * e), [
+				3,
+				3,
+				e,
+				1
+			]), a = Re.tensor4d(o(e * r), [
+				1,
+				1,
+				e,
+				r
+			]), i = Re.tensor1d(o(r));
+			return t.push({ paramPath: `${n}/depthwise_filter` }, { paramPath: `${n}/pointwise_filter` }, { paramPath: `${n}/bias` }), new Be(s, a, i);
+		};
+	}
+	function ge(o) {
+		return (t) => {
+			return new Be(o(`${t}/depthwise_filter`, 4), o(`${t}/pointwise_filter`, 4), o(`${t}/bias`, 1));
+		};
+	}
+	function Y(o, t) {
+		return (e, r, n) => {
+			let s = o[e];
+			if (!Bt(s, r)) throw new Error(`expected weightMap[${e}] to be a Tensor${r}D, instead have ${s}`);
+			return t.push({
+				originalPath: e,
+				paramPath: n || e
+			}), s;
+		};
+	}
+	function k(o) {
+		let t = o;
+		function e(n) {
+			let s = t.slice(0, n);
+			return t = t.slice(n), s;
+		}
+		function r() {
+			return t;
+		}
+		return {
+			extractWeights: e,
+			getRemainingWeights: r
+		};
+	}
+	function hr(o, t) {
+		let e = he(o, t), r = be(o, t);
+		function n(a, i, c, m = !1) {
+			return {
+				conv0: m ? e(a, i, 3, `${c}/conv0`) : r(a, i, `${c}/conv0`),
+				conv1: r(i, i, `${c}/conv1`),
+				conv2: r(i, i, `${c}/conv2`)
+			};
+		}
+		function s(a, i, c, m = !1) {
+			let { conv0: p, conv1: u, conv2: f } = n(a, i, c, m);
+			return {
+				conv0: p,
+				conv1: u,
+				conv2: f,
+				conv3: r(i, i, `${c}/conv3`)
+			};
+		}
+		return {
+			extractDenseBlock3Params: n,
+			extractDenseBlock4Params: s
+		};
+	}
+	function Eo(o) {
+		let t = [], { extractWeights: e, getRemainingWeights: r } = k(o), { extractDenseBlock4Params: n } = hr(e, t), s = n(3, 32, "dense0", !0), a = n(32, 64, "dense1"), i = n(64, 128, "dense2"), c = n(128, 256, "dense3");
+		if (r().length !== 0) throw new Error(`weights remaing after extract: ${r().length}`);
+		return {
+			paramMappings: t,
+			params: {
+				dense0: s,
+				dense1: a,
+				dense2: i,
+				dense3: c
+			}
+		};
+	}
+	function br(o) {
+		return (t) => {
+			return {
+				filters: o(`${t}/filters`, 4),
+				bias: o(`${t}/bias`, 1)
+			};
+		};
+	}
+	function gr(o, t) {
+		let e = Y(o, t), r = br(e), n = ge(e);
+		function s(i, c = !1) {
+			return {
+				conv0: c ? r(`${i}/conv0`) : n(`${i}/conv0`),
+				conv1: n(`${i}/conv1`),
+				conv2: n(`${i}/conv2`)
+			};
+		}
+		function a(i, c = !1) {
+			return {
+				conv0: c ? r(`${i}/conv0`) : n(`${i}/conv0`),
+				conv1: n(`${i}/conv1`),
+				conv2: n(`${i}/conv2`),
+				conv3: n(`${i}/conv3`)
+			};
+		}
+		return {
+			extractDenseBlock3Params: s,
+			extractDenseBlock4Params: a
+		};
+	}
+	function Mo(o) {
+		let t = [], { extractDenseBlock4Params: e } = gr(o, t), r = {
+			dense0: e("dense0", !0),
+			dense1: e("dense1"),
+			dense2: e("dense2"),
+			dense3: e("dense3")
+		};
+		return W(o, t), {
+			params: r,
+			paramMappings: t
+		};
+	}
+	var xe = class extends A {
+		constructor() {
+			super("FaceFeatureExtractor");
+		}
+		forwardInput(t) {
+			let { params: e } = this;
+			if (!e) throw new Error("FaceFeatureExtractor - load model before inference");
+			return ve.tidy(() => {
+				let a = ke(rt(ve.cast(t.toBatchTensor(112, !0), "float32"), [
+					122.782,
+					117.001,
+					104.298
+				]).div(255), e.dense0, !0);
+				return a = ke(a, e.dense1), a = ke(a, e.dense2), a = ke(a, e.dense3), a = ve.avgPool(a, [7, 7], [2, 2], "valid"), a;
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		getDefaultModelName() {
+			return "face_feature_extractor_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return Mo(t);
+		}
+		extractParams(t) {
+			return Eo(t);
+		}
+	};
+	var No = v(x());
+	var ye = v(x());
+	function $e(o, t) {
+		return ye.tidy(() => ye.add(ye.matMul(o, t.weights), t.bias));
+	}
+	function Co(o, t, e) {
+		let r = [], { extractWeights: n, getRemainingWeights: s } = k(o), i = dr(n, r)(t, e, "fc");
+		if (s().length !== 0) throw new Error(`weights remaing after extract: ${s().length}`);
+		return {
+			paramMappings: r,
+			params: { fc: i }
+		};
+	}
+	function Io(o) {
+		let t = [], e = Y(o, t);
+		function r(s) {
+			return {
+				weights: e(`${s}/weights`, 2),
+				bias: e(`${s}/bias`, 1)
+			};
+		}
+		let n = { fc: r("fc") };
+		return W(o, t), {
+			params: n,
+			paramMappings: t
+		};
+	}
+	function xr(o) {
+		let t = {}, e = {};
+		return Object.keys(o).forEach((r) => {
+			let n = r.startsWith("fc") ? e : t;
+			n[r] = o[r];
+		}), {
+			featureExtractorMap: t,
+			classifierMap: e
+		};
+	}
+	var _e = class extends A {
+		constructor(t, e) {
+			super(t), this._faceFeatureExtractor = e;
+		}
+		get faceFeatureExtractor() {
+			return this._faceFeatureExtractor;
+		}
+		runNet(t) {
+			let { params: e } = this;
+			if (!e) throw new Error(`${this._name} - load model before inference`);
+			return No.tidy(() => {
+				let r = t instanceof ut ? this.faceFeatureExtractor.forwardInput(t) : t;
+				return $e(r.as2D(r.shape[0], -1), e.fc);
+			});
+		}
+		dispose(t = !0) {
+			this.faceFeatureExtractor.dispose(t), super.dispose(t);
+		}
+		loadClassifierParams(t) {
+			let { params: e, paramMappings: r } = this.extractClassifierParams(t);
+			this._params = e, this._paramMappings = r;
+		}
+		extractClassifierParams(t) {
+			return Co(t, this.getClassifierChannelsIn(), this.getClassifierChannelsOut());
+		}
+		extractParamsFromWeightMap(t) {
+			let { featureExtractorMap: e, classifierMap: r } = xr(t);
+			return this.faceFeatureExtractor.loadFromWeightMap(e), Io(r);
+		}
+		extractParams(t) {
+			let e = this.getClassifierChannelsIn(), r = this.getClassifierChannelsOut(), n = r * e + r, s = t.slice(0, t.length - n), a = t.slice(t.length - n);
+			return this.faceFeatureExtractor.extractWeights(s), this.extractClassifierParams(a);
+		}
+	};
+	var so = [
+		"neutral",
+		"happy",
+		"sad",
+		"angry",
+		"fearful",
+		"disgusted",
+		"surprised"
+	];
+	var gt = class {
+		constructor(t) {
+			this.neutral = 0;
+			this.happy = 0;
+			this.sad = 0;
+			this.angry = 0;
+			this.fearful = 0;
+			this.disgusted = 0;
+			this.surprised = 0;
+			if (t.length !== 7) throw new Error(`FaceExpressions.constructor - expected probabilities.length to be 7, have: ${t.length}`);
+			so.forEach((e, r) => {
+				this[e] = t[r];
+			});
+		}
+		asSortedArray() {
+			return so.map((t) => ({
+				expression: t,
+				probability: this[t]
+			})).sort((t, e) => e.probability - t.probability);
+		}
+	};
+	var Oe = class extends _e {
+		constructor(t = new xe()) {
+			super("FaceExpressionNet", t);
+		}
+		forwardInput(t) {
+			return Te.tidy(() => Te.softmax(this.runNet(t)));
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		async predictExpressions(t) {
+			let e = await D(t), r = await this.forwardInput(e), n = await Promise.all(Te.unstack(r).map(async (a) => {
+				let i = a.dataSync();
+				return a.dispose(), i;
+			}));
+			r.dispose();
+			let s = n.map((a) => new gt(a));
+			return e.isBatchInput ? s : s[0];
+		}
+		getDefaultModelName() {
+			return "face_expression_model";
+		}
+		getClassifierChannelsIn() {
+			return 256;
+		}
+		getClassifierChannelsOut() {
+			return 7;
+		}
+	};
+	function io(o) {
+		return o.expressions instanceof gt;
+	}
+	function vr(o, t) {
+		return {
+			...o,
+			expressions: t
+		};
+	}
+	function Vn(o, t, e = .1, r) {
+		(Array.isArray(t) ? t : [t]).forEach((s) => {
+			let a = s instanceof gt ? s : io(s) ? s.expressions : void 0;
+			if (!a) throw new Error("drawFaceExpressions - expected faceExpressions to be FaceExpressions | WithFaceExpressions<{}> or array thereof");
+			let c = a.asSortedArray().filter((u) => u.probability > e), m = pt(s) ? s.detection.box.bottomLeft : r || new _(0, 0);
+			new jt(c.map((u) => `${u.expression} (${Rt(u.probability)})`), m).draw(o);
+		});
+	}
+	function qt(o) {
+		return pt(o) && o.landmarks instanceof H && o.unshiftedLandmarks instanceof H && o.alignedRect instanceof M;
+	}
+	function Gn(o) {
+		let t = (c) => c * 180 / Math.PI, e = (c, m) => Math.sqrt((c.x - m.x) ** 2 + (c.y - m.y) ** 2), r = {
+			roll: void 0,
+			pitch: void 0,
+			yaw: void 0
+		}, n = (c, m, p) => {
+			return Math.floor(c.x - m.x) - Math.floor(m.x - p.x);
+		}, s = (c, m) => {
+			let p = Math.hypot(m.x - c.x, m.y - c.y), u = m.y - c.y, f = Math.asin(u / p), l = t(f);
+			return Math.floor(90 - l) * (m.x - c.x < 0 ? -1 : 1);
+		}, a = (c, m, p) => {
+			let u = e(c, p), f = new _((c.x + p.x) / 2, (c.y + p.y) / 2), l = e(m, f), b = Math.atan(l / u);
+			return Math.floor(t(b)) * (f.y - m.y < 0 ? -1 : 1);
+		};
+		if (!o || !o.positions || o.positions.length !== 68) return r;
+		let i = o.positions;
+		return r.roll = s(i[27], i[66]), r.pitch = a(i[14], i[30], i[2]), r.yaw = n(i[14], i[33], i[2]), r;
+	}
+	function Pe(o, t) {
+		let { box: e } = o.detection, r = t.shiftBy(e.x, e.y), n = r.align(), { imageDims: s } = o.detection, a = new M(o.detection.score, n.rescale(s.reverse()), s), i = Gn(t);
+		return {
+			...o,
+			landmarks: r,
+			unshiftedLandmarks: t,
+			alignedRect: a,
+			angle: i
+		};
+	}
+	var yr = class {
+		constructor(t = {}) {
+			let { drawLines: e = !0, drawPoints: r = !0, lineWidth: n, lineColor: s, pointSize: a, pointColor: i } = t;
+			this.drawLines = e, this.drawPoints = r, this.lineWidth = n || 1, this.pointSize = a || 2, this.lineColor = s || "rgba(0, 255, 255, 1)", this.pointColor = i || "rgba(255, 0, 255, 1)";
+		}
+	};
+	var _r = class {
+		constructor(t, e = {}) {
+			this.faceLandmarks = t, this.options = new yr(e);
+		}
+		draw(t) {
+			let e = $(t), { drawLines: r, drawPoints: n, lineWidth: s, lineColor: a, pointSize: i, pointColor: c } = this.options;
+			if (r && this.faceLandmarks instanceof Yt && (e.strokeStyle = a, e.lineWidth = s, lt(e, this.faceLandmarks.getJawOutline()), lt(e, this.faceLandmarks.getLeftEyeBrow()), lt(e, this.faceLandmarks.getRightEyeBrow()), lt(e, this.faceLandmarks.getNose()), lt(e, this.faceLandmarks.getLeftEye(), !0), lt(e, this.faceLandmarks.getRightEye(), !0), lt(e, this.faceLandmarks.getMouth(), !0)), n) {
+				e.strokeStyle = c, e.fillStyle = c;
+				let m = (p) => {
+					e.beginPath(), e.arc(p.x, p.y, i, 0, 2 * Math.PI), e.fill();
+				};
+				this.faceLandmarks.positions.forEach(m);
+			}
+		}
+	};
+	function jn(o, t) {
+		(Array.isArray(t) ? t : [t]).forEach((r) => {
+			let n = r instanceof H ? r : qt(r) ? r.landmarks : void 0;
+			if (!n) throw new Error("drawFaceLandmarks - expected faceExpressions to be FaceLandmarks | WithFaceLandmarks<WithFaceDetection<{}>> or array thereof");
+			new _r(n).draw(o);
+		});
+	}
+	var Lo = "1.7.15";
+	var ft = v(x());
+	var N = v(x());
+	function Jn(o, t) {
+		let e = he(o, t), r = be(o, t);
+		function n(a, i, c) {
+			return {
+				separable_conv0: r(a, i, `${c}/separable_conv0`),
+				separable_conv1: r(i, i, `${c}/separable_conv1`),
+				expansion_conv: e(a, i, 1, `${c}/expansion_conv`)
+			};
+		}
+		function s(a, i) {
+			return {
+				separable_conv0: r(a, a, `${i}/separable_conv0`),
+				separable_conv1: r(a, a, `${i}/separable_conv1`),
+				separable_conv2: r(a, a, `${i}/separable_conv2`)
+			};
+		}
+		return {
+			extractConvParams: e,
+			extractSeparableConvParams: r,
+			extractReductionBlockParams: n,
+			extractMainBlockParams: s
+		};
+	}
+	function So(o, t) {
+		let e = [], { extractWeights: r, getRemainingWeights: n } = k(o), { extractConvParams: s, extractSeparableConvParams: a, extractReductionBlockParams: i, extractMainBlockParams: c } = Jn(r, e), f = {
+			conv_in: s(3, 32, 3, "entry_flow/conv_in"),
+			reduction_block_0: i(32, 64, "entry_flow/reduction_block_0"),
+			reduction_block_1: i(64, 128, "entry_flow/reduction_block_1")
+		}, l = {};
+		ct(t, 0, 1).forEach((g) => {
+			l[`main_block_${g}`] = c(128, `middle_flow/main_block_${g}`);
+		});
+		let h = {
+			reduction_block: i(128, 256, "exit_flow/reduction_block"),
+			separable_conv: a(256, 512, "exit_flow/separable_conv")
+		};
+		if (n().length !== 0) throw new Error(`weights remaing after extract: ${n().length}`);
+		return {
+			paramMappings: e,
+			params: {
+				entry_flow: f,
+				middle_flow: l,
+				exit_flow: h
+			}
+		};
+	}
+	function qn(o, t) {
+		let e = Y(o, t), r = br(e), n = ge(e);
+		function s(i) {
+			return {
+				separable_conv0: n(`${i}/separable_conv0`),
+				separable_conv1: n(`${i}/separable_conv1`),
+				expansion_conv: r(`${i}/expansion_conv`)
+			};
+		}
+		function a(i) {
+			return {
+				separable_conv0: n(`${i}/separable_conv0`),
+				separable_conv1: n(`${i}/separable_conv1`),
+				separable_conv2: n(`${i}/separable_conv2`)
+			};
+		}
+		return {
+			extractConvParams: r,
+			extractSeparableConvParams: n,
+			extractReductionBlockParams: s,
+			extractMainBlockParams: a
+		};
+	}
+	function Ao(o, t) {
+		let e = [], { extractConvParams: r, extractSeparableConvParams: n, extractReductionBlockParams: s, extractMainBlockParams: a } = qn(o, e), p = {
+			conv_in: r("entry_flow/conv_in"),
+			reduction_block_0: s("entry_flow/reduction_block_0"),
+			reduction_block_1: s("entry_flow/reduction_block_1")
+		}, u = {};
+		ct(t, 0, 1).forEach((T) => {
+			u[`main_block_${T}`] = a(`middle_flow/main_block_${T}`);
+		});
+		let b = {
+			reduction_block: s("exit_flow/reduction_block"),
+			separable_conv: n("exit_flow/separable_conv")
+		};
+		return W(o, e), {
+			params: {
+				entry_flow: p,
+				middle_flow: u,
+				exit_flow: b
+			},
+			paramMappings: e
+		};
+	}
+	function Wo(o, t, e) {
+		return N.add(N.conv2d(o, t.filters, e, "same"), t.bias);
+	}
+	function mo(o, t, e = !0) {
+		let r = e ? N.relu(o) : o;
+		return r = O(r, t.separable_conv0, [1, 1]), r = O(N.relu(r), t.separable_conv1, [1, 1]), r = N.maxPool(r, [3, 3], [2, 2], "same"), r = N.add(r, Wo(o, t.expansion_conv, [2, 2])), r;
+	}
+	function Zn(o, t) {
+		let e = O(N.relu(o), t.separable_conv0, [1, 1]);
+		return e = O(N.relu(e), t.separable_conv1, [1, 1]), e = O(N.relu(e), t.separable_conv2, [1, 1]), e = N.add(e, o), e;
+	}
+	var Tr = class extends A {
+		constructor(t) {
+			super("TinyXception"), this._numMainBlocks = t;
+		}
+		forwardInput(t) {
+			let { params: e } = this;
+			if (!e) throw new Error("TinyXception - load model before inference");
+			return N.tidy(() => {
+				let s = rt(N.cast(t.toBatchTensor(112, !0), "float32"), [
+					122.782,
+					117.001,
+					104.298
+				]).div(255), a = N.relu(Wo(s, e.entry_flow.conv_in, [2, 2]));
+				return a = mo(a, e.entry_flow.reduction_block_0, !1), a = mo(a, e.entry_flow.reduction_block_1), ct(this._numMainBlocks, 0, 1).forEach((i) => {
+					a = Zn(a, e.middle_flow[`main_block_${i}`]);
+				}), a = mo(a, e.exit_flow.reduction_block), a = N.relu(O(a, e.exit_flow.separable_conv, [1, 1])), a;
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		getDefaultModelName() {
+			return "tiny_xception_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return Ao(t, this._numMainBlocks);
+		}
+		extractParams(t) {
+			return So(t, this._numMainBlocks);
+		}
+	};
+	function ko(o) {
+		let t = [], { extractWeights: e, getRemainingWeights: r } = k(o), n = dr(e, t), s = n(512, 1, "fc/age"), a = n(512, 2, "fc/gender");
+		if (r().length !== 0) throw new Error(`weights remaing after extract: ${r().length}`);
+		return {
+			paramMappings: t,
+			params: { fc: {
+				age: s,
+				gender: a
+			} }
+		};
+	}
+	function Bo(o) {
+		let t = [], e = Y(o, t);
+		function r(s) {
+			return {
+				weights: e(`${s}/weights`, 2),
+				bias: e(`${s}/bias`, 1)
+			};
+		}
+		let n = { fc: {
+			age: r("fc/age"),
+			gender: r("fc/gender")
+		} };
+		return W(o, t), {
+			params: n,
+			paramMappings: t
+		};
+	}
+	var Pr = ((e) => (e.FEMALE = "female", e.MALE = "male", e))(Pr || {});
+	var He = class extends A {
+		constructor(t = new Tr(2)) {
+			super("AgeGenderNet"), this._faceFeatureExtractor = t;
+		}
+		get faceFeatureExtractor() {
+			return this._faceFeatureExtractor;
+		}
+		runNet(t) {
+			let { params: e } = this;
+			if (!e) throw new Error(`${this._name} - load model before inference`);
+			return ft.tidy(() => {
+				let r = t instanceof ut ? this.faceFeatureExtractor.forwardInput(t) : t, n = ft.avgPool(r, [7, 7], [2, 2], "valid").as2D(r.shape[0], -1);
+				return {
+					age: $e(n, e.fc.age).as1D(),
+					gender: $e(n, e.fc.gender)
+				};
+			});
+		}
+		forwardInput(t) {
+			return ft.tidy(() => {
+				let { age: e, gender: r } = this.runNet(t);
+				return {
+					age: e,
+					gender: ft.softmax(r)
+				};
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		async predictAgeAndGender(t) {
+			let e = await D(t), r = await this.forwardInput(e), n = ft.unstack(r.age), s = ft.unstack(r.gender), a = n.map((c, m) => ({
+				ageTensor: c,
+				genderTensor: s[m]
+			})), i = await Promise.all(a.map(async ({ ageTensor: c, genderTensor: m }) => {
+				let p = c.dataSync()[0], u = m.dataSync()[0], f = u > .5, l = f ? "male" : "female", b = f ? u : 1 - u;
+				return c.dispose(), m.dispose(), {
+					age: p,
+					gender: l,
+					genderProbability: b
+				};
+			}));
+			return r.age.dispose(), r.gender.dispose(), e.isBatchInput ? i : i[0];
+		}
+		getDefaultModelName() {
+			return "age_gender_model";
+		}
+		dispose(t = !0) {
+			this.faceFeatureExtractor.dispose(t), super.dispose(t);
+		}
+		loadClassifierParams(t) {
+			let { params: e, paramMappings: r } = this.extractClassifierParams(t);
+			this._params = e, this._paramMappings = r;
+		}
+		extractClassifierParams(t) {
+			return ko(t);
+		}
+		extractParamsFromWeightMap(t) {
+			let { featureExtractorMap: e, classifierMap: r } = xr(t);
+			return this.faceFeatureExtractor.loadFromWeightMap(e), Bo(r);
+		}
+		extractParams(t) {
+			let r = t.slice(0, t.length - 1539), n = t.slice(t.length - 1539);
+			return this.faceFeatureExtractor.extractWeights(r), this.extractClassifierParams(n);
+		}
+	};
+	var V = v(x());
+	var we = class extends _e {
+		postProcess(t, e, r) {
+			let n = r.map(({ width: a, height: i }) => {
+				let c = e / Math.max(i, a);
+				return {
+					width: a * c,
+					height: i * c
+				};
+			}), s = n.length;
+			return V.tidy(() => {
+				let a = (u, f) => V.stack([V.fill([68], u, "float32"), V.fill([68], f, "float32")], 1).as2D(1, 136).as1D(), i = (u, f) => {
+					let { width: l, height: b } = n[u];
+					return f(l, b) ? Math.abs(l - b) / 2 : 0;
+				}, c = (u) => i(u, (f, l) => f < l), m = (u) => i(u, (f, l) => l < f);
+				return t.mul(V.fill([s, 136], e, "float32")).sub(V.stack(Array.from(Array(s), (u, f) => a(c(f), m(f))))).div(V.stack(Array.from(Array(s), (u, f) => a(n[f].width, n[f].height))));
+			});
+		}
+		forwardInput(t) {
+			return V.tidy(() => {
+				let e = this.runNet(t);
+				return this.postProcess(e, t.inputSize, t.inputDimensions.map(([r, n]) => ({
+					height: r,
+					width: n
+				})));
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		async detectLandmarks(t) {
+			let e = await D(t), r = V.tidy(() => V.unstack(this.forwardInput(e))), n = await Promise.all(r.map(async (s, a) => {
+				let i = Array.from(s.dataSync()), c = i.filter((p, u) => or(u)), m = i.filter((p, u) => !or(u));
+				return new Yt(Array(68).fill(0).map((p, u) => new _(c[u], m[u])), {
+					height: e.getInputHeight(a),
+					width: e.getInputWidth(a)
+				});
+			}));
+			return r.forEach((s) => s.dispose()), e.isBatchInput ? n : n[0];
+		}
+		getClassifierChannelsOut() {
+			return 136;
+		}
+	};
+	var Zt = class extends we {
+		constructor(t = new xe()) {
+			super("FaceLandmark68Net", t);
+		}
+		getDefaultModelName() {
+			return "face_landmark_68_model";
+		}
+		getClassifierChannelsIn() {
+			return 256;
+		}
+	};
+	var Fe = v(x());
+	function Ro(o) {
+		let t = [], { extractDenseBlock3Params: e } = gr(o, t), r = {
+			dense0: e("dense0", !0),
+			dense1: e("dense1"),
+			dense2: e("dense2")
+		};
+		return W(o, t), {
+			params: r,
+			paramMappings: t
+		};
+	}
+	function $o(o) {
+		let t = [], { extractWeights: e, getRemainingWeights: r } = k(o), { extractDenseBlock3Params: n } = hr(e, t), s = n(3, 32, "dense0", !0), a = n(32, 64, "dense1"), i = n(64, 128, "dense2");
+		if (r().length !== 0) throw new Error(`weights remaing after extract: ${r().length}`);
+		return {
+			paramMappings: t,
+			params: {
+				dense0: s,
+				dense1: a,
+				dense2: i
+			}
+		};
+	}
+	var wr = class extends A {
+		constructor() {
+			super("TinyFaceFeatureExtractor");
+		}
+		forwardInput(t) {
+			let { params: e } = this;
+			if (!e) throw new Error("TinyFaceFeatureExtractor - load model before inference");
+			return Fe.tidy(() => {
+				let a = ur(rt(Fe.cast(t.toBatchTensor(112, !0), "float32"), [
+					122.782,
+					117.001,
+					104.298
+				]).div(255), e.dense0, !0);
+				return a = ur(a, e.dense1), a = ur(a, e.dense2), a = Fe.avgPool(a, [14, 14], [2, 2], "valid"), a;
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		getDefaultModelName() {
+			return "face_feature_extractor_tiny_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return Ro(t);
+		}
+		extractParams(t) {
+			return $o(t);
+		}
+	};
+	var ze = class extends we {
+		constructor(t = new wr()) {
+			super("FaceLandmark68TinyNet", t);
+		}
+		getDefaultModelName() {
+			return "face_landmark_68_tiny_model";
+		}
+		getClassifierChannelsIn() {
+			return 128;
+		}
+	};
+	var po = class extends Zt {};
+	var nt = v(x());
+	var De = v(x());
+	var Fr = v(x());
+	function Oo(o, t) {
+		return Fr.add(Fr.mul(o, t.weights), t.biases);
+	}
+	function uo(o, t, e, r, n = "same") {
+		let { filters: s, bias: a } = t.conv, i = De.conv2d(o, s, e, n);
+		return i = De.add(i, a), i = Oo(i, t.scale), r ? De.relu(i) : i;
+	}
+	function Ho(o, t) {
+		return uo(o, t, [1, 1], !0);
+	}
+	function fo(o, t) {
+		return uo(o, t, [1, 1], !1);
+	}
+	function Dr(o, t) {
+		return uo(o, t, [2, 2], !0, "valid");
+	}
+	var G = v(x());
+	function Kn(o, t) {
+		function e(i, c, m) {
+			let p = o(i), u = p.length / (c * m * m);
+			if ($r(u)) throw new Error(`depth has to be an integer: ${u}, weights.length: ${p.length}, numFilters: ${c}, filterSize: ${m}`);
+			return G.tidy(() => G.transpose(G.tensor4d(p, [
+				c,
+				u,
+				m,
+				m
+			]), [
+				2,
+				3,
+				1,
+				0
+			]));
+		}
+		function r(i, c, m, p) {
+			let u = e(i, c, m), f = G.tensor1d(o(c));
+			return t.push({ paramPath: `${p}/filters` }, { paramPath: `${p}/bias` }), {
+				filters: u,
+				bias: f
+			};
+		}
+		function n(i, c) {
+			let m = G.tensor1d(o(i)), p = G.tensor1d(o(i));
+			return t.push({ paramPath: `${c}/weights` }, { paramPath: `${c}/biases` }), {
+				weights: m,
+				biases: p
+			};
+		}
+		function s(i, c, m, p) {
+			return {
+				conv: r(i, c, m, `${p}/conv`),
+				scale: n(c, `${p}/scale`)
+			};
+		}
+		function a(i, c, m, p, u = !1) {
+			return {
+				conv1: s((u ? .5 : 1) * i, c, m, `${p}/conv1`),
+				conv2: s(i, c, m, `${p}/conv2`)
+			};
+		}
+		return {
+			extractConvLayerParams: s,
+			extractResidualLayerParams: a
+		};
+	}
+	function zo(o) {
+		let { extractWeights: t, getRemainingWeights: e } = k(o), r = [], { extractConvLayerParams: n, extractResidualLayerParams: s } = Kn(t, r), a = n(4704, 32, 7, "conv32_down"), i = s(9216, 32, 3, "conv32_1"), c = s(9216, 32, 3, "conv32_2"), m = s(9216, 32, 3, "conv32_3"), p = s(36864, 64, 3, "conv64_down", !0), u = s(36864, 64, 3, "conv64_1"), f = s(36864, 64, 3, "conv64_2"), l = s(36864, 64, 3, "conv64_3"), b = s(147456, 128, 3, "conv128_down", !0), T = s(147456, 128, 3, "conv128_1"), h = s(147456, 128, 3, "conv128_2"), g = s(589824, 256, 3, "conv256_down", !0), P = s(589824, 256, 3, "conv256_1"), y = s(589824, 256, 3, "conv256_2"), I = s(589824, 256, 3, "conv256_down_out"), j = G.tidy(() => G.transpose(G.tensor2d(t(256 * 128), [128, 256]), [1, 0]));
+		if (r.push({ paramPath: "fc" }), e().length !== 0) throw new Error(`weights remaing after extract: ${e().length}`);
+		return {
+			params: {
+				conv32_down: a,
+				conv32_1: i,
+				conv32_2: c,
+				conv32_3: m,
+				conv64_down: p,
+				conv64_1: u,
+				conv64_2: f,
+				conv64_3: l,
+				conv128_down: b,
+				conv128_1: T,
+				conv128_2: h,
+				conv256_down: g,
+				conv256_1: P,
+				conv256_2: y,
+				conv256_down_out: I,
+				fc: j
+			},
+			paramMappings: r
+		};
+	}
+	function Qn(o, t) {
+		let e = Y(o, t);
+		function r(a) {
+			return {
+				weights: e(`${a}/scale/weights`, 1),
+				biases: e(`${a}/scale/biases`, 1)
+			};
+		}
+		function n(a) {
+			let i = e(`${a}/conv/filters`, 4), c = e(`${a}/conv/bias`, 1), m = r(a);
+			return {
+				conv: {
+					filters: i,
+					bias: c
+				},
+				scale: m
+			};
+		}
+		function s(a) {
+			return {
+				conv1: n(`${a}/conv1`),
+				conv2: n(`${a}/conv2`)
+			};
+		}
+		return {
+			extractConvLayerParams: n,
+			extractResidualLayerParams: s
+		};
+	}
+	function Yo(o) {
+		let t = [], { extractConvLayerParams: e, extractResidualLayerParams: r } = Qn(o, t), n = e("conv32_down"), s = r("conv32_1"), a = r("conv32_2"), i = r("conv32_3"), c = r("conv64_down"), m = r("conv64_1"), p = r("conv64_2"), u = r("conv64_3"), f = r("conv128_down"), l = r("conv128_1"), b = r("conv128_2"), T = r("conv256_down"), h = r("conv256_1"), g = r("conv256_2"), P = r("conv256_down_out"), { fc: y } = o;
+		if (t.push({
+			originalPath: "fc",
+			paramPath: "fc"
+		}), !Rr(y)) throw new Error(`expected weightMap[fc] to be a Tensor2D, instead have ${y}`);
+		let I = {
+			conv32_down: n,
+			conv32_1: s,
+			conv32_2: a,
+			conv32_3: i,
+			conv64_down: c,
+			conv64_1: m,
+			conv64_2: p,
+			conv64_3: u,
+			conv128_down: f,
+			conv128_1: l,
+			conv128_2: b,
+			conv256_down: T,
+			conv256_1: h,
+			conv256_2: g,
+			conv256_down_out: P,
+			fc: y
+		};
+		return W(o, t), {
+			params: I,
+			paramMappings: t
+		};
+	}
+	var B = v(x());
+	function ot(o, t) {
+		let e = Ho(o, t.conv1);
+		return e = fo(e, t.conv2), e = B.add(e, o), e = B.relu(e), e;
+	}
+	function Ye(o, t) {
+		let e = Dr(o, t.conv1);
+		e = fo(e, t.conv2);
+		let r = B.avgPool(o, 2, 2, "valid"), n = B.zeros(r.shape), s = r.shape[3] !== e.shape[3];
+		if (r.shape[1] !== e.shape[1] || r.shape[2] !== e.shape[2]) {
+			let i = [...e.shape];
+			i[1] = 1;
+			let c = B.zeros(i);
+			e = B.concat([e, c], 1);
+			let m = [...e.shape];
+			m[2] = 1;
+			let p = B.zeros(m);
+			e = B.concat([e, p], 2);
+		}
+		return r = s ? B.concat([r, n], 3) : r, e = B.add(r, e), e = B.relu(e), e;
+	}
+	var Kt = class extends A {
+		constructor() {
+			super("FaceRecognitionNet");
+		}
+		forwardInput(t) {
+			let { params: e } = this;
+			if (!e) throw new Error("FaceRecognitionNet - load model before inference");
+			return nt.tidy(() => {
+				let a = Dr(rt(nt.cast(t.toBatchTensor(150, !0), "float32"), [
+					122.782,
+					117.001,
+					104.298
+				]).div(255), e.conv32_down);
+				a = nt.maxPool(a, 3, 2, "valid"), a = ot(a, e.conv32_1), a = ot(a, e.conv32_2), a = ot(a, e.conv32_3), a = Ye(a, e.conv64_down), a = ot(a, e.conv64_1), a = ot(a, e.conv64_2), a = ot(a, e.conv64_3), a = Ye(a, e.conv128_down), a = ot(a, e.conv128_1), a = ot(a, e.conv128_2), a = Ye(a, e.conv256_down), a = ot(a, e.conv256_1), a = ot(a, e.conv256_2), a = Ye(a, e.conv256_down_out);
+				let i = a.mean([1, 2]);
+				return nt.matMul(i, e.fc);
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		async computeFaceDescriptor(t) {
+			var s;
+			if ((s = t == null ? void 0 : t.shape) != null && s.some((a) => a <= 0)) return /* @__PURE__ */ new Float32Array(128);
+			let e = await D(t), r = nt.tidy(() => nt.unstack(this.forwardInput(e))), n = await Promise.all(r.map((a) => a.data()));
+			return r.forEach((a) => a.dispose()), e.isBatchInput ? n : n[0];
+		}
+		getDefaultModelName() {
+			return "face_recognition_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return Yo(t);
+		}
+		extractParams(t) {
+			return zo(t);
+		}
+	};
+	function ta(o) {
+		let t = new Kt();
+		return t.extractWeights(o), t;
+	}
+	function Er(o, t) {
+		return {
+			...o,
+			descriptor: t
+		};
+	}
+	function ea(o) {
+		return typeof o.age == "number";
+	}
+	function Mr(o, t) {
+		return {
+			...o,
+			age: t
+		};
+	}
+	function ra(o) {
+		return (o.gender === "male" || o.gender === "female") && ce(o.genderProbability);
+	}
+	function Cr(o, t, e) {
+		return {
+			...o,
+			gender: t,
+			genderProbability: e
+		};
+	}
+	var Nt = v(x());
+	var at = v(x());
+	function oa(o, t) {
+		function e(c, m) {
+			let p = at.tensor4d(o(9 * c), [
+				3,
+				3,
+				c,
+				1
+			]), u = at.tensor1d(o(c)), f = at.tensor1d(o(c)), l = at.tensor1d(o(c)), b = at.tensor1d(o(c));
+			return t.push({ paramPath: `${m}/filters` }, { paramPath: `${m}/batch_norm_scale` }, { paramPath: `${m}/batch_norm_offset` }, { paramPath: `${m}/batch_norm_mean` }, { paramPath: `${m}/batch_norm_variance` }), {
+				filters: p,
+				batch_norm_scale: u,
+				batch_norm_offset: f,
+				batch_norm_mean: l,
+				batch_norm_variance: b
+			};
+		}
+		function r(c, m, p, u, f) {
+			let l = at.tensor4d(o(c * m * p * p), [
+				p,
+				p,
+				c,
+				m
+			]), b = at.tensor1d(o(m));
+			return t.push({ paramPath: `${u}/filters` }, { paramPath: `${u}/${f ? "batch_norm_offset" : "bias"}` }), {
+				filters: l,
+				bias: b
+			};
+		}
+		function n(c, m, p, u) {
+			let { filters: f, bias: l } = r(c, m, p, u, !0);
+			return {
+				filters: f,
+				batch_norm_offset: l
+			};
+		}
+		function s(c, m, p) {
+			return {
+				depthwise_conv: e(c, `${p}/depthwise_conv`),
+				pointwise_conv: n(c, m, 1, `${p}/pointwise_conv`)
+			};
+		}
+		function a() {
+			return {
+				conv_0: n(3, 32, 3, "mobilenetv1/conv_0"),
+				conv_1: s(32, 64, "mobilenetv1/conv_1"),
+				conv_2: s(64, 128, "mobilenetv1/conv_2"),
+				conv_3: s(128, 128, "mobilenetv1/conv_3"),
+				conv_4: s(128, 256, "mobilenetv1/conv_4"),
+				conv_5: s(256, 256, "mobilenetv1/conv_5"),
+				conv_6: s(256, 512, "mobilenetv1/conv_6"),
+				conv_7: s(512, 512, "mobilenetv1/conv_7"),
+				conv_8: s(512, 512, "mobilenetv1/conv_8"),
+				conv_9: s(512, 512, "mobilenetv1/conv_9"),
+				conv_10: s(512, 512, "mobilenetv1/conv_10"),
+				conv_11: s(512, 512, "mobilenetv1/conv_11"),
+				conv_12: s(512, 1024, "mobilenetv1/conv_12"),
+				conv_13: s(1024, 1024, "mobilenetv1/conv_13")
+			};
+		}
+		function i() {
+			let c = n(1024, 256, 1, "prediction_layer/conv_0"), m = n(256, 512, 3, "prediction_layer/conv_1"), p = n(512, 128, 1, "prediction_layer/conv_2"), u = n(128, 256, 3, "prediction_layer/conv_3"), f = n(256, 128, 1, "prediction_layer/conv_4"), l = n(128, 256, 3, "prediction_layer/conv_5"), b = n(256, 64, 1, "prediction_layer/conv_6"), T = n(64, 128, 3, "prediction_layer/conv_7"), h = r(512, 12, 1, "prediction_layer/box_predictor_0/box_encoding_predictor"), g = r(512, 9, 1, "prediction_layer/box_predictor_0/class_predictor"), P = r(1024, 24, 1, "prediction_layer/box_predictor_1/box_encoding_predictor"), y = r(1024, 18, 1, "prediction_layer/box_predictor_1/class_predictor"), I = r(512, 24, 1, "prediction_layer/box_predictor_2/box_encoding_predictor"), j = r(512, 18, 1, "prediction_layer/box_predictor_2/class_predictor"), tt = r(256, 24, 1, "prediction_layer/box_predictor_3/box_encoding_predictor"), it = r(256, 18, 1, "prediction_layer/box_predictor_3/class_predictor"), q = r(256, 24, 1, "prediction_layer/box_predictor_4/box_encoding_predictor"), Pt = r(256, 18, 1, "prediction_layer/box_predictor_4/class_predictor"), wt = r(128, 24, 1, "prediction_layer/box_predictor_5/box_encoding_predictor"), Ft = r(128, 18, 1, "prediction_layer/box_predictor_5/class_predictor");
+			return {
+				conv_0: c,
+				conv_1: m,
+				conv_2: p,
+				conv_3: u,
+				conv_4: f,
+				conv_5: l,
+				conv_6: b,
+				conv_7: T,
+				box_predictor_0: {
+					box_encoding_predictor: h,
+					class_predictor: g
+				},
+				box_predictor_1: {
+					box_encoding_predictor: P,
+					class_predictor: y
+				},
+				box_predictor_2: {
+					box_encoding_predictor: I,
+					class_predictor: j
+				},
+				box_predictor_3: {
+					box_encoding_predictor: tt,
+					class_predictor: it
+				},
+				box_predictor_4: {
+					box_encoding_predictor: q,
+					class_predictor: Pt
+				},
+				box_predictor_5: {
+					box_encoding_predictor: wt,
+					class_predictor: Ft
+				}
+			};
+		}
+		return {
+			extractMobilenetV1Params: a,
+			extractPredictionLayerParams: i
+		};
+	}
+	function Vo(o) {
+		let t = [], { extractWeights: e, getRemainingWeights: r } = k(o), { extractMobilenetV1Params: n, extractPredictionLayerParams: s } = oa(e, t), a = n(), i = s(), m = { extra_dim: at.tensor3d(e(5118 * 4), [
+			1,
+			5118,
+			4
+		]) };
+		if (t.push({ paramPath: "output_layer/extra_dim" }), r().length !== 0) throw new Error(`weights remaing after extract: ${r().length}`);
+		return {
+			params: {
+				mobilenetv1: a,
+				prediction_layer: i,
+				output_layer: m
+			},
+			paramMappings: t
+		};
+	}
+	function na(o, t) {
+		let e = Y(o, t);
+		function r(m, p, u) {
+			return {
+				filters: e(`${m}/Conv2d_${p}_pointwise/weights`, 4, `${u}/filters`),
+				batch_norm_offset: e(`${m}/Conv2d_${p}_pointwise/convolution_bn_offset`, 1, `${u}/batch_norm_offset`)
+			};
+		}
+		function n(m) {
+			let p = `mobilenetv1/conv_${m}`, u = `MobilenetV1/Conv2d_${m}_depthwise`, f = `${p}/depthwise_conv`, l = `${p}/pointwise_conv`;
+			return {
+				depthwise_conv: {
+					filters: e(`${u}/depthwise_weights`, 4, `${f}/filters`),
+					batch_norm_scale: e(`${u}/BatchNorm/gamma`, 1, `${f}/batch_norm_scale`),
+					batch_norm_offset: e(`${u}/BatchNorm/beta`, 1, `${f}/batch_norm_offset`),
+					batch_norm_mean: e(`${u}/BatchNorm/moving_mean`, 1, `${f}/batch_norm_mean`),
+					batch_norm_variance: e(`${u}/BatchNorm/moving_variance`, 1, `${f}/batch_norm_variance`)
+				},
+				pointwise_conv: r("MobilenetV1", m, l)
+			};
+		}
+		function s() {
+			return {
+				conv_0: r("MobilenetV1", 0, "mobilenetv1/conv_0"),
+				conv_1: n(1),
+				conv_2: n(2),
+				conv_3: n(3),
+				conv_4: n(4),
+				conv_5: n(5),
+				conv_6: n(6),
+				conv_7: n(7),
+				conv_8: n(8),
+				conv_9: n(9),
+				conv_10: n(10),
+				conv_11: n(11),
+				conv_12: n(12),
+				conv_13: n(13)
+			};
+		}
+		function a(m, p) {
+			return {
+				filters: e(`${m}/weights`, 4, `${p}/filters`),
+				bias: e(`${m}/biases`, 1, `${p}/bias`)
+			};
+		}
+		function i(m) {
+			return {
+				box_encoding_predictor: a(`Prediction/BoxPredictor_${m}/BoxEncodingPredictor`, `prediction_layer/box_predictor_${m}/box_encoding_predictor`),
+				class_predictor: a(`Prediction/BoxPredictor_${m}/ClassPredictor`, `prediction_layer/box_predictor_${m}/class_predictor`)
+			};
+		}
+		function c() {
+			return {
+				conv_0: r("Prediction", 0, "prediction_layer/conv_0"),
+				conv_1: r("Prediction", 1, "prediction_layer/conv_1"),
+				conv_2: r("Prediction", 2, "prediction_layer/conv_2"),
+				conv_3: r("Prediction", 3, "prediction_layer/conv_3"),
+				conv_4: r("Prediction", 4, "prediction_layer/conv_4"),
+				conv_5: r("Prediction", 5, "prediction_layer/conv_5"),
+				conv_6: r("Prediction", 6, "prediction_layer/conv_6"),
+				conv_7: r("Prediction", 7, "prediction_layer/conv_7"),
+				box_predictor_0: i(0),
+				box_predictor_1: i(1),
+				box_predictor_2: i(2),
+				box_predictor_3: i(3),
+				box_predictor_4: i(4),
+				box_predictor_5: i(5)
+			};
+		}
+		return {
+			extractMobilenetV1Params: s,
+			extractPredictionLayerParams: c
+		};
+	}
+	function Go(o) {
+		let t = [], { extractMobilenetV1Params: e, extractPredictionLayerParams: r } = na(o, t), n = o["Output/extra_dim"];
+		if (t.push({
+			originalPath: "Output/extra_dim",
+			paramPath: "output_layer/extra_dim"
+		}), !dt(n)) throw new Error(`expected weightMap['Output/extra_dim'] to be a Tensor3D, instead have ${n}`);
+		let s = {
+			mobilenetv1: e(),
+			prediction_layer: r(),
+			output_layer: { extra_dim: n }
+		};
+		return W(o, t), {
+			params: s,
+			paramMappings: t
+		};
+	}
+	var xt = v(x());
+	var Ct = v(x());
+	function Z(o, t, e) {
+		return Ct.tidy(() => {
+			let r = Ct.conv2d(o, t.filters, e, "same");
+			return r = Ct.add(r, t.batch_norm_offset), Ct.clipByValue(r, 0, 6);
+		});
+	}
+	var aa = .0010000000474974513;
+	function sa(o, t, e) {
+		return xt.tidy(() => {
+			let r = xt.depthwiseConv2d(o, t.filters, e, "same");
+			return r = xt.batchNorm(r, t.batch_norm_mean, t.batch_norm_variance, t.batch_norm_offset, t.batch_norm_scale, aa), xt.clipByValue(r, 0, 6);
+		});
+	}
+	function ia(o) {
+		return [
+			2,
+			4,
+			6,
+			12
+		].some((t) => t === o) ? [2, 2] : [1, 1];
+	}
+	function jo(o, t) {
+		return xt.tidy(() => {
+			let e, r = Z(o, t.conv_0, [2, 2]);
+			if ([
+				t.conv_1,
+				t.conv_2,
+				t.conv_3,
+				t.conv_4,
+				t.conv_5,
+				t.conv_6,
+				t.conv_7,
+				t.conv_8,
+				t.conv_9,
+				t.conv_10,
+				t.conv_11,
+				t.conv_12,
+				t.conv_13
+			].forEach((s, a) => {
+				let i = a + 1, c = ia(i);
+				r = sa(r, s.depthwise_conv, c), r = Z(r, s.pointwise_conv, [1, 1]), i === 11 && (e = r);
+			}), e === null) throw new Error("mobileNetV1 - output of conv layer 11 is null");
+			return {
+				out: r,
+				conv11: e
+			};
+		});
+	}
+	function ca(o, t, e) {
+		let r = o.arraySync(), n = Math.min(r[t][0], r[t][2]), s = Math.min(r[t][1], r[t][3]), a = Math.max(r[t][0], r[t][2]), i = Math.max(r[t][1], r[t][3]), c = Math.min(r[e][0], r[e][2]), m = Math.min(r[e][1], r[e][3]), p = Math.max(r[e][0], r[e][2]), u = Math.max(r[e][1], r[e][3]), f = (a - n) * (i - s), l = (p - c) * (u - m);
+		if (f <= 0 || l <= 0) return 0;
+		let b = Math.max(n, c), T = Math.max(s, m), h = Math.min(a, p), g = Math.min(i, u), P = Math.max(h - b, 0) * Math.max(g - T, 0);
+		return P / (f + l - P);
+	}
+	function Uo(o, t, e, r, n) {
+		let s = o.shape[0], a = Math.min(e, s), i = t.map((p, u) => ({
+			score: p,
+			boxIndex: u
+		})).filter((p) => p.score > n).sort((p, u) => u.score - p.score), c = (p) => p <= r ? 1 : 0, m = [];
+		return i.forEach((p) => {
+			if (m.length >= a) return;
+			let u = p.score;
+			for (let f = m.length - 1; f >= 0; --f) {
+				let l = ca(o, p.boxIndex, m[f]);
+				if (l !== 0 && (p.score *= c(l), p.score <= n)) break;
+			}
+			u === p.score && m.push(p.boxIndex);
+		}), m;
+	}
+	var d = v(x());
+	function ma(o) {
+		let t = d.unstack(d.transpose(o, [1, 0])), e = [d.sub(t[2], t[0]), d.sub(t[3], t[1])];
+		return {
+			sizes: e,
+			centers: [d.add(t[0], d.div(e[0], 2)), d.add(t[1], d.div(e[1], 2))]
+		};
+	}
+	function pa(o, t) {
+		let { sizes: e, centers: r } = ma(o), n = d.unstack(d.transpose(t, [1, 0])), s = d.div(d.mul(d.exp(d.div(n[2], 5)), e[0]), 2), a = d.add(d.mul(d.div(n[0], 10), e[0]), r[0]), i = d.div(d.mul(d.exp(d.div(n[3], 5)), e[1]), 2), c = d.add(d.mul(d.div(n[1], 10), e[1]), r[1]);
+		return d.transpose(d.stack([
+			d.sub(a, s),
+			d.sub(c, i),
+			d.add(a, s),
+			d.add(c, i)
+		]), [1, 0]);
+	}
+	function Xo(o, t, e) {
+		return d.tidy(() => {
+			let r = o.shape[0], n = pa(d.reshape(d.tile(e.extra_dim, [
+				r,
+				1,
+				1
+			]), [-1, 4]), d.reshape(o, [-1, 4]));
+			n = d.reshape(n, [
+				r,
+				n.shape[0] / r,
+				4
+			]);
+			let s = d.sigmoid(d.slice(t, [
+				0,
+				0,
+				1
+			], [
+				-1,
+				-1,
+				-1
+			])), a = d.slice(s, [
+				0,
+				0,
+				0
+			], [
+				-1,
+				-1,
+				1
+			]);
+			a = d.reshape(a, [r, a.shape[1]]);
+			return {
+				boxes: d.unstack(n),
+				scores: d.unstack(a)
+			};
+		});
+	}
+	var Ge = v(x());
+	var Ve = v(x());
+	function Qt(o, t) {
+		return Ve.tidy(() => {
+			let e = o.shape[0];
+			return {
+				boxPredictionEncoding: Ve.reshape(Jt(o, t.box_encoding_predictor), [
+					e,
+					-1,
+					1,
+					4
+				]),
+				classPrediction: Ve.reshape(Jt(o, t.class_predictor), [
+					e,
+					-1,
+					3
+				])
+			};
+		});
+	}
+	function Jo(o, t, e) {
+		return Ge.tidy(() => {
+			let n = Z(Z(o, e.conv_0, [1, 1]), e.conv_1, [2, 2]), a = Z(Z(n, e.conv_2, [1, 1]), e.conv_3, [2, 2]), c = Z(Z(a, e.conv_4, [1, 1]), e.conv_5, [2, 2]), p = Z(Z(c, e.conv_6, [1, 1]), e.conv_7, [2, 2]), u = Qt(t, e.box_predictor_0), f = Qt(o, e.box_predictor_1), l = Qt(n, e.box_predictor_2), b = Qt(a, e.box_predictor_3), T = Qt(c, e.box_predictor_4), h = Qt(p, e.box_predictor_5);
+			return {
+				boxPredictions: Ge.concat([
+					u.boxPredictionEncoding,
+					f.boxPredictionEncoding,
+					l.boxPredictionEncoding,
+					b.boxPredictionEncoding,
+					T.boxPredictionEncoding,
+					h.boxPredictionEncoding
+				], 1),
+				classPredictions: Ge.concat([
+					u.classPrediction,
+					f.classPrediction,
+					l.classPrediction,
+					b.classPrediction,
+					T.classPrediction,
+					h.classPrediction
+				], 1)
+			};
+		});
+	}
+	var X = class {
+		constructor({ minConfidence: t, maxResults: e } = {}) {
+			this._name = "SsdMobilenetv1Options";
+			if (this._minConfidence = t || .5, this._maxResults = e || 100, typeof this._minConfidence != "number" || this._minConfidence <= 0 || this._minConfidence >= 1) throw new Error(`${this._name} - expected minConfidence to be a number between 0 and 1`);
+			if (typeof this._maxResults != "number") throw new Error(`${this._name} - expected maxResults to be a number`);
+		}
+		get minConfidence() {
+			return this._minConfidence;
+		}
+		get maxResults() {
+			return this._maxResults;
+		}
+	};
+	var It = class extends A {
+		constructor() {
+			super("SsdMobilenetv1");
+		}
+		forwardInput(t) {
+			let { params: e } = this;
+			if (!e) throw new Error("SsdMobilenetv1 - load model before inference");
+			return Nt.tidy(() => {
+				let r = Nt.cast(t.toBatchTensor(512, !1), "float32"), s = jo(Nt.sub(Nt.div(r, 127.5), 1), e.mobilenetv1), { boxPredictions: a, classPredictions: i } = Jo(s.out, s.conv11, e.prediction_layer);
+				return Xo(a, i, e.output_layer);
+			});
+		}
+		async forward(t) {
+			return this.forwardInput(await D(t));
+		}
+		async locateFaces(t, e = {}) {
+			let { maxResults: r, minConfidence: n } = new X(e), s = await D(t), { boxes: a, scores: i } = this.forwardInput(s), c = a[0], m = i[0];
+			for (let y = 1; y < a.length; y++) a[y].dispose(), i[y].dispose();
+			let p = Array.from(m.dataSync()), f = Uo(c, p, r, .5, n), l = s.getReshapedInputDimensions(0), b = s.inputSize, T = b / l.width, h = b / l.height, g = c.arraySync(), P = f.map((y) => {
+				let [I, j] = [Math.max(0, g[y][0]), Math.min(1, g[y][2])].map((q) => q * h), [tt, it] = [Math.max(0, g[y][1]), Math.min(1, g[y][3])].map((q) => q * T);
+				return new M(p[y], new zt(tt, I, it - tt, j - I), {
+					height: s.getInputHeight(0),
+					width: s.getInputWidth(0)
+				});
+			});
+			return c.dispose(), m.dispose(), P;
+		}
+		getDefaultModelName() {
+			return "ssd_mobilenetv1_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return Go(t);
+		}
+		extractParams(t) {
+			return Vo(t);
+		}
+	};
+	function qo(o) {
+		let t = new It();
+		return t.extractWeights(o), t;
+	}
+	function ua(o) {
+		return qo(o);
+	}
+	var lo = class extends It {};
+	var Zo = .4;
+	var Ko = [
+		new _(.738768, .874946),
+		new _(2.42204, 2.65704),
+		new _(4.30971, 7.04493),
+		new _(10.246, 4.59428),
+		new _(12.6868, 11.8741)
+	];
+	var Qo = [
+		new _(1.603231, 2.094468),
+		new _(6.041143, 7.080126),
+		new _(2.882459, 3.518061),
+		new _(4.266906, 5.178857),
+		new _(9.041765, 10.66308)
+	];
+	var tn = [
+		117.001,
+		114.697,
+		97.404
+	];
+	var en = "tiny_yolov2_model";
+	var rn = "tiny_yolov2_separable_conv_model";
+	var C = v(x());
+	var Ir = (o) => typeof o == "number";
+	function ho(o) {
+		if (!o) throw new Error(`invalid config: ${o}`);
+		if (typeof o.withSeparableConvs != "boolean") throw new Error(`config.withSeparableConvs has to be a boolean, have: ${o.withSeparableConvs}`);
+		if (!Ir(o.iouThreshold) || o.iouThreshold < 0 || o.iouThreshold > 1) throw new Error(`config.iouThreshold has to be a number between [0, 1], have: ${o.iouThreshold}`);
+		if (!Array.isArray(o.classes) || !o.classes.length || !o.classes.every((t) => typeof t == "string")) throw new Error(`config.classes has to be an array class names: string[], have: ${JSON.stringify(o.classes)}`);
+		if (!Array.isArray(o.anchors) || !o.anchors.length || !o.anchors.map((t) => t || {}).every((t) => Ir(t.x) && Ir(t.y))) throw new Error(`config.anchors has to be an array of { x: number, y: number }, have: ${JSON.stringify(o.anchors)}`);
+		if (o.meanRgb && (!Array.isArray(o.meanRgb) || o.meanRgb.length !== 3 || !o.meanRgb.every(Ir))) throw new Error(`config.meanRgb has to be an array of shape [number, number, number], have: ${JSON.stringify(o.meanRgb)}`);
+	}
+	var Q = v(x());
+	var K = v(x());
+	function Ee(o) {
+		return K.tidy(() => {
+			let t = K.mul(o, K.scalar(.10000000149011612));
+			return K.add(K.relu(K.sub(o, t)), t);
+		});
+	}
+	function vt(o, t) {
+		return Q.tidy(() => {
+			let e = Q.pad(o, [
+				[0, 0],
+				[1, 1],
+				[1, 1],
+				[0, 0]
+			]);
+			return e = Q.conv2d(e, t.conv.filters, [1, 1], "valid"), e = Q.sub(e, t.bn.sub), e = Q.mul(e, t.bn.truediv), e = Q.add(e, t.conv.bias), Ee(e);
+		});
+	}
+	var Lt = v(x());
+	function yt(o, t) {
+		return Lt.tidy(() => {
+			let e = Lt.pad(o, [
+				[0, 0],
+				[1, 1],
+				[1, 1],
+				[0, 0]
+			]);
+			return e = Lt.separableConv2d(e, t.depthwise_filter, t.pointwise_filter, [1, 1], "valid"), e = Lt.add(e, t.bias), Ee(e);
+		});
+	}
+	var bo = v(x());
+	function fa(o, t) {
+		let e = he(o, t);
+		function r(a, i) {
+			let c = bo.tensor1d(o(a)), m = bo.tensor1d(o(a));
+			return t.push({ paramPath: `${i}/sub` }, { paramPath: `${i}/truediv` }), {
+				sub: c,
+				truediv: m
+			};
+		}
+		function n(a, i, c) {
+			return {
+				conv: e(a, i, 3, `${c}/conv`),
+				bn: r(i, `${c}/bn`)
+			};
+		}
+		return {
+			extractConvParams: e,
+			extractConvWithBatchNormParams: n,
+			extractSeparableConvParams: be(o, t)
+		};
+	}
+	function on(o, t, e, r) {
+		let { extractWeights: n, getRemainingWeights: s } = k(o), a = [], { extractConvParams: i, extractConvWithBatchNormParams: c, extractSeparableConvParams: m } = fa(n, a), p;
+		if (t.withSeparableConvs) {
+			let [u, f, l, b, T, h, g, P, y] = r;
+			p = {
+				conv0: t.isFirstLayerConv2d ? i(u, f, 3, "conv0") : m(u, f, "conv0"),
+				conv1: m(f, l, "conv1"),
+				conv2: m(l, b, "conv2"),
+				conv3: m(b, T, "conv3"),
+				conv4: m(T, h, "conv4"),
+				conv5: m(h, g, "conv5"),
+				conv6: P ? m(g, P, "conv6") : void 0,
+				conv7: y ? m(P, y, "conv7") : void 0,
+				conv8: i(y || P || g, 5 * e, 1, "conv8")
+			};
+		} else {
+			let [u, f, l, b, T, h, g, P, y] = r;
+			p = {
+				conv0: c(u, f, "conv0"),
+				conv1: c(f, l, "conv1"),
+				conv2: c(l, b, "conv2"),
+				conv3: c(b, T, "conv3"),
+				conv4: c(T, h, "conv4"),
+				conv5: c(h, g, "conv5"),
+				conv6: c(g, P, "conv6"),
+				conv7: c(P, y, "conv7"),
+				conv8: i(y, 5 * e, 1, "conv8")
+			};
+		}
+		if (s().length !== 0) throw new Error(`weights remaing after extract: ${s().length}`);
+		return {
+			params: p,
+			paramMappings: a
+		};
+	}
+	function la(o, t) {
+		let e = Y(o, t);
+		function r(i) {
+			return {
+				sub: e(`${i}/sub`, 1),
+				truediv: e(`${i}/truediv`, 1)
+			};
+		}
+		function n(i) {
+			return {
+				filters: e(`${i}/filters`, 4),
+				bias: e(`${i}/bias`, 1)
+			};
+		}
+		function s(i) {
+			return {
+				conv: n(`${i}/conv`),
+				bn: r(`${i}/bn`)
+			};
+		}
+		return {
+			extractConvParams: n,
+			extractConvWithBatchNormParams: s,
+			extractSeparableConvParams: ge(e)
+		};
+	}
+	function nn(o, t) {
+		let e = [], { extractConvParams: r, extractConvWithBatchNormParams: n, extractSeparableConvParams: s } = la(o, e), a;
+		if (t.withSeparableConvs) {
+			let i = t.filterSizes && t.filterSizes.length || 9;
+			a = {
+				conv0: t.isFirstLayerConv2d ? r("conv0") : s("conv0"),
+				conv1: s("conv1"),
+				conv2: s("conv2"),
+				conv3: s("conv3"),
+				conv4: s("conv4"),
+				conv5: s("conv5"),
+				conv6: i > 7 ? s("conv6") : void 0,
+				conv7: i > 8 ? s("conv7") : void 0,
+				conv8: r("conv8")
+			};
+		} else a = {
+			conv0: n("conv0"),
+			conv1: n("conv1"),
+			conv2: n("conv2"),
+			conv3: n("conv3"),
+			conv4: n("conv4"),
+			conv5: n("conv5"),
+			conv6: n("conv6"),
+			conv7: n("conv7"),
+			conv8: r("conv8")
+		};
+		return W(o, e), {
+			params: a,
+			paramMappings: e
+		};
+	}
+	var st = class {
+		constructor({ inputSize: t, scoreThreshold: e } = {}) {
+			this._name = "TinyYolov2Options";
+			if (this._inputSize = t || 416, this._scoreThreshold = e || .5, typeof this._inputSize != "number" || this._inputSize % 32 !== 0) throw new Error(`${this._name} - expected inputSize to be a number divisible by 32`);
+			if (typeof this._scoreThreshold != "number" || this._scoreThreshold <= 0 || this._scoreThreshold >= 1) throw new Error(`${this._name} - expected scoreThreshold to be a number between 0 and 1`);
+		}
+		get inputSize() {
+			return this._inputSize;
+		}
+		get scoreThreshold() {
+			return this._scoreThreshold;
+		}
+	};
+	var Nr = class Nr extends A {
+		constructor(t) {
+			super("TinyYolov2"), ho(t), this._config = t;
+		}
+		get config() {
+			return this._config;
+		}
+		get withClassScores() {
+			return this.config.withClassScores || this.config.classes.length > 1;
+		}
+		get boxEncodingSize() {
+			return 5 + (this.withClassScores ? this.config.classes.length : 0);
+		}
+		runTinyYolov2(t, e) {
+			let r = vt(t, e.conv0);
+			return r = C.maxPool(r, [2, 2], [2, 2], "same"), r = vt(r, e.conv1), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = vt(r, e.conv2), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = vt(r, e.conv3), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = vt(r, e.conv4), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = vt(r, e.conv5), r = C.maxPool(r, [2, 2], [1, 1], "same"), r = vt(r, e.conv6), r = vt(r, e.conv7), Jt(r, e.conv8, "valid", !1);
+		}
+		runMobilenet(t, e) {
+			let r = this.config.isFirstLayerConv2d ? Ee(Jt(t, e.conv0, "valid", !1)) : yt(t, e.conv0);
+			return r = C.maxPool(r, [2, 2], [2, 2], "same"), r = yt(r, e.conv1), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = yt(r, e.conv2), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = yt(r, e.conv3), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = yt(r, e.conv4), r = C.maxPool(r, [2, 2], [2, 2], "same"), r = yt(r, e.conv5), r = C.maxPool(r, [2, 2], [1, 1], "same"), r = e.conv6 ? yt(r, e.conv6) : r, r = e.conv7 ? yt(r, e.conv7) : r, Jt(r, e.conv8, "valid", !1);
+		}
+		forwardInput(t, e) {
+			let { params: r } = this;
+			if (!r) throw new Error("TinyYolov2 - load model before inference");
+			return C.tidy(() => {
+				let n = C.cast(t.toBatchTensor(e, !1), "float32");
+				return n = this.config.meanRgb ? rt(n, this.config.meanRgb) : n, n = n.div(255), this.config.withSeparableConvs ? this.runMobilenet(n, r) : this.runTinyYolov2(n, r);
+			});
+		}
+		async forward(t, e) {
+			return this.forwardInput(await D(t), e);
+		}
+		async detect(t, e = {}) {
+			let { inputSize: r, scoreThreshold: n } = new st(e), s = await D(t), a = await this.forwardInput(s, r), i = C.tidy(() => C.unstack(a)[0].expandDims()), c = {
+				width: s.getInputWidth(0),
+				height: s.getInputHeight(0)
+			}, m = await this.extractBoxes(i, s.getReshapedInputDimensions(0), n);
+			a.dispose(), i.dispose();
+			let p = m.map((h) => h.box), u = m.map((h) => h.score), f = m.map((h) => h.classScore), l = m.map((h) => this.config.classes[h.label]);
+			return Vr(p.map((h) => h.rescale(r)), u, this.config.iouThreshold, !0).map((h) => new Ht(u[h], f[h], l[h], p[h], c));
+		}
+		getDefaultModelName() {
+			return "";
+		}
+		extractParamsFromWeightMap(t) {
+			return nn(t, this.config);
+		}
+		extractParams(t) {
+			let e = this.config.filterSizes || Nr.DEFAULT_FILTER_SIZES, r = e ? e.length : void 0;
+			if (r !== 7 && r !== 8 && r !== 9) throw new Error(`TinyYolov2 - expected 7 | 8 | 9 convolutional filters, but found ${r} filterSizes in config`);
+			return on(t, this.config, this.boxEncodingSize, e);
+		}
+		async extractBoxes(t, e, r) {
+			let { width: n, height: s } = e, a = Math.max(n, s), i = a / n, c = a / s, m = t.shape[1], p = this.config.anchors.length, [u, f, l] = C.tidy(() => {
+				let g = t.reshape([
+					m,
+					m,
+					p,
+					this.boxEncodingSize
+				]);
+				return [
+					g.slice([
+						0,
+						0,
+						0,
+						0
+					], [
+						m,
+						m,
+						p,
+						4
+					]),
+					g.slice([
+						0,
+						0,
+						0,
+						4
+					], [
+						m,
+						m,
+						p,
+						1
+					]),
+					this.withClassScores ? C.softmax(g.slice([
+						0,
+						0,
+						0,
+						5
+					], [
+						m,
+						m,
+						p,
+						this.config.classes.length
+					]), 3) : C.scalar(0)
+				];
+			}), b = [], T = await f.array(), h = await u.array();
+			for (let g = 0; g < m; g++) for (let P = 0; P < m; P++) for (let y = 0; y < p; y++) {
+				let I = Ne(T[g][P][y][0]);
+				if (!r || I > r) {
+					let j = (P + Ne(h[g][P][y][0])) / m * i, tt = (g + Ne(h[g][P][y][1])) / m * c, it = Math.exp(h[g][P][y][2]) * this.config.anchors[y].x / m * i, q = Math.exp(h[g][P][y][3]) * this.config.anchors[y].y / m * c, Pt = j - it / 2, wt = tt - q / 2, Ft = {
+						row: g,
+						col: P,
+						anchor: y
+					}, { classScore: ie, label: yo } = this.withClassScores ? await this.extractPredictedClass(l, Ft) : {
+						classScore: 1,
+						label: 0
+					};
+					b.push({
+						box: new Ot(Pt, wt, Pt + it, wt + q),
+						score: I,
+						classScore: I * ie,
+						label: yo,
+						...Ft
+					});
+				}
+			}
+			return u.dispose(), f.dispose(), l.dispose(), b;
+		}
+		async extractPredictedClass(t, e) {
+			let { row: r, col: n, anchor: s } = e, a = await t.array();
+			return Array(this.config.classes.length).fill(0).map((i, c) => a[r][n][s][c]).map((i, c) => ({
+				classScore: i,
+				label: c
+			})).reduce((i, c) => i.classScore > c.classScore ? i : c);
+		}
+	};
+	Nr.DEFAULT_FILTER_SIZES = [
+		3,
+		16,
+		32,
+		64,
+		128,
+		256,
+		512,
+		1024,
+		1024
+	];
+	var Me = Nr;
+	var te = class extends Me {
+		constructor(t = !0) {
+			let e = {
+				withSeparableConvs: t,
+				iouThreshold: Zo,
+				classes: ["face"],
+				...t ? {
+					anchors: Qo,
+					meanRgb: tn
+				} : {
+					anchors: Ko,
+					withClassScores: !0
+				}
+			};
+			super(e);
+		}
+		get withSeparableConvs() {
+			return this.config.withSeparableConvs;
+		}
+		get anchors() {
+			return this.config.anchors;
+		}
+		async locateFaces(t, e) {
+			return (await this.detect(t, e)).map((n) => new M(n.score, n.relativeBox, {
+				width: n.imageWidth,
+				height: n.imageHeight
+			}));
+		}
+		getDefaultModelName() {
+			return this.withSeparableConvs ? rn : en;
+		}
+		extractParamsFromWeightMap(t) {
+			return super.extractParamsFromWeightMap(t);
+		}
+	};
+	function da(o, t = !0) {
+		let e = new te(t);
+		return e.extractWeights(o), e;
+	}
+	var je = class extends st {
+		constructor() {
+			super(...arguments);
+			this._name = "TinyFaceDetectorOptions";
+		}
+	};
+	var J = class {
+		async then(t) {
+			return t(await this.run());
+		}
+		async run() {
+			throw new Error("ComposableTask - run is not implemented");
+		}
+	};
+	var Xe = v(x());
+	var go = v(x());
+	async function ee(o, t, e, r, n = ({ alignedRect: s }) => s) {
+		let s = o.map((c) => qt(c) ? n(c) : c.detection), a = r || (t instanceof go.Tensor ? await le(t, s) : await fe(t, s)), i = await e(a);
+		return a.forEach((c) => c instanceof go.Tensor && c.dispose()), i;
+	}
+	async function Ce(o, t, e, r, n) {
+		return ee([o], t, async (s) => e(s[0]), r, n);
+	}
+	var an = .4;
+	var sn = [
+		new _(1.603231, 2.094468),
+		new _(6.041143, 7.080126),
+		new _(2.882459, 3.518061),
+		new _(4.266906, 5.178857),
+		new _(9.041765, 10.66308)
+	];
+	var cn = [
+		117.001,
+		114.697,
+		97.404
+	];
+	var re = class extends Me {
+		constructor() {
+			super({
+				withSeparableConvs: !0,
+				iouThreshold: an,
+				classes: ["face"],
+				anchors: sn,
+				meanRgb: cn,
+				isFirstLayerConv2d: !0,
+				filterSizes: [
+					3,
+					16,
+					32,
+					64,
+					128,
+					256,
+					512
+				]
+			});
+		}
+		get anchors() {
+			return this.config.anchors;
+		}
+		async locateFaces(t, e) {
+			return (await this.detect(t, e)).map((n) => new M(n.score, n.relativeBox, {
+				width: n.imageWidth,
+				height: n.imageHeight
+			}));
+		}
+		getDefaultModelName() {
+			return "tiny_face_detector_model";
+		}
+		extractParamsFromWeightMap(t) {
+			return super.extractParamsFromWeightMap(t);
+		}
+	};
+	var F = {
+		ssdMobilenetv1: new It(),
+		tinyFaceDetector: new re(),
+		tinyYolov2: new te(),
+		faceLandmark68Net: new Zt(),
+		faceLandmark68TinyNet: new ze(),
+		faceRecognitionNet: new Kt(),
+		faceExpressionNet: new Oe(),
+		ageGenderNet: new He()
+	};
+	var mn = (o, t) => F.ssdMobilenetv1.locateFaces(o, t);
+	var ha = (o, t) => F.tinyFaceDetector.locateFaces(o, t);
+	var ba = (o, t) => F.tinyYolov2.locateFaces(o, t);
+	var pn = (o) => F.faceLandmark68Net.detectLandmarks(o);
+	var ga = (o) => F.faceLandmark68TinyNet.detectLandmarks(o);
+	var xa = (o) => F.faceRecognitionNet.computeFaceDescriptor(o);
+	var va = (o) => F.faceExpressionNet.predictExpressions(o);
+	var ya = (o) => F.ageGenderNet.predictAgeAndGender(o);
+	var un = (o) => F.ssdMobilenetv1.load(o);
+	var _a = (o) => F.tinyFaceDetector.load(o);
+	var Ta = (o) => F.tinyYolov2.load(o);
+	var Pa = (o) => F.faceLandmark68Net.load(o);
+	var wa = (o) => F.faceLandmark68TinyNet.load(o);
+	var Fa = (o) => F.faceRecognitionNet.load(o);
+	var Da = (o) => F.faceExpressionNet.load(o);
+	var Ea = (o) => F.ageGenderNet.load(o);
+	var Ma = un;
+	var Ca = mn;
+	var Ia = pn;
+	var Lr = class extends J {
+		constructor(e, r, n) {
+			super();
+			this.parentTask = e;
+			this.input = r;
+			this.extractedFaces = n;
+		}
+	};
+	var oe = class extends Lr {
+		async run() {
+			let t = await this.parentTask, e = await ee(t, this.input, async (r) => Promise.all(r.map((n) => F.faceExpressionNet.predictExpressions(n))), this.extractedFaces);
+			return t.map((r, n) => vr(r, e[n]));
+		}
+		withAgeAndGender() {
+			return new ae(this, this.input);
+		}
+	};
+	var ne = class extends Lr {
+		async run() {
+			let t = await this.parentTask;
+			if (!t) return;
+			return vr(t, await Ce(t, this.input, (r) => F.faceExpressionNet.predictExpressions(r), this.extractedFaces));
+		}
+		withAgeAndGender() {
+			return new se(this, this.input);
+		}
+	};
+	var St = class extends oe {
+		withAgeAndGender() {
+			return new Wt(this, this.input);
+		}
+		withFaceDescriptors() {
+			return new _t(this, this.input);
+		}
+	};
+	var At = class extends ne {
+		withAgeAndGender() {
+			return new kt(this, this.input);
+		}
+		withFaceDescriptor() {
+			return new Tt(this, this.input);
+		}
+	};
+	var Sr = class extends J {
+		constructor(e, r, n) {
+			super();
+			this.parentTask = e;
+			this.input = r;
+			this.extractedFaces = n;
+		}
+	};
+	var ae = class extends Sr {
+		async run() {
+			let t = await this.parentTask, e = await ee(t, this.input, async (r) => Promise.all(r.map((n) => F.ageGenderNet.predictAgeAndGender(n))), this.extractedFaces);
+			return t.map((r, n) => {
+				let { age: s, gender: a, genderProbability: i } = e[n];
+				return Mr(Cr(r, a, i), s);
+			});
+		}
+		withFaceExpressions() {
+			return new oe(this, this.input);
+		}
+	};
+	var se = class extends Sr {
+		async run() {
+			let t = await this.parentTask;
+			if (!t) return;
+			let { age: e, gender: r, genderProbability: n } = await Ce(t, this.input, (s) => F.ageGenderNet.predictAgeAndGender(s), this.extractedFaces);
+			return Mr(Cr(t, r, n), e);
+		}
+		withFaceExpressions() {
+			return new ne(this, this.input);
+		}
+	};
+	var Wt = class extends ae {
+		withFaceExpressions() {
+			return new St(this, this.input);
+		}
+		withFaceDescriptors() {
+			return new _t(this, this.input);
+		}
+	};
+	var kt = class extends se {
+		withFaceExpressions() {
+			return new At(this, this.input);
+		}
+		withFaceDescriptor() {
+			return new Tt(this, this.input);
+		}
+	};
+	var Ue = class extends J {
+		constructor(e, r) {
+			super();
+			this.parentTask = e;
+			this.input = r;
+		}
+	};
+	var _t = class extends Ue {
+		async run() {
+			let t = await this.parentTask;
+			return (await ee(t, this.input, (r) => Promise.all(r.map((n) => F.faceRecognitionNet.computeFaceDescriptor(n))), null, (r) => r.landmarks.align(null, { useDlibAlignment: !0 }))).map((r, n) => Er(t[n], r));
+		}
+		withFaceExpressions() {
+			return new St(this, this.input);
+		}
+		withAgeAndGender() {
+			return new Wt(this, this.input);
+		}
+	};
+	var Tt = class extends Ue {
+		async run() {
+			let t = await this.parentTask;
+			if (!t) return;
+			return Er(t, await Ce(t, this.input, (r) => F.faceRecognitionNet.computeFaceDescriptor(r), null, (r) => r.landmarks.align(null, { useDlibAlignment: !0 })));
+		}
+		withFaceExpressions() {
+			return new At(this, this.input);
+		}
+		withAgeAndGender() {
+			return new kt(this, this.input);
+		}
+	};
+	var Je = class extends J {
+		constructor(e, r, n) {
+			super();
+			this.parentTask = e;
+			this.input = r;
+			this.useTinyLandmarkNet = n;
+		}
+		get landmarkNet() {
+			return this.useTinyLandmarkNet ? F.faceLandmark68TinyNet : F.faceLandmark68Net;
+		}
+	};
+	var qe = class extends Je {
+		async run() {
+			let t = await this.parentTask, e = t.map((a) => a.detection), r = this.input instanceof Xe.Tensor ? await le(this.input, e) : await fe(this.input, e), n = await Promise.all(r.map((a) => this.landmarkNet.detectLandmarks(a)));
+			return r.forEach((a) => a instanceof Xe.Tensor && a.dispose()), t.filter((a, i) => n[i]).map((a, i) => Pe(a, n[i]));
+		}
+		withFaceExpressions() {
+			return new St(this, this.input);
+		}
+		withAgeAndGender() {
+			return new Wt(this, this.input);
+		}
+		withFaceDescriptors() {
+			return new _t(this, this.input);
+		}
+	};
+	var Ze = class extends Je {
+		async run() {
+			let t = await this.parentTask;
+			if (!t) return;
+			let { detection: e } = t, r = this.input instanceof Xe.Tensor ? await le(this.input, [e]) : await fe(this.input, [e]), n = await this.landmarkNet.detectLandmarks(r[0]);
+			return r.forEach((s) => s instanceof Xe.Tensor && s.dispose()), Pe(t, n);
+		}
+		withFaceExpressions() {
+			return new At(this, this.input);
+		}
+		withAgeAndGender() {
+			return new kt(this, this.input);
+		}
+		withFaceDescriptor() {
+			return new Tt(this, this.input);
+		}
+	};
+	var Ke = class extends J {
+		constructor(e, r = new X()) {
+			super();
+			this.input = e;
+			this.options = r;
+		}
+	};
+	var Ie = class extends Ke {
+		async run() {
+			let { input: t, options: e } = this, r;
+			if (e instanceof je) r = F.tinyFaceDetector.locateFaces(t, e);
+			else if (e instanceof X) r = F.ssdMobilenetv1.locateFaces(t, e);
+			else if (e instanceof st) r = F.tinyYolov2.locateFaces(t, e);
+			else throw new Error("detectFaces - expected options to be instance of TinyFaceDetectorOptions | SsdMobilenetv1Options | TinyYolov2Options");
+			return r;
+		}
+		runAndExtendWithFaceDetections() {
+			return new Promise((t, e) => {
+				this.run().then((r) => t(r.map((n) => Vt({}, n)))).catch((r) => e(r));
+			});
+		}
+		withFaceLandmarks(t = !1) {
+			return new qe(this.runAndExtendWithFaceDetections(), this.input, t);
+		}
+		withFaceExpressions() {
+			return new oe(this.runAndExtendWithFaceDetections(), this.input);
+		}
+		withAgeAndGender() {
+			return new ae(this.runAndExtendWithFaceDetections(), this.input);
+		}
+	};
+	var Qe = class extends Ke {
+		async run() {
+			let t = await new Ie(this.input, this.options), e = t[0];
+			return t.forEach((r) => {
+				r.score > e.score && (e = r);
+			}), e;
+		}
+		runAndExtendWithFaceDetection() {
+			return new Promise(async (t) => {
+				let e = await this.run();
+				t(e ? Vt({}, e) : void 0);
+			});
+		}
+		withFaceLandmarks(t = !1) {
+			return new Ze(this.runAndExtendWithFaceDetection(), this.input, t);
+		}
+		withFaceExpressions() {
+			return new ne(this.runAndExtendWithFaceDetection(), this.input);
+		}
+		withAgeAndGender() {
+			return new se(this.runAndExtendWithFaceDetection(), this.input);
+		}
+	};
+	function Na(o, t = new X()) {
+		return new Qe(o, t);
+	}
+	function Ar(o, t = new X()) {
+		return new Ie(o, t);
+	}
+	async function fn(o, t) {
+		return Ar(o, new X(t ? { minConfidence: t } : {})).withFaceLandmarks().withFaceDescriptors();
+	}
+	async function La(o, t = {}) {
+		return Ar(o, new st(t)).withFaceLandmarks().withFaceDescriptors();
+	}
+	var Sa = fn;
+	function xo(o, t) {
+		if (o.length !== t.length) throw new Error("euclideanDistance: arr1.length !== arr2.length");
+		let e = Array.from(o), r = Array.from(t);
+		return Math.sqrt(e.map((n, s) => n - r[s]).reduce((n, s) => n + s * s, 0));
+	}
+	var vo = class o {
+		constructor(t, e = .6) {
+			this._distanceThreshold = e;
+			let r = Array.isArray(t) ? t : [t];
+			if (!r.length) throw new Error("FaceRecognizer.constructor - expected atleast one input");
+			let n = 1, s = () => `person ${n++}`;
+			this._labeledDescriptors = r.map((a) => {
+				if (a instanceof Et) return a;
+				if (a instanceof Float32Array) return new Et(s(), [a]);
+				if (a.descriptor && a.descriptor instanceof Float32Array) return new Et(s(), [a.descriptor]);
+				throw new Error("FaceRecognizer.constructor - expected inputs to be of type LabeledFaceDescriptors | WithFaceDescriptor<any> | Float32Array | Array<LabeledFaceDescriptors | WithFaceDescriptor<any> | Float32Array>");
+			});
+		}
+		get labeledDescriptors() {
+			return this._labeledDescriptors;
+		}
+		get distanceThreshold() {
+			return this._distanceThreshold;
+		}
+		computeMeanDistance(t, e) {
+			return e.map((r) => xo(r, t)).reduce((r, n) => r + n, 0) / (e.length || 1);
+		}
+		matchDescriptor(t) {
+			return this.labeledDescriptors.map(({ descriptors: e, label: r }) => new me(r, this.computeMeanDistance(t, e))).reduce((e, r) => e.distance < r.distance ? e : r);
+		}
+		findBestMatch(t) {
+			let e = this.matchDescriptor(t);
+			return e.distance < this._distanceThreshold ? e : new me("unknown", e.distance);
+		}
+		toJSON() {
+			return {
+				distanceThreshold: this._distanceThreshold,
+				labeledDescriptors: this._labeledDescriptors.map((t) => t.toJSON())
+			};
+		}
+		static fromJSON(t) {
+			let e = t.labeledDescriptors.map((r) => Et.fromJSON(r));
+			return new o(e, t.distanceThreshold);
+		}
+	};
+	function Aa(o) {
+		let t = new re();
+		return t.extractWeights(o), t;
+	}
+	function ln(o, t) {
+		let { width: e, height: r } = new R(t.width, t.height);
+		if (e <= 0 || r <= 0) throw new Error(`resizeResults - invalid dimensions: ${JSON.stringify({
+			width: e,
+			height: r
+		})}`);
+		if (Array.isArray(o)) return o.map((n) => ln(n, {
+			width: e,
+			height: r
+		}));
+		if (qt(o)) {
+			let n = o.detection.forSize(e, r), s = o.unshiftedLandmarks.forSize(n.box.width, n.box.height);
+			return Pe(Vt(o, n), s);
+		}
+		return pt(o) ? Vt(o, o.detection.forSize(e, r)) : o instanceof H || o instanceof M ? o.forSize(e, r) : o;
+	}
+	var ka = Lo;
+	0 && (module.exports = {
+		AgeGenderNet,
+		BoundingBox,
+		Box,
+		ComposableTask,
+		ComputeAllFaceDescriptorsTask,
+		ComputeFaceDescriptorsTaskBase,
+		ComputeSingleFaceDescriptorTask,
+		DetectAllFaceLandmarksTask,
+		DetectAllFacesTask,
+		DetectFaceLandmarksTaskBase,
+		DetectFacesTaskBase,
+		DetectSingleFaceLandmarksTask,
+		DetectSingleFaceTask,
+		Dimensions,
+		FACE_EXPRESSION_LABELS,
+		FaceDetection,
+		FaceDetectionNet,
+		FaceExpressionNet,
+		FaceExpressions,
+		FaceLandmark68Net,
+		FaceLandmark68TinyNet,
+		FaceLandmarkNet,
+		FaceLandmarks,
+		FaceLandmarks5,
+		FaceLandmarks68,
+		FaceMatch,
+		FaceMatcher,
+		FaceRecognitionNet,
+		Gender,
+		LabeledBox,
+		LabeledFaceDescriptors,
+		NetInput,
+		NeuralNetwork,
+		ObjectDetection,
+		Point,
+		PredictedBox,
+		Rect,
+		SsdMobilenetv1,
+		SsdMobilenetv1Options,
+		TinyFaceDetector,
+		TinyFaceDetectorOptions,
+		TinyYolov2,
+		TinyYolov2Options,
+		allFaces,
+		allFacesSsdMobilenetv1,
+		allFacesTinyYolov2,
+		awaitMediaLoaded,
+		bufferToImage,
+		computeFaceDescriptor,
+		createCanvas,
+		createCanvasFromMedia,
+		createFaceDetectionNet,
+		createFaceRecognitionNet,
+		createSsdMobilenetv1,
+		createTinyFaceDetector,
+		createTinyYolov2,
+		detectAllFaces,
+		detectFaceLandmarks,
+		detectFaceLandmarksTiny,
+		detectLandmarks,
+		detectSingleFace,
+		draw,
+		env,
+		euclideanDistance,
+		extendWithAge,
+		extendWithFaceDescriptor,
+		extendWithFaceDetection,
+		extendWithFaceExpressions,
+		extendWithFaceLandmarks,
+		extendWithGender,
+		extractFaceTensors,
+		extractFaces,
+		fetchImage,
+		fetchJson,
+		fetchNetWeights,
+		fetchOrThrow,
+		fetchVideo,
+		getContext2dOrThrow,
+		getMediaDimensions,
+		imageTensorToCanvas,
+		imageToSquare,
+		inverseSigmoid,
+		iou,
+		isMediaElement,
+		isMediaLoaded,
+		isWithAge,
+		isWithFaceDetection,
+		isWithFaceExpressions,
+		isWithFaceLandmarks,
+		isWithGender,
+		loadAgeGenderModel,
+		loadFaceDetectionModel,
+		loadFaceExpressionModel,
+		loadFaceLandmarkModel,
+		loadFaceLandmarkTinyModel,
+		loadFaceRecognitionModel,
+		loadSsdMobilenetv1Model,
+		loadTinyFaceDetectorModel,
+		loadTinyYolov2Model,
+		loadWeightMap,
+		locateFaces,
+		matchDimensions,
+		minBbox,
+		nets,
+		nonMaxSuppression,
+		normalize,
+		padToSquare,
+		predictAgeAndGender,
+		recognizeFaceExpressions,
+		resizeResults,
+		resolveInput,
+		shuffleArray,
+		sigmoid,
+		ssdMobilenetv1,
+		tf,
+		tinyFaceDetector,
+		tinyYolov2,
+		toNetInput,
+		utils,
+		validateConfig,
+		version
+	});
+})))());
+async function run() {
+	const { modelPath } = worker_threads.workerData;
+	await _tensorflow_tfjs.setBackend("cpu");
+	await _tensorflow_tfjs.ready();
+	await import_face_api_node_wasm.nets.ssdMobilenetv1.loadFromDisk(modelPath);
+	await import_face_api_node_wasm.nets.faceLandmark68Net.loadFromDisk(modelPath);
+	await import_face_api_node_wasm.nets.faceRecognitionNet.loadFromDisk(modelPath);
+	worker_threads.parentPort.postMessage({ type: "ready" });
+	worker_threads.parentPort.on("message", async ({ requestId, imagePath }) => {
+		try {
+			const { data, info } = await (0, sharp.default)(imagePath).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
+			const rgbData = new Uint8Array(info.width * info.height * 3);
+			for (let i = 0; i < info.width * info.height; i++) {
+				rgbData[i * 3] = data[i * 4];
+				rgbData[i * 3 + 1] = data[i * 4 + 1];
+				rgbData[i * 3 + 2] = data[i * 4 + 2];
+			}
+			const tensor = _tensorflow_tfjs.tensor3d(rgbData, [
+				info.height,
+				info.width,
+				3
+			], "int32");
+			const detections = await import_face_api_node_wasm.detectAllFaces(tensor).withFaceLandmarks().withFaceDescriptors();
+			tensor.dispose();
+			worker_threads.parentPort.postMessage({
+				type: "result",
+				requestId,
+				result: detections.map((d) => ({
+					descriptor: Array.from(d.descriptor),
+					box: {
+						x: d.detection.box.x,
+						y: d.detection.box.y,
+						width: d.detection.box.width,
+						height: d.detection.box.height
+					}
+				}))
+			});
+		} catch (err) {
+			worker_threads.parentPort.postMessage({
+				type: "result",
+				requestId,
+				result: [],
+				error: err.message
+			});
+		}
+	});
+}
+run().catch((err) => {
+	worker_threads.parentPort.postMessage({
+		type: "error",
+		error: err.message
+	});
+	process.exit(1);
+});
+//#endregion

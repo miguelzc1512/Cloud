@@ -175,10 +175,10 @@ const worker = new Worker('image-processing', async job => {
           let minDistance = 0.5; // Sweet spot for face-api.js to balance false positives and false negatives
 
           for (const ef of existingFaces) {
-            const efDescriptor = JSON.parse(ef.descriptor);
+            const efDescriptor = JSON.parse(ef.descriptor) as number[];
             let distance = 0;
             for (let i = 0; i < 128; i++) {
-              distance += Math.pow(face.descriptor[i] - efDescriptor[i], 2);
+              distance += Math.pow((face.descriptor as number[])[i] - efDescriptor[i], 2);
             }
             distance = Math.sqrt(distance);
             
