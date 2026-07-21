@@ -321,53 +321,53 @@ export default function FilesView({
       )}
 
       {/* Header / Breadcrumbs or Selection Bar */}
-      {selectedIds.size > 0 ? (
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 bg-white">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => { setSelectedIds(new Set()); setLastSelectedId(null); }}
-              className="text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <span className="font-medium text-lg text-slate-800 ml-2">
-              {selectedIds.size} seleccionado{selectedIds.size !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => {
-                const ids = Array.from(selectedIds).join(',');
-                window.location.href = `/api/download/zip?ids=${ids}`;
-              }}
-              className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
-              title="Descargar"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => {/* TODO: Implement multiple move */}}
-              className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
-              title="Mover a carpeta"
-            >
-              <FolderOutput className="w-5 h-5 -scale-x-100" />
-            </button>
-            <button 
-              onClick={() => {
-                // Delete all selected
-                selectedIds.forEach(id => onDelete(id));
-                setSelectedIds(new Set());
-                setLastSelectedId(null);
-              }}
-              className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
-              title="Borrar seleccionados"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
+      <div 
+        className={`fixed top-0 right-0 left-[64px] h-20 z-40 bg-white flex items-center justify-between px-8 shadow-sm border-b border-slate-200 transition-transform duration-200 ease-out ${selectedIds.size > 0 ? 'translate-y-0' : '-translate-y-full'}`}
+      >
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => { setSelectedIds(new Set()); setLastSelectedId(null); }}
+            className="text-slate-500 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <span className="font-medium text-lg text-slate-800 ml-2">
+            {selectedIds.size} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+          </span>
         </div>
-      ) : (
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => {
+              const ids = Array.from(selectedIds).join(',');
+              window.location.href = `/api/download/zip?ids=${ids}`;
+            }}
+            className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
+            title="Descargar"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => {/* TODO: Implement multiple move */}}
+            className="text-slate-500 hover:text-slate-700 p-2.5 rounded-full hover:bg-slate-100 transition-colors"
+            title="Mover a carpeta"
+          >
+            <FolderOutput className="w-5 h-5 -scale-x-100" />
+          </button>
+          <button 
+            onClick={() => {
+              selectedIds.forEach(id => onDelete(id));
+              setSelectedIds(new Set());
+              setLastSelectedId(null);
+            }}
+            className="text-slate-500 hover:text-red-600 p-2.5 rounded-full hover:bg-red-50 transition-colors"
+            title="Borrar seleccionados"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
           <div className="flex items-center text-lg font-medium text-slate-700">
             {breadcrumbs.map((crumb, idx) => (
               <React.Fragment key={crumb.id || 'root'}>
