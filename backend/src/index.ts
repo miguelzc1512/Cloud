@@ -550,10 +550,14 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
     const targetFolderId = req.body.targetFolderId === 'null' ? null : (req.body.targetFolderId || null);
     const sourceTab = req.body.sourceTab || null;
 
+    const contentType = req.body.contentType || 'gallery';
+
     let finalClusterId = targetFolderId;
-    if (relativePath) {
+    if (relativePath && (contentType === 'drive' || sourceTab === 'archivos')) {
       finalClusterId = resolveFoldersTransaction(relativePath, targetFolderId);
     }
+    const isMedia = (req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/')) && contentType !== 'drive';
+    const relativeSavedName = path.relative(absoluteStoragePath, req.file.path).replace(/\\/g, '/');
 
     let uploadSource = 'Navegador Web';
     const ua = req.headers['user-agent'] || '';
@@ -562,10 +566,6 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
     else if (/iPhone|iPad/.test(ua)) uploadSource = 'iOS';
     else if (/Android/.test(ua)) uploadSource = 'Android';
     else if (/Linux/.test(ua)) uploadSource = 'Linux';
-
-    const contentType = req.body.contentType || 'gallery';
-    const isMedia = (req.file.mimetype.startsWith('image/') || req.file.mimetype.startsWith('video/')) && contentType !== 'drive';
-    const relativeSavedName = path.relative(absoluteStoragePath, req.file.path).replace(/\\/g, '/');
 
     const fileMeta = {
       id: Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7),
@@ -604,8 +604,8 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
         return;
       }
 
-      // Si se subió desde la pestaña de Archivos o como parte de una carpeta mixta, guardarlo en Documentos también
-      if (sourceTab === 'archivos' || relativePath || targetFolderId) {
+      // Solo guardar en Documentos si se subió explícitamente desde la pestaña de Archivos o con contentType 'drive'
+      if (sourceTab === 'archivos' || contentType === 'drive') {
         const ext = path.extname(req.file.originalname).substring(1) || 'file';
         docDb.prepare(`
           INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
