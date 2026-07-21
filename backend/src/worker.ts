@@ -265,6 +265,7 @@ const worker = new Worker('image-processing', async job => {
   } catch (error) {
     console.error(`[Worker] Error crítico procesando ${originalName}`, error);
     db.prepare(`UPDATE files SET status = 'ERROR' WHERE id = ?`).run(fileId);
+    emitWorkerStep(fileId, 'done', 'Error de archivo', originalName);
   }
 }, { connection: redisConnection as any });
 

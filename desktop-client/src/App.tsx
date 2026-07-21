@@ -67,7 +67,7 @@ export default function App() {
         if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`);
       } else if (event === 'upload_started') {
         setProgress(prev => prev
-          ? { ...prev, total: Math.max(prev.total, data.total || prev.total + 1), currentFile: data.originalName }
+          ? { ...prev, total: data.total ? Math.max(prev.total, data.total) : prev.total, currentFile: data.originalName }
           : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null }
         );
         addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
