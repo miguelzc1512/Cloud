@@ -138,6 +138,17 @@ export default function FilesView({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const getFolderSize = (folderId: string): number => {
+    let totalSize = 0;
+    const docsInFolder = documents.filter(d => d.clusterId === folderId);
+    totalSize += docsInFolder.reduce((sum, doc) => sum + doc.size, 0);
+    const subfolders = folders.filter(f => f.parentId === folderId);
+    for (const sub of subfolders) {
+      totalSize += getFolderSize(sub.id);
+    }
+    return totalSize;
+  };
+
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
@@ -235,7 +246,8 @@ export default function FilesView({
   currentFolders.sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name) * sortMultiplier;
     if (sortBy === 'date') return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * sortMultiplier;
-    return 0; // Folders don't have size
+    if (sortBy === 'size') return (getFolderSize(a.id) - getFolderSize(b.id)) * sortMultiplier;
+    return 0;
   });
 
   currentDocuments.sort((a, b) => {
@@ -501,7 +513,7 @@ export default function FilesView({
                             {new Date(folder.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </div>
                           <div className="col-span-3 md:col-span-2 text-right text-sm text-slate-500 select-none">
-                            —
+                            {formatSize(getFolderSize(folder.id))}
                           </div>
                           <div className="col-span-1 text-right flex justify-end">
                             <button 
