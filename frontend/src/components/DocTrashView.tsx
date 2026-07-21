@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, RefreshCcw, File as FileIcon, Loader2 } from 'lucide-react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
 
 interface DocFile {
   id: string;
@@ -25,8 +23,11 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
 
   const fetchDeletedFiles = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/documents/trash`);
-      setDeletedFiles(res.data);
+      const res = await fetch(`/api/documents/trash`);
+      if (res.ok) {
+        const data = await res.json();
+        setDeletedFiles(data);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -72,7 +73,11 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
   const handleRestore = async (ids: string[]) => {
     setIsProcessing(true);
     try {
-      await axios.post(`${API_BASE_URL}/documents/trash/restore`, { ids });
+      await fetch(`/api/documents/trash/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
       setSelectedIds(new Set());
       await fetchDeletedFiles();
       onRefresh(); // Refresh global doc state
@@ -87,7 +92,11 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     if (!window.confirm("¿Estás seguro de que deseas eliminar permanentemente todos los archivos en la papelera? Esta acción no se puede deshacer.")) return;
     setIsProcessing(true);
     try {
-      await axios.delete(`${API_BASE_URL}/documents/trash/empty`, { data: { ids: selectedIds.size > 0 ? Array.from(selectedIds) : null } });
+      await fetch(`/api/documents/trash/empty`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds.size > 0 ? Array.from(selectedIds) : null })
+      });
       setSelectedIds(new Set());
       await fetchDeletedFiles();
     } catch (e) {
