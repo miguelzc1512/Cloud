@@ -82,14 +82,12 @@ export default function App() {
       } else if (event === 'scan_progress') {
         if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`, data.contentType);
       } else if (event === 'upload_started') {
-        if (data.contentType === 'drive') return;
         setProg((prev: any) => prev
           ? { ...prev, total: prev.isBatch ? Math.max(prev.total, data.total || prev.total) : Math.max(prev.total, data.total || prev.total + 1), currentFile: data.originalName }
           : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null, isBatch: false }
         );
         addLog('info', `Copiando: ${data.originalName || 'archivo'}`, data.contentType);
       } else if (event === 'worker_step') {
-        if (data.contentType === 'drive') return;
         setProg((prev: any) => {
           let base = prev;
           if (!base) {
