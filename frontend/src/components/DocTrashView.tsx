@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, File as FileIcon, Loader2, AlertCircle, RotateCcw, CheckSquare, X } from 'lucide-react';
+import { Trash2, File as FileIcon, Loader2, AlertCircle, RotateCcw, CheckSquare, X, List, LayoutGrid, ChevronDown } from 'lucide-react';
 
 interface DocFile {
   id: string;
@@ -19,6 +19,19 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
   const [deletedFiles, setDeletedFiles] = useState<DocFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('date');
+  const [sortDesc, setSortDesc] = useState(true);
+
+  const toggleSort = (field: 'name' | 'size' | 'date') => {
+    if (sortBy === field) {
+      setSortDesc(!sortDesc);
+    } else {
+      setSortBy(field);
+      setSortDesc(field === 'name' ? false : true);
+    }
+  };
   
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const [showRestoreMenu, setShowRestoreMenu] = useState(false);
@@ -140,6 +153,14 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
 
   const selectedArray = Array.from(selectedIds);
 
+  const sortedFiles = [...deletedFiles].sort((a, b) => {
+    let comparison = 0;
+    if (sortBy === 'name') comparison = a.name.localeCompare(b.name);
+    else if (sortBy === 'size') comparison = a.size - b.size;
+    else if (sortBy === 'date') comparison = new Date(a.deletedAt || 0).getTime() - new Date(b.deletedAt || 0).getTime();
+    return sortDesc ? -comparison : comparison;
+  });
+
   return (
     <div className="flex flex-col h-full bg-slate-50/50">
       
@@ -221,37 +242,109 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
         <span className="text-center truncate">Los archivos en la papelera se eliminarán permanentemente al vaciarla.</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-10 pb-10 pt-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          {deletedFiles.map(file => (
-            <div 
-              key={file.id} 
-              className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${
-                selectedIds.has(file.id) ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
-              }`}
-              onClick={() => toggleSelect(file.id)}
-            >
-              <div className="w-full flex items-center justify-center mb-3 text-slate-400 group-hover:text-slate-500">
-                <FileIcon className="w-12 h-12 stroke-[1.5]" />
+      <div className="flex justify-end px-10 pt-4 pb-2">
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            title="Vista de lista"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            title="Vista de cuadrícula"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-10 pb-10">
+        {viewMode === 'list' ? (
+          <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+            <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-600 bg-slate-50">
+              <div 
+                className="col-span-8 md:col-span-6 flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                onClick={() => toggleSort('name')}
+              >
+                Nombre {sortBy === 'name' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
               </div>
-              <div className="w-full text-center">
-                <p className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{formatSize(file.size)}</p>
+              <div 
+                className="col-span-3 hidden md:flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                onClick={() => toggleSort('date')}
+              >
+                Fecha de Eliminación {sortBy === 'date' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
               </div>
-              
-              {/* Checkbox circular top-left */}
-              <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-0 group-hover:opacity-100 bg-white/80'
-              }`}>
-                {selectedIds.has(file.id) && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
+              <div 
+                className="col-span-4 md:col-span-3 flex items-center justify-end gap-2 cursor-pointer hover:text-slate-800"
+                onClick={() => toggleSort('size')}
+              >
+                Tamaño {sortBy === 'size' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
               </div>
             </div>
-          ))}
-        </div>
+            
+            <div className="divide-y divide-slate-100">
+              {sortedFiles.map(file => (
+                <div 
+                  key={file.id}
+                  onClick={() => toggleSelect(file.id)}
+                  className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                >
+                  <div className="col-span-8 md:col-span-6 flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-50 group-hover:opacity-100 bg-white/80'}`}>
+                      {selectedIds.has(file.id) && (
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <FileIcon className="w-8 h-8 text-slate-400 shrink-0" />
+                    <span className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</span>
+                  </div>
+                  <div className="col-span-3 hidden md:flex items-center text-sm text-slate-500">
+                    {new Date(file.deletedAt).toLocaleDateString()}
+                  </div>
+                  <div className="col-span-4 md:col-span-3 flex items-center justify-end text-sm text-slate-500">
+                    {formatSize(file.size)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+            {sortedFiles.map(file => (
+              <div 
+                key={file.id} 
+                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${
+                  selectedIds.has(file.id) ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                }`}
+                onClick={() => toggleSelect(file.id)}
+              >
+                <div className="w-full flex items-center justify-center mb-3 text-slate-400 group-hover:text-slate-500">
+                  <FileIcon className="w-12 h-12 stroke-[1.5]" />
+                </div>
+                <div className="w-full text-center">
+                  <p className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{formatSize(file.size)}</p>
+                </div>
+                
+                {/* Checkbox circular top-left */}
+                <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-0 group-hover:opacity-100 bg-white/80'
+                }`}>
+                  {selectedIds.has(file.id) && (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
