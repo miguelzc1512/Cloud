@@ -408,6 +408,39 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
   try {
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
 
+    const sourceTab = req.body.sourceTab || 'Fotos';
+    const targetFolderId = req.body.targetFolderId || null;
+
+    if (sourceTab === 'Archivos') {
+      const docId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      
+      docsDb.prepare(`
+        INSERT INTO documents (id, name, extension, absolutePath, size, status, clusterId, createdAt, updatedAt)
+        VALUES (@id, @name, @extension, @absolutePath, @size, 'PENDING', @clusterId, @createdAt, @updatedAt)
+      `).run({
+        id: docId,
+        name: req.file.originalname,
+        extension: ext,
+        absolutePath: req.file.path,
+        size: req.file.size,
+        clusterId: targetFolderId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      // Asynchronous processing
+      processDocument({ absolutePath: req.file.path, originalName: req.file.originalname, extension: ext, size: req.file.size }).catch(console.error);
+
+      res.status(202).json({
+        id: docId,
+        name: req.file.originalname,
+        status: 'PENDING',
+        message: 'Document uploaded and processing'
+      });
+      return;
+    }
+
     let uploadSource = 'Navegador Web';
     const ua = req.headers['user-agent'] || '';
     if (/Mac OS X/.test(ua)) uploadSource = 'macOS';
