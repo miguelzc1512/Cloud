@@ -28,12 +28,7 @@ const STEP_ICONS: Record<string, React.ReactNode> = {
   done: <Sparkles className="w-3.5 h-3.5" />,
 };
 
-const PIPELINE_STEPS = [
-  { id: 'upload', label: 'Copiando', icon: <Cloud className="w-3 h-3" /> },
-  { id: 'thumbnail', label: 'Miniatura', icon: <Image className="w-3 h-3" /> },
-  { id: 'embedding', label: 'Analizando', icon: <Brain className="w-3 h-3" /> },
-  { id: 'faces', label: 'Rostros', icon: <Users className="w-3 h-3" /> },
-];
+
 
 export default function App() {
   const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
@@ -66,43 +61,52 @@ export default function App() {
     const unsubscribeSSE = (window as any).electronAPI.onSSEEvent((_: any, payload: { event: string; data: any }) => {
       const { event, data } = payload;
       if (event === 'scan_start') {
-        setProgress({ current: 0, total: data.total, currentFile: '', stepInfo: null });
+        setProgress({ total: data.total, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: '', stepInfo: null });
         addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`);
       } else if (event === 'scan_progress') {
         if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`);
       } else if (event === 'upload_started') {
         setProgress(prev => prev
-          ? { ...prev, total: Math.max(prev.total, data.total || 1), currentFile: data.originalName }
-          : { current: 0, total: data.total || 1, currentFile: data.originalName, stepInfo: null }
+          ? { ...prev, total: Math.max(prev.total, data.total || prev.total + 1), currentFile: data.originalName }
+          : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null }
         );
         addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
       } else if (event === 'worker_step') {
         setProgress(prev => {
-          if (prev) return { ...prev, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || prev.currentFile };
-          if (data.originalName) {
-            return { current: 0, total: 1, currentFile: data.originalName, stepInfo: { step: data.step, label: data.label, fileId: data.fileId } };
+          let base = prev;
+          if (!base) {
+            base = { total: 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null };
           }
-          return null;
+          let nextState = { ...base, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || base.currentFile };
+
+          if (data.step === 'thumbnail_done') {
+            nextState.thumbCompleted = Math.min(base.thumbCompleted + 1, base.total);
+          } else if (data.step === 'embedding_done') {
+            nextState.embedCompleted = Math.min(base.embedCompleted + 1, base.total);
+          } else if (data.step === 'done') {
+            nextState.facesCompleted = Math.min(base.facesCompleted + 1, base.total);
+          }
+          return nextState;
         });
+
         if (data.step === 'done') {
           addLog('success', `Concluido con éxito: ${data.originalName || 'Archivo procesado'}`);
           setTimeout(() => {
             setProgress(prev => {
               if (!prev) return null;
-              const nextCurrent = prev.current + 1;
-              if (nextCurrent >= prev.total) {
+              if (prev.facesCompleted >= prev.total) {
                 const now = new Date();
                 setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
                 return null;
               }
-              
-              // Solo limpiar stepInfo si la UI no ha avanzado ya al siguiente archivo
               if (data.originalName && prev.currentFile !== data.originalName) {
-                return { ...prev, current: nextCurrent };
+                return prev;
               }
-              return { ...prev, current: nextCurrent, stepInfo: null };
+              return { ...prev, stepInfo: null };
             });
           }, 1500);
+        } else if (data.step === 'thumbnail_done' || data.step === 'embedding_done') {
+          // Silent internal updates for counts
         } else {
           addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`);
         }
@@ -185,7 +189,6 @@ export default function App() {
   };
 
   const isProcessing = progress !== null || (syncStatus && syncStatus.status === 'syncing');
-  const progressPercent = progress && progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
 
   if (!config) return <div className="h-screen w-screen flex items-center justify-center text-slate-500 bg-[#f8fafc]">Cargando...</div>;
 
@@ -331,55 +334,61 @@ export default function App() {
           </p>
 
           {progress && progress.total > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-blue-600">
-                  {progress.current} de {progress.total} archivos
-                </span>
-                <span className="text-xs text-slate-400">{progressPercent}%</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              {/* Pasos del worker (Stepper) */}
-              {progress.currentFile && (
-                <div className="flex items-center justify-between mt-4 relative">
-                  {/* Línea conectora de fondo */}
-                  <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-100 -z-10 -translate-y-1/2 rounded-full" />
-                  
-                  {PIPELINE_STEPS.map((step, idx) => {
-                    let activeIdx = 0;
-                    if (progress.stepInfo) {
-                      if (progress.stepInfo.step === 'thumbnail') activeIdx = 1;
-                      if (progress.stepInfo.step === 'embedding') activeIdx = 2;
-                      if (progress.stepInfo.step === 'faces') activeIdx = 3;
-                      if (progress.stepInfo.step === 'done') activeIdx = 4;
-                    }
-
-                    const isCompleted = idx < activeIdx;
-                    const isCurrent = idx === activeIdx;
-                    const isPending = idx > activeIdx;
-
-                    return (
-                      <div key={step.id} className={`flex flex-col items-center gap-1.5 bg-white px-1 ${isPending ? 'opacity-40 grayscale' : ''}`}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors
-                          ${isCompleted ? 'bg-blue-500 border-blue-500 text-white' : 
-                            isCurrent ? 'bg-blue-50 border-blue-500 text-blue-600 animate-pulse' : 
-                            'bg-slate-50 border-slate-200 text-slate-400'}`}
-                        >
-                          {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : step.icon}
-                        </div>
-                        <span className={`text-[10px] font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-slate-600' : 'text-slate-400'}`}>
-                          {step.label}
-                        </span>
-                      </div>
-                    );
-                  })}
+            <div className="mt-4 flex flex-col gap-3">
+              {/* Progreso General */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                    Progreso General
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))}%
+                  </span>
                 </div>
-              )}
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))}%` }}
+                  />
+                </div>
+              </div>
+              
+              {/* Fases individuales */}
+              <div className="grid grid-cols-3 gap-4 mt-2 bg-slate-50 border border-slate-100 p-3 rounded-xl">
+                {/* Fase 1: Miniaturas */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Image className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[10px] font-medium text-slate-600 truncate">1. Miniaturas</span>
+                    <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted}/{progress.total}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.thumbCompleted * 100) / progress.total)}%` }} />
+                  </div>
+                </div>
+                {/* Fase 2: Embeddings */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Brain className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[10px] font-medium text-slate-600 truncate">2. Análisis IA</span>
+                    <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted}/{progress.total}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.embedCompleted * 100) / progress.total)}%` }} />
+                  </div>
+                </div>
+                {/* Fase 3: Rostros */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Users className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-[10px] font-medium text-slate-600 truncate">3. Rostros</span>
+                    <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted}/{progress.total}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.facesCompleted * 100) / progress.total)}%` }} />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

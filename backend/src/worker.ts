@@ -58,199 +58,214 @@ async function initModels() {
 initModels();
 
 // ─── Queries preparadas para actualizar base de datos ───────────────────
-const updateFileStmt = db.prepare(`
+const imageQueue = new Queue('image-processing', { connection: redisConnection as any });
+
+const updateFileThumbnailStmt = db.prepare(`
   UPDATE files SET
     thumbnailName = @thumbnailName,
     blurhash = @blurhash,
     width = @width,
     height = @height,
-    embedding = @embedding,
     takenAt = COALESCE(@takenAt, takenAt),
     latitude = COALESCE(@latitude, latitude),
-    longitude = COALESCE(@longitude, longitude),
-    status = 'READY'
+    longitude = COALESCE(@longitude, longitude)
   WHERE id = @id
+`);
+
+const updateFileEmbeddingStmt = db.prepare(`
+  UPDATE files SET embedding = @embedding WHERE id = @id
+`);
+
+const updateFileReadyStmt = db.prepare(`
+  UPDATE files SET status = 'READY' WHERE id = @id
 `);
 
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 
 const worker = new Worker('image-processing', async job => {
   const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
-  console.log(`[Worker] Empezando a procesar ${originalName} (${fileId})`);
+  const start = Date.now();
+  let filePath = absolutePath || path.join(absoluteStoragePath, savedName);
+  let tempJpegPath: string | null = null;
+  const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
+  const thumbnailPath = path.join(absoluteStoragePath, thumbnailName);
 
   try {
-    const start = Date.now();
-    // Si absolutePath existe (modo index), leemos el archivo desde ahí sin copiarlo
-    let filePath = absolutePath || path.join(absoluteStoragePath, savedName);
-    let tempJpegPath: string | null = null;
-    
-    // Convertir HEIC a JPG temporalmente (solo para procesamiento, no guardamos el original)
-    if (originalName.toLowerCase().endsWith('.heic')) {
-      try {
-        const { execSync } = require('child_process');
-        tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
-        execSync(`sips -s format jpeg "${filePath}" --out "${tempJpegPath}"`);
-        filePath = tempJpegPath;
-      } catch (e) {
-        console.error(`[Worker] Error convirtiendo HEIC a JPG con sips para ${originalName}`, e);
-      }
-    }
-
-    // Solo procesamos imágenes
     if (!mimeType.startsWith('image/')) {
-       updateFileStmt.run({
+       updateFileThumbnailStmt.run({
            id: fileId, thumbnailName: null, blurhash: null, width: null, height: null, 
-           embedding: null, takenAt: null, latitude: null, longitude: null
+           takenAt: null, latitude: null, longitude: null
        });
+       updateFileEmbeddingStmt.run({ id: fileId, embedding: null });
+       updateFileReadyStmt.run({ id: fileId });
        return;
     }
 
-    const image = sharp(filePath, { unlimited: true }).rotate();
-    const metadata = await image.metadata();
-    
-    // Ensure thumbnails directory exists
-    const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
-    if (!fs.existsSync(thumbnailsDir)) {
-      fs.mkdirSync(thumbnailsDir, { recursive: true });
-    }
-
-    // A) Generar miniatura WebP (Max 800px) — SOLO el thumbnail va a storage, nunca el original
-    emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
-    const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
-    const thumbnailPath = path.join(absoluteStoragePath, thumbnailName);
-    await image.clone()
-      .resize({ width: 800, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toFile(thumbnailPath);
-
-    // A.2) Si es HEIC, generar también una versión web de alta resolución
-    if (originalName.toLowerCase().endsWith('.heic')) {
-      const webPath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
-      await image.clone()
-        .resize({ width: 2560, withoutEnlargement: true })
-        .webp({ quality: 90 })
-        .toFile(webPath);
-    }
-
-    // B) Generar BlurHash
-    // Ajustamos la imagen a 32x32 manteniendo proporción, con canal alpha asegurado
-    const { data: rawData, info: rawInfo } = await image.clone()
-      .raw()
-      .ensureAlpha()
-      .resize(32, 32, { fit: 'inside' })
-      .toBuffer({ resolveWithObject: true });
-    
-    const blurhashStr = encode(new Uint8ClampedArray(rawData), rawInfo.width, rawInfo.height, 4, 4);
-
-    // C) Extraer EXIF
-    let takenAt = null;
-    let latitude = null;
-    let longitude = null;
-    try {
-      const exifData = await exifr.parse(filePath);
-      if (exifData) {
-        if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
-        if (exifData.latitude !== undefined) latitude = exifData.latitude;
-        if (exifData.longitude !== undefined) longitude = exifData.longitude;
-      }
-    } catch(e) {}
-
-    // D) Generar CLIP Embedding (Semantic Search)
-    emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName);
-    let embeddingStr = null;
-    if (visionPipeline) {
-      try {
-         const output = await visionPipeline(filePath);
-         embeddingStr = JSON.stringify(Array.from(output.data));
-      } catch (e) {
-         console.error('[Worker] Falló embedding para', originalName);
-      }
-    }
-
-    // E) Guardar todo en SQLite
-    updateFileStmt.run({
-      id: fileId,
-      thumbnailName,
-      blurhash: blurhashStr,
-      width: metadata.width,
-      height: metadata.height,
-      embedding: embeddingStr,
-      takenAt,
-      latitude,
-      longitude
-    });
-
-    // F) Extraer rostros enviando al modelo local de node.js
-    emitWorkerStep(fileId, 'faces', 'Detectando rostros...', originalName);
-    try {
-      console.log(`[Worker] Detectando rostros en miniatura de ${originalName}`);
-      const faces = await detectFacesInImage(thumbnailPath);
+    if (job.name === 'generate-thumbnail') {
+      console.log(`[Worker] Empezando a procesar miniatura ${originalName} (${fileId})`);
       
-      if (faces && faces.length > 0) {
-        // Almacenar info en la base de datos de manera relacional (y agrupar)
-        for (const face of faces) {
-          const descriptorStr = JSON.stringify(face.descriptor);
-          
-          // Buscar si el rostro ya pertenece a alguien (Euclidean distance < 0.6)
-          const existingFaces = db.prepare(`SELECT id, personId, descriptor FROM file_faces`).all() as any[];
-          let matchedPersonId = null;
-          let minDistance = 0.5; // Sweet spot for face-api.js to balance false positives and false negatives
-
-          for (const ef of existingFaces) {
-            const efDescriptor = JSON.parse(ef.descriptor) as number[];
-            let distance = 0;
-            for (let i = 0; i < 128; i++) {
-              distance += Math.pow((face.descriptor as number[])[i] - efDescriptor[i], 2);
-            }
-            distance = Math.sqrt(distance);
-            
-            if (distance < minDistance) {
-              minDistance = distance;
-              matchedPersonId = ef.personId;
-            }
-          }
-
-          // Si no hace match, crear una nueva persona anónima
-          if (!matchedPersonId) {
-            matchedPersonId = crypto.randomUUID();
-            db.prepare(`INSERT INTO people (id, name, coverFileId) VALUES (?, ?, ?)`).run(matchedPersonId, 'Desconocido', fileId);
-          } else {
-            // Actualizar portada si no tiene
-            db.prepare(`UPDATE people SET coverFileId = COALESCE(coverFileId, ?) WHERE id = ?`).run(fileId, matchedPersonId);
-          }
-
-          // Guardar el rostro detectado
-          db.prepare(`
-            INSERT INTO file_faces (id, fileId, personId, descriptor, boxX, boxY, boxW, boxH)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            crypto.randomUUID(), fileId, matchedPersonId, descriptorStr, 
-            face.box.x, face.box.y, face.box.width, face.box.height
-          );
+      if (originalName.toLowerCase().endsWith('.heic')) {
+        try {
+          const { execSync } = require('child_process');
+          tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
+          execSync(`sips -s format jpeg "${filePath}" --out "${tempJpegPath}"`);
+          filePath = tempJpegPath;
+        } catch (e) {
+          console.error(`[Worker] Error convirtiendo HEIC a JPG con sips para ${originalName}`, e);
         }
-        
-        // Guardar por retrocompatibilidad en 'faces' column
-        updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
-        emitWorkerStep(fileId, 'faces', `Se ${faces.length === 1 ? 'encontró 1 rostro' : `encontraron ${faces.length} rostros`}`, originalName);
-      } else {
-        emitWorkerStep(fileId, 'faces', 'No se detectaron rostros', originalName);
       }
-    } catch (e) {
-      console.log(`[Worker] Local face API falló para ${originalName}:`, e);
-      emitWorkerStep(fileId, 'faces', 'No se pudieron detectar rostros (error interno)', originalName);
-    }
 
-    console.log(`[Worker] Finalizado con éxito ${originalName}`);
-    emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
+      const image = sharp(filePath, { unlimited: true }).rotate();
+      const metadata = await image.metadata();
+      
+      const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
+      if (!fs.existsSync(thumbnailsDir)) {
+        fs.mkdirSync(thumbnailsDir, { recursive: true });
+      }
 
-    if (tempJpegPath) {
-      try { fs.unlinkSync(tempJpegPath); } catch(e) {}
+      emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
+      await image.clone()
+        .resize({ width: 800, withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toFile(thumbnailPath);
+
+      if (originalName.toLowerCase().endsWith('.heic')) {
+        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
+        await image.clone()
+          .resize({ width: 2560, withoutEnlargement: true })
+          .webp({ quality: 90 })
+          .toFile(webPath);
+      }
+
+      const { data: rawData, info: rawInfo } = await image.clone()
+        .raw()
+        .ensureAlpha()
+        .resize(32, 32, { fit: 'inside' })
+        .toBuffer({ resolveWithObject: true });
+      
+      const blurhashStr = encode(new Uint8ClampedArray(rawData), rawInfo.width, rawInfo.height, 4, 4);
+
+      let takenAt = null;
+      let latitude = null;
+      let longitude = null;
+      try {
+        const exifData = await exifr.parse(filePath);
+        if (exifData) {
+          if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
+          if (exifData.latitude !== undefined) latitude = exifData.latitude;
+          if (exifData.longitude !== undefined) longitude = exifData.longitude;
+        }
+      } catch(e) {}
+
+      updateFileThumbnailStmt.run({
+        id: fileId,
+        thumbnailName,
+        blurhash: blurhashStr,
+        width: metadata.width,
+        height: metadata.height,
+        takenAt,
+        latitude,
+        longitude
+      });
+
+      if (tempJpegPath) {
+        try { fs.unlinkSync(tempJpegPath); } catch(e) {}
+      }
+
+      // Chain next job
+      await imageQueue.add('generate-embedding', job.data, { priority: 2, jobId: `embed-${fileId}` });
+      emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura lista', originalName);
+
+    } else if (job.name === 'generate-embedding') {
+      console.log(`[Worker] Generando embedding para ${originalName} (${fileId})`);
+      
+      if (originalName.toLowerCase().endsWith('.heic')) {
+        // We use the generated high-res webp for embedding HEIC
+        filePath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
+      }
+
+      emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName);
+      let embeddingStr = null;
+      if (visionPipeline) {
+        try {
+           const output = await visionPipeline(filePath);
+           embeddingStr = JSON.stringify(Array.from(output.data));
+        } catch (e) {
+           console.error('[Worker] Falló embedding para', originalName);
+        }
+      }
+
+      updateFileEmbeddingStmt.run({
+        id: fileId,
+        embedding: embeddingStr
+      });
+
+      // Chain next job
+      await imageQueue.add('detect-faces', job.data, { priority: 3, jobId: `faces-${fileId}` });
+      emitWorkerStep(fileId, 'embedding_done', 'Embedding listo', originalName);
+
+    } else if (job.name === 'detect-faces') {
+      console.log(`[Worker] Detectando rostros en ${originalName} (${fileId})`);
+      emitWorkerStep(fileId, 'faces', 'Detectando rostros...', originalName);
+      try {
+        const faces = await detectFacesInImage(thumbnailPath);
+        
+        if (faces && faces.length > 0) {
+          for (const face of faces) {
+            const descriptorStr = JSON.stringify(face.descriptor);
+            
+            const existingFaces = db.prepare(`SELECT id, personId, descriptor FROM file_faces`).all() as any[];
+            let matchedPersonId = null;
+            let minDistance = 0.5;
+
+            for (const ef of existingFaces) {
+              const efDescriptor = JSON.parse(ef.descriptor) as number[];
+              let distance = 0;
+              for (let i = 0; i < 128; i++) {
+                distance += Math.pow((face.descriptor as number[])[i] - efDescriptor[i], 2);
+              }
+              distance = Math.sqrt(distance);
+              
+              if (distance < minDistance) {
+                minDistance = distance;
+                matchedPersonId = ef.personId;
+              }
+            }
+
+            if (!matchedPersonId) {
+              matchedPersonId = crypto.randomUUID();
+              db.prepare(`INSERT INTO people (id, name, coverFileId) VALUES (?, ?, ?)`).run(matchedPersonId, 'Desconocido', fileId);
+            } else {
+              db.prepare(`UPDATE people SET coverFileId = COALESCE(coverFileId, ?) WHERE id = ?`).run(fileId, matchedPersonId);
+            }
+
+            db.prepare(`
+              INSERT INTO file_faces (id, fileId, personId, descriptor, boxX, boxY, boxW, boxH)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(
+              crypto.randomUUID(), fileId, matchedPersonId, descriptorStr, 
+              face.box.x, face.box.y, face.box.width, face.box.height
+            );
+          }
+          
+          updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
+          emitWorkerStep(fileId, 'faces', `Se ${faces.length === 1 ? 'encontró 1 rostro' : `encontraron ${faces.length} rostros`}`, originalName);
+        } else {
+          emitWorkerStep(fileId, 'faces', 'No se detectaron rostros', originalName);
+        }
+      } catch (e) {
+        console.error(`[Worker] Local face API falló para ${originalName}:`, e);
+        emitWorkerStep(fileId, 'faces', 'No se pudieron detectar rostros (error interno)', originalName);
+      }
+
+      updateFileReadyStmt.run({ id: fileId });
+      console.log(`[Worker] Finalizado con éxito ${originalName}`);
+      emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
     }
   } catch (error) {
     console.error(`[Worker] Error crítico procesando ${originalName}`, error);
     db.prepare(`UPDATE files SET status = 'ERROR' WHERE id = ?`).run(fileId);
   }
-
 }, { connection: redisConnection as any });
 
 worker.on('failed', (job, err) => {

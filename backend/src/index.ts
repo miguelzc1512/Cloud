@@ -540,13 +540,13 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 
       // 2. Encolar trabajo de procesamiento asíncrono
       try {
-        await imageQueue.add('process-image', {
+        await imageQueue.add('generate-thumbnail', {
           fileId: fileMeta.id,
           savedName: fileMeta.savedName,
           originalName: fileMeta.originalName,
           mimeType: fileMeta.mimeType,
-          absolutePath: null
-        });
+          absolutePath: fileMeta.absolutePath
+        }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
       } catch (err) {
         console.error('Redis Queue Error (imageQueue):', err);
         // Fallback or just continue (it will show as processing forever, or we could delete it)
@@ -790,13 +790,13 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total });
 
         try {
-          await imageQueue.add('process-image', {
+          await imageQueue.add('generate-thumbnail', {
             fileId: fileMeta.id,
             savedName: fileMeta.savedName,
             originalName: fileMeta.originalName,
             mimeType: fileMeta.mimeType,
-            absolutePath: filePath
-          });
+            absolutePath: fileMeta.absolutePath
+          }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
         } catch (err) {
           console.error('Queue Error during scan:', err);
           stmts.hardDelete.run(fileMeta.id);
@@ -892,13 +892,13 @@ app.post('/api/index-file', async (req: Request, res: Response): Promise<void> =
       stmts.insertFile.run(fileMeta);
       broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName });
 
-      await imageQueue.add('process-image', {
+      await imageQueue.add('generate-thumbnail', {
         fileId: fileMeta.id,
         savedName: fileMeta.savedName,
         originalName: fileMeta.originalName,
         mimeType: fileMeta.mimeType,
-        absolutePath
-      });
+        absolutePath: fileMeta.absolutePath
+      }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
     } else {
       let mimeType = 'application/octet-stream';
       if (ext === '.pdf') mimeType = 'application/pdf';
