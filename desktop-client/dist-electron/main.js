@@ -16919,6 +16919,69 @@ electron.ipcMain.handle("pick-folder", async () => {
 	if (!result.canceled && result.filePaths.length > 0) return result.filePaths[0];
 	return null;
 });
+async function processExistingSyncFiles(folderPath) {
+	const filesToUpload = [];
+	function scan(dir) {
+		try {
+			const entries = fs.readdirSync(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				if (entry.name.startsWith(".")) continue;
+				const fullPath = node_path.join(dir, entry.name);
+				if (entry.isDirectory()) scan(fullPath);
+				else {
+					const ext = node_path.extname(fullPath).toLowerCase();
+					if ([
+						".jpg",
+						".jpeg",
+						".png",
+						".webp",
+						".heic",
+						".heif",
+						".mp4",
+						".mov",
+						".webm",
+						".avi",
+						".pdf",
+						".txt",
+						".doc",
+						".docx",
+						".xls",
+						".xlsx",
+						".ppt",
+						".pptx",
+						".csv",
+						".md"
+					].includes(ext) && !uploadedState[fullPath]) filesToUpload.push(fullPath);
+				}
+			}
+		} catch (e) {
+			console.error("Error scanning folder:", e);
+		}
+	}
+	scan(folderPath);
+	if (filesToUpload.length > 0) {
+		console.log(`Found ${filesToUpload.length} existing files to sync in ${folderPath}`);
+		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "scan_start",
+				data: { total: filesToUpload.length }
+			});
+		});
+		for (const file of filesToUpload) if (isSyncPaused) {
+			if (!pendingUploads.find((p) => p.path === file)) pendingUploads.push({
+				path: file,
+				mode: "sync"
+			});
+		} else await uploadFile(file);
+		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "scan_done",
+				data: { total: filesToUpload.length }
+			});
+		});
+		notifySyncStatus();
+	}
+}
 electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode }) => {
 	if (!config.linkedFolders.find((f) => f.path === folderPath)) {
 		const folder = {
@@ -16929,6 +16992,7 @@ electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode }) => {
 		saveConfig();
 		startWatching(folder);
 		if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath }).catch(console.error);
+		else if (mode === "sync") processExistingSyncFiles(folderPath).catch(console.error);
 	}
 	return config;
 });

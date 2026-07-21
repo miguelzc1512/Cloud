@@ -408,6 +408,53 @@ ipcMain.handle('pick-folder', async () => {
   return null;
 });
 
+async function processExistingSyncFiles(folderPath: string) {
+  const filesToUpload: string[] = [];
+  
+  function scan(dir: string) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue;
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          scan(fullPath);
+        } else {
+          const ext = path.extname(fullPath).toLowerCase();
+          const isSupported = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi', '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext);
+          if (isSupported && !uploadedState[fullPath]) {
+            filesToUpload.push(fullPath);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error scanning folder:', e);
+    }
+  }
+  
+  scan(folderPath);
+  
+  if (filesToUpload.length > 0) {
+    console.log(`Found ${filesToUpload.length} existing files to sync in ${folderPath}`);
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sse-event', { event: 'scan_start', data: { total: filesToUpload.length } });
+    });
+
+    for (const file of filesToUpload) {
+      if (isSyncPaused) {
+        if (!pendingUploads.find(p => p.path === file)) pendingUploads.push({ path: file, mode: 'sync' });
+      } else {
+        await uploadFile(file);
+      }
+    }
+    
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sse-event', { event: 'scan_done', data: { total: filesToUpload.length } });
+    });
+    notifySyncStatus();
+  }
+}
+
 ipcMain.handle('link-folder', (event, { path: folderPath, mode }) => {
   if (!config.linkedFolders.find(f => f.path === folderPath)) {
     const folder = { path: folderPath, mode: mode as 'index' | 'sync' };
@@ -418,6 +465,8 @@ ipcMain.handle('link-folder', (event, { path: folderPath, mode }) => {
     // Si es index, corremos scan-local una vez para asegurar todo el árbol
     if (mode === 'index') {
       axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath }).catch(console.error);
+    } else if (mode === 'sync') {
+      processExistingSyncFiles(folderPath).catch(console.error);
     }
   }
   return config;
