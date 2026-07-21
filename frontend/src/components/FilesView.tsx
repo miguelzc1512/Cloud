@@ -258,6 +258,8 @@ export default function FilesView({
 
   // Drag and drop to move items
   const handleDragStart = (e: React.DragEvent, docId: string) => {
+    const idsToMove = selectedIds.has(docId) ? Array.from(selectedIds) : [docId];
+    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'move_docs', ids: idsToMove }));
     e.dataTransfer.setData('text/plain', docId);
     setDraggedDocId(docId);
   };
@@ -278,14 +280,38 @@ export default function FilesView({
     }
   };
 
-  const handleFolderDrop = (e: React.DragEvent, folderId: string | null) => {
+  const handleFolderDrop = async (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverFolderId(null);
+    
+    try {
+      const dataStr = e.dataTransfer.getData('application/json');
+      if (dataStr) {
+        const data = JSON.parse(dataStr);
+        if (data.type === 'move_docs' && Array.isArray(data.ids)) {
+          const docIds = data.ids.filter((id: string) => documents.some(d => d.id === id));
+          if (docIds.length > 0) {
+            await Promise.all(docIds.map((id: string) => 
+              fetch(`/api/documents/${id}/move`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folderId })
+              })
+            ));
+            setSelectedIds(new Set());
+            fetchItems();
+            return;
+          }
+        }
+      }
+    } catch (err) {}
+
     const docId = e.dataTransfer.getData('text/plain');
     if (docId && documents.some(d => d.id === docId)) {
       handleMoveDocument(docId, folderId);
       setDraggedDocId(null);
+      setSelectedIds(new Set());
     } else {
       // It's a file from OS, but right now handleDrop drops it in root because it doesn't know about currentFolderId.
       // To fix this fully, we would need to pass currentFolderId to handleDrop.
