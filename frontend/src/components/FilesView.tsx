@@ -24,6 +24,7 @@ type FilesViewProps = {
   handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDelete: (id: string) => void;
   setSidebarActions?: (actions: React.ReactNode) => void;
+  refreshTrigger?: number;
 };
 
 type FolderData = {
@@ -54,7 +55,8 @@ export default function FilesView({
   handleDrop,
   handleDragOver,
   onDelete,
-  setSidebarActions
+  setSidebarActions,
+  refreshTrigger
 }: FilesViewProps) {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
@@ -131,7 +133,7 @@ export default function FilesView({
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [refreshTrigger]);
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';

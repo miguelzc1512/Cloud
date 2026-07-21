@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle, FolderPlus, Zap, Menu, Smartphone } from 'lucide-react';
+import { Folder, Image as ImageIcon, Search, Cloud, Loader2, FileText, Plus, Book, Users, Map, Trash2, ChevronDown, Star, ArrowRight, ArrowLeft, Copy, LayoutGrid, MonitorDown, Download, Apple, Monitor, XCircle, X, FolderPlus, Zap, Menu, Smartphone } from 'lucide-react';
 import FilesView from './components/FilesView';
 import PhotosView from './components/PhotosView';
 import AlbumsView from './components/photos/albums/AlbumsView';
@@ -9,6 +9,7 @@ import TrashView from './components/photos/trash/TrashView';
 import DuplicatesView from './components/photos/duplicates/DuplicatesView';
 import DocTrashView from './components/DocTrashView';
 import DocDevicesView from './components/DocDevicesView';
+import FileIcon from './components/FileIcon';
 
 const SEARCH_SUGGESTIONS = [
   'playa', 'montaña', 'ciudad', 'perro', 'gato', 'comida', 'nieve', 
@@ -41,7 +42,9 @@ export default function App() {
   const [files, setFiles] = useState<FileData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ total: number; current: number; percentage: number } | null>(null);
+  const [uploadTasks, setUploadTasks] = useState<{id: string, name: string, status: 'uploading' | 'completed' | 'error'}[]>([]);
+  const [isUploadToastVisible, setIsUploadToastVisible] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   // importingCount ahora rastrea { current, total } para mostrar "X de Y"
   const [importing, setImporting] = useState<{ current: number; total: number } | null>(null);
@@ -205,13 +208,21 @@ export default function App() {
 
   const uploadMultipleFiles = async (filesToUpload: FileList | File[], targetFolderId: string | null = null) => {
     setIsUploading(true);
+    setIsUploadToastVisible(true);
     const filesArray = Array.from(filesToUpload);
-    const total = filesArray.length;
+    
+    // Create new tasks and prepend them to the list
+    const newTasks = filesArray.map(f => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: f.name,
+      status: 'uploading' as const
+    }));
+    
+    setUploadTasks(prev => [...newTasks, ...prev]);
 
-    setUploadProgress({ total, current: 0, percentage: 0 });
-
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < filesArray.length; i++) {
       const file = filesArray[i];
+      const taskId = newTasks[i].id;
       const formData = new FormData();
       formData.append('file', file);
       formData.append('lastModified', file.lastModified.toString());
@@ -230,26 +241,20 @@ export default function App() {
         });
         if (!res.ok) {
           console.error('Upload failed for', file.name);
+          setUploadTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'error' } : t));
         } else {
+          setUploadTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
           // Refresh list immediately so photos appear one by one
           await fetchFiles();
+          setRefreshTrigger(prev => prev + 1); // Trigger refresh in FilesView
         }
       } catch (error) {
         console.error('Error during upload:', error);
+        setUploadTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'error' } : t));
       }
-
-      const current = i + 1;
-      setUploadProgress({
-        total,
-        current,
-        percentage: Math.round((current / total) * 100)
-      });
     }
 
-    setTimeout(() => {
-      setUploadProgress(null);
-      setIsUploading(false);
-    }, 800);
+    setIsUploading(false);
   };
 
   const handleDelete = useCallback(async (id: string, skipConfirm = false) => {
@@ -647,6 +652,7 @@ export default function App() {
               handleDragOver={handleDragOver}
               onDelete={handleDelete}
               setSidebarActions={setSidebarActions}
+              refreshTrigger={refreshTrigger}
             />
           )}
 
@@ -727,25 +733,47 @@ export default function App() {
         </div>
       </main>
 
-      {uploadProgress && (
-        <div className="fixed bottom-6 right-6 z-[100] w-80 bg-white/90 backdrop-blur-md border border-slate-200/60 shadow-2xl rounded-2xl p-5 transition-all duration-300">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-semibold text-slate-800 text-sm">
-              Subiendo {uploadProgress.current} de {uploadProgress.total} {uploadProgress.total === 1 ? 'elemento' : 'elementos'}
+      {isUploadToastVisible && (
+        <div className="fixed bottom-6 right-6 z-[100] w-80 sm:w-96 bg-white border border-slate-200/80 shadow-2xl rounded-xl flex flex-col overflow-hidden transition-all duration-300">
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+            <span className="font-medium text-slate-800 text-[15px]">
+              {uploadTasks.every(t => t.status === 'completed') 
+                ? `Se completó ${uploadTasks.length} carga${uploadTasks.length === 1 ? '' : 's'}`
+                : `Subiendo ${uploadTasks.filter(t => t.status === 'completed').length} de ${uploadTasks.length} carga${uploadTasks.length === 1 ? '' : 's'}`}
             </span>
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-              {uploadProgress.percentage}%
-            </span>
+            <div className="flex items-center gap-1 text-slate-500">
+              <button onClick={() => setIsUploadToastVisible(false)} className="p-1 hover:bg-slate-200 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-300 ease-out"
-              style={{ width: `${uploadProgress.percentage}%` }}
-            ></div>
+          <div className="max-h-64 overflow-y-auto">
+            {uploadTasks.map(task => (
+              <div key={task.id} className="flex items-center gap-3 px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                <div className="w-6 h-6 shrink-0 flex items-center justify-center">
+                  <FileIcon filename={task.name} className="w-6 h-6" />
+                </div>
+                <p className="text-[13px] text-slate-700 font-medium truncate flex-1" title={task.name}>
+                  {task.name}
+                </p>
+                <div className="w-5 h-5 shrink-0 flex items-center justify-center">
+                  {task.status === 'completed' ? (
+                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  ) : task.status === 'error' ? (
+                    <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                      <X className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                    </div>
+                  ) : (
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 truncate">
-            Agregando a tu nube privada...
-          </p>
         </div>
       )}
     </div>
