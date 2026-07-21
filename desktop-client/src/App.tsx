@@ -249,31 +249,60 @@ export default function App() {
           </button>
         </div>
 
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-2">Carpetas Activas</p>
-        <div className="flex-1 overflow-y-auto min-h-0 space-y-2 non-draggable pr-1">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 non-draggable pr-1">
           {config.linkedFolders.length === 0 ? (
             <div className="py-4 px-3 rounded-xl border border-dashed border-slate-200 text-center">
               <p className="text-xs text-slate-400">Sin carpetas</p>
             </div>
           ) : (
-            config.linkedFolders.map(folderObj => (
-              <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
-                <div className="flex items-center gap-2 overflow-hidden mb-1">
-                  <Folder className="w-4 h-4 text-blue-500 shrink-0" />
-                  <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
+            <>
+              {config.linkedFolders.filter(f => f.contentType !== 'drive').length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Galería</p>
+                  {config.linkedFolders.filter(f => f.contentType !== 'drive').map(folderObj => (
+                    <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
+                      <div className="flex items-center gap-2 overflow-hidden mb-1">
+                        <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+                        <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
+                      </div>
+                      <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
+                      </span>
+                      <button 
+                        onClick={() => confirmUnlink(folderObj.path)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
+                        title="Desvincular"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                  {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
-                </span>
-                <button 
-                  onClick={() => confirmUnlink(folderObj.path)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
-                  title="Desvincular"
-                >
-                  <XCircle className="w-4 h-4" />
-                </button>
-              </div>
-            ))
+              )}
+              {config.linkedFolders.filter(f => f.contentType === 'drive').length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Documentos / Archivos</p>
+                  {config.linkedFolders.filter(f => f.contentType === 'drive').map(folderObj => (
+                    <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
+                      <div className="flex items-center gap-2 overflow-hidden mb-1">
+                        <Folder className="w-4 h-4 text-slate-500 shrink-0" />
+                        <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
+                      </div>
+                      <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
+                      </span>
+                      <button 
+                        onClick={() => confirmUnlink(folderObj.path)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-all shrink-0 bg-white"
+                        title="Desvincular"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
