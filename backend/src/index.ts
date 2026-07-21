@@ -606,9 +606,10 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
 // GET /api/documents
 app.get('/api/documents', (_req: Request, res: Response) => {
   try {
-    // Retornar todos los documentos de la base de datos de Archivos (incluyendo media si se subió a esta pestaña)
+    // Retornar todos los documentos no eliminados de la base de datos de Archivos
     const docs = docDb.prepare(`
       SELECT * FROM docs 
+      WHERE isDeleted = 0 OR isDeleted IS NULL
       ORDER BY createdAt DESC
     `).all();
     res.json(docs);
@@ -678,21 +679,82 @@ app.put('/api/documents/:id/move', (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/documents/:id
+// DELETE /api/documents/:id (Soft Delete)
 app.delete('/api/documents/:id', (req: Request, res: Response) => {
   try {
     const doc = docDb.prepare(`SELECT * FROM docs WHERE id = ?`).get(req.params.id) as any;
     if (doc) {
-      docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(req.params.id);
+      docDb.prepare(`UPDATE docs SET isDeleted = 1, deletedAt = ? WHERE id = ?`).run(new Date().toISOString(), req.params.id);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+});
+
+// GET /api/documents/trash
+app.get('/api/documents/trash', (_req: Request, res: Response) => {
+  try {
+    const docs = docDb.prepare(`
+      SELECT * FROM docs 
+      WHERE isDeleted = 1
+      ORDER BY deletedAt DESC
+    `).all();
+    res.json(docs);
+  } catch (e) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// POST /api/documents/trash/restore
+app.post('/api/documents/trash/restore', (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      res.status(400).json({ error: 'Invalid input' });
+      return;
+    }
+    
+    const restoreStmt = docDb.prepare(`UPDATE docs SET isDeleted = 0, deletedAt = NULL WHERE id = ?`);
+    const transaction = docDb.transaction((docIds: string[]) => {
+      for (const id of docIds) {
+        restoreStmt.run(id);
+      }
+    });
+    transaction(ids);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to restore documents' });
+  }
+});
+
+// DELETE /api/documents/trash/empty
+app.delete('/api/documents/trash/empty', (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body; // opcional: si se mandan ids específicos, solo borra esos
+    
+    let docsToDelete: any[] = [];
+    if (ids && Array.isArray(ids)) {
+      const getStmt = docDb.prepare(`SELECT * FROM docs WHERE id = ? AND isDeleted = 1`);
+      docsToDelete = ids.map(id => getStmt.get(id)).filter(Boolean);
+    } else {
+      docsToDelete = docDb.prepare(`SELECT * FROM docs WHERE isDeleted = 1`).all();
+    }
+    
+    const deleteStmt = docDb.prepare(`DELETE FROM docs WHERE id = ?`);
+    
+    for (const doc of docsToDelete) {
+      deleteStmt.run(doc.id);
       try {
         if (doc.savedName) fs.unlinkSync(path.join(absoluteStoragePath, doc.savedName));
       } catch (err) {
         console.error('Failed to delete file from disk', err);
       }
     }
-    res.json({ success: true });
+    
+    res.json({ success: true, count: docsToDelete.length });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to delete document' });
+    res.status(500).json({ error: 'Failed to empty trash' });
   }
 });
 

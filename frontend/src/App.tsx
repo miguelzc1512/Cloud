@@ -7,6 +7,8 @@ import { PeopleView } from './components/photos/people/PeopleView';
 import MapView from './components/photos/map/MapView';
 import TrashView from './components/photos/trash/TrashView';
 import DuplicatesView from './components/photos/duplicates/DuplicatesView';
+import DocTrashView from './components/DocTrashView';
+import DocDevicesView from './components/DocDevicesView';
 
 const SEARCH_SUGGESTIONS = [
   'playa', 'montaña', 'ciudad', 'perro', 'gato', 'comida', 'nieve', 
@@ -31,6 +33,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('fotos');
   const [previousTab, setPreviousTab] = useState('fotos');
   const [isFotosSubmenuOpen, setIsFotosSubmenuOpen] = useState(true);
+  const [isArchivosSubmenuOpen, setIsArchivosSubmenuOpen] = useState(false);
   const [customHeader, setCustomHeader] = useState<React.ReactNode | null>(null);
   const [sidebarActions, setSidebarActions] = useState<React.ReactNode>(null);
   const [headerActions, setHeaderActions] = useState<React.ReactNode | null>(null);
@@ -334,20 +337,50 @@ export default function App() {
           </div>
 
           <nav className="flex-1 space-y-1">
-            <button
-              onClick={() => {
-                setActiveTab('archivos');
-                setIsFotosSubmenuOpen(false);
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm ${activeTab === 'archivos'
-                ? 'bg-blue-50 text-blue-600 font-medium'
-                : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                }`}
-            >
-              <Folder className={`w-4 h-4 shrink-0 ${activeTab === 'archivos' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Archivos</span>
-            </button>
+            <div>
+              <button
+                onClick={() => {
+                  setActiveTab('archivos');
+                  setIsArchivosSubmenuOpen(true);
+                  setIsFotosSubmenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-sm ${['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab)
+                  ? 'bg-blue-50 text-blue-600 font-medium'
+                  : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                  }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Folder className={`w-4 h-4 shrink-0 ${['archivos', 'archivos_dispositivos', 'archivos_papelera'].includes(activeTab) ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Archivos</span>
+                </div>
+              </button>
+
+              <div className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${isArchivosSubmenuOpen ? 'max-h-[160px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="flex flex-col pl-0 group-hover:pl-7 pr-1 py-1 mt-1 space-y-0.5 relative before:content-[''] before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-slate-200 before:opacity-0 group-hover:before:opacity-100 transition-all duration-300">
+                  <button
+                    onClick={() => { setActiveTab('archivos'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'archivos' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <Folder className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'archivos' ? 'text-blue-600' : ''}`} />
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Explorador</span>
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('archivos_dispositivos'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'archivos_dispositivos' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <Smartphone className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'archivos_dispositivos' ? 'text-blue-600' : ''}`} />
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Dispositivos</span>
+                  </button>
+                  <button
+                    onClick={() => { setActiveTab('archivos_papelera'); setIsMobileMenuOpen(false); }}
+                    className={`flex items-center text-left gap-2 w-full py-2 px-3 group-hover:px-2 text-[13px] font-medium transition-all duration-300 rounded-lg hover:bg-slate-50 ${activeTab === 'archivos_papelera' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <Trash2 className={`w-4 h-4 shrink-0 stroke-[1.5] ${activeTab === 'archivos_papelera' ? 'text-blue-600' : ''}`} />
+                    <span className="truncate opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">Papelera</span>
+                  </button>
+                </div>
+              </div>
+            </div>
 
 
 
@@ -600,6 +633,14 @@ export default function App() {
               onDelete={handleDelete}
               setSidebarActions={setSidebarActions}
             />
+          )}
+
+          {activeTab === 'archivos_dispositivos' && (
+            <DocDevicesView />
+          )}
+
+          {activeTab === 'archivos_papelera' && (
+            <DocTrashView onRefresh={fetchFiles} setHeaderActions={setHeaderActions} />
           )}
 
           {activeTab === 'fotos' && (
