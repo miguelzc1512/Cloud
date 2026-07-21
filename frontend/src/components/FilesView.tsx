@@ -571,15 +571,24 @@ export default function FilesView({
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                           {currentFolders.map(folder => (
                             <div
+                            <div
                               key={folder.id}
                               onClick={(e) => handleSelect(e, folder.id)}
                               onDoubleClick={() => setCurrentFolderId(folder.id)}
                               onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                               onDrop={(e) => handleFolderDrop(e, folder.id)}
-                              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${selectedIds.has(folder.id) ? 'bg-blue-50/80 border-blue-200' : 'bg-slate-50 border-transparent hover:border-slate-200 hover:shadow-sm'}`}
+                              className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer select-none transition-all group ${selectedIds.has(folder.id) ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-slate-100/60 border-transparent hover:border-slate-200 hover:shadow-sm hover:bg-slate-100'}`}
                             >
-                              <Folder className="w-8 h-8 text-slate-400 fill-slate-400 shrink-0" />
-                              <p className="font-medium text-slate-700 text-sm truncate">{folder.name}</p>
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <Folder className="w-5 h-5 text-slate-600 fill-slate-600 shrink-0" />
+                                <p className="font-medium text-slate-700 text-sm truncate">{folder.name}</p>
+                              </div>
+                              <button 
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 rounded-full hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors ml-2 shrink-0"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -596,15 +605,43 @@ export default function FilesView({
                               draggable
                               onClick={(e) => handleSelect(e, doc.id)}
                               onDragStart={(e) => handleDragStart(e, doc.id)}
-                              className={`flex flex-col items-center justify-center gap-4 p-5 rounded-xl border cursor-grab active:cursor-grabbing select-none transition-all ${selectedIds.has(doc.id) ? 'bg-blue-50/80 border-blue-200' : 'bg-slate-50 border-transparent hover:border-slate-200 hover:shadow-sm'}`}
+                              className={`flex flex-col rounded-2xl border cursor-grab active:cursor-grabbing select-none overflow-hidden transition-all bg-white group ${selectedIds.has(doc.id) ? 'bg-blue-50/10 border-blue-500 ring-1 ring-blue-500' : 'border-slate-200 hover:bg-slate-50 hover:shadow-sm'}`}
                             >
-                              <FileIcon filename={doc.name} className="w-16 h-16 shrink-0" />
-                              <div className="text-center w-full">
-                                <p className="font-medium text-slate-700 text-sm truncate w-full" title={doc.name}>{doc.name}</p>
+                              {/* Header */}
+                              <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                  <FileIcon filename={doc.name} className="w-5 h-5 shrink-0" />
+                                  <p className="font-medium text-slate-700 text-[13px] truncate" title={doc.name}>{doc.name}</p>
+                                </div>
+                                <button 
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1.5 rounded-full hover:bg-slate-200/50 text-slate-400 hover:text-slate-600 transition-colors shrink-0 ml-1"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                              </div>
+                              
+                              {/* Preview Area */}
+                              <div className="h-40 bg-slate-50 flex items-center justify-center relative overflow-hidden group-hover:bg-slate-100/50 transition-colors">
+                                {doc.extension?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                                  <div className="w-full h-full p-2 bg-slate-100 pattern-dots-sm text-slate-200 flex items-center justify-center">
+                                    <img 
+                                      src={`/uploads/${doc.savedName}`} 
+                                      alt={doc.name}
+                                      className="max-w-full max-h-full object-contain drop-shadow-sm rounded"
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                ) : (
+                                  <FileIcon filename={doc.name} className="w-16 h-16 opacity-30" />
+                                )}
+                                
                                 {doc.status !== 'READY' && (
-                                  <p className="text-[10px] text-blue-500 flex items-center justify-center gap-1 mt-1 uppercase tracking-wider font-semibold">
-                                    <Loader2 className="w-3 h-3 animate-spin" /> Procesando
-                                  </p>
+                                  <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                                    <p className="text-[10px] text-blue-600 flex items-center gap-1 uppercase tracking-wider font-semibold bg-white/80 px-2 py-1 rounded-md shadow-sm">
+                                      <Loader2 className="w-3 h-3 animate-spin" /> Procesando
+                                    </p>
+                                  </div>
                                 )}
                               </div>
                             </div>
