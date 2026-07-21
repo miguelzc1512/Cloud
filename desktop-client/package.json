@@ -5,7 +5,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && sed -i '' 's/crossorigin//g' dist/index.html && electron-builder",
+    "build": "tsc -b && vite build && node -e \"const fs = require('fs'); const f = 'dist/index.html'; fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/crossorigin/g, ''));\" && electron-builder",
     "lint": "oxlint",
     "preview": "vite preview"
   },
