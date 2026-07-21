@@ -1750,6 +1750,25 @@ const cleanupTrash = () => {
         stmts.hardDelete.run(f.id);
       });
     }
+
+    const docsToDelete = docDb.prepare(`SELECT id, savedName, thumbnailName FROM docs WHERE isDeleted = 1 AND deletedAt <= ?`).all(dateStr) as any[];
+    
+    if (docsToDelete.length > 0) {
+      console.log(`🧹 Auto-deleting ${docsToDelete.length} documents from trash (older than 60 days)...`);
+      docsToDelete.forEach(f => {
+        try {
+          if (f.savedName && fs.existsSync(path.join(absoluteStoragePath, f.savedName))) {
+            fs.unlinkSync(path.join(absoluteStoragePath, f.savedName));
+          }
+          if (f.thumbnailName && fs.existsSync(path.join(absoluteStoragePath, f.thumbnailName))) {
+            fs.unlinkSync(path.join(absoluteStoragePath, f.thumbnailName));
+          }
+        } catch (e) {
+          console.error(`Failed to delete physical document for ${f.id}`, e);
+        }
+        docDb.prepare('DELETE FROM docs WHERE id = ?').run(f.id);
+      });
+    }
   } catch (error) {
     console.error('Error in cleanupTrash:', error);
   }

@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, File as FileIcon, Loader2, AlertCircle, RotateCcw, CheckSquare, X, List, LayoutGrid, ChevronDown } from 'lucide-react';
+import { Trash2, Loader2, AlertCircle, RotateCcw, CheckSquare, X, List, LayoutGrid, ChevronDown, MoreVertical } from 'lucide-react';
+import { Blurhash } from 'react-blurhash';
+import FileIcon from './FileIcon';
 
 interface DocFile {
   id: string;
   name: string;
   savedName: string;
   extension: string;
+  mimeType: string;
   size: number;
   deletedAt: string;
+  thumbnailName?: string;
+  blurhash?: string;
 }
 
 interface DocTrashViewProps {
@@ -130,11 +135,16 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSelectedIds(next);
+  };
+  
+  const daysLeft = (deletedAt: string) => {
+    return Math.max(0, 60 - Math.floor((Date.now() - new Date(deletedAt || 0).getTime()) / (1000 * 60 * 60 * 24)));
   };
 
   if (isLoading) {
@@ -239,7 +249,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
 
       <div className="bg-slate-100/80 text-slate-700 px-4 py-3 flex items-center justify-center gap-2 text-sm font-medium border-b border-slate-200 shrink-0 mb-2">
         <AlertCircle className="w-5 h-5 text-slate-500 flex-shrink-0" />
-        <span className="text-center truncate">Los archivos en la papelera se eliminarán permanentemente al vaciarla.</span>
+        <span className="text-center truncate">Los elementos se eliminarán definitivamente después de 60 días.</span>
       </div>
 
       <div className="flex justify-end px-10 pt-4 pb-2">
@@ -266,19 +276,22 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
           <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
             <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-600 bg-slate-50">
               <div 
-                className="col-span-8 md:col-span-6 flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                className="col-span-6 md:col-span-5 flex items-center gap-2 cursor-pointer hover:text-slate-800"
                 onClick={() => toggleSort('name')}
               >
                 Nombre {sortBy === 'name' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
               </div>
               <div 
-                className="col-span-3 hidden md:flex items-center gap-2 cursor-pointer hover:text-slate-800"
+                className="col-span-3 md:col-span-2 hidden md:flex items-center gap-2 cursor-pointer hover:text-slate-800"
                 onClick={() => toggleSort('date')}
               >
-                Fecha de Eliminación {sortBy === 'date' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
+                Eliminado {sortBy === 'date' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
+              </div>
+              <div className="col-span-3 md:col-span-3 flex items-center justify-end">
+                Días Restantes
               </div>
               <div 
-                className="col-span-4 md:col-span-3 flex items-center justify-end gap-2 cursor-pointer hover:text-slate-800"
+                className="col-span-3 md:col-span-2 flex items-center justify-end gap-2 cursor-pointer hover:text-slate-800"
                 onClick={() => toggleSort('size')}
               >
                 Tamaño {sortBy === 'size' && <ChevronDown className={`w-3 h-3 transition-transform ${sortDesc ? 'rotate-180' : ''}`} />}
@@ -292,7 +305,7 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
                   onClick={() => toggleSelect(file.id)}
                   className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                 >
-                  <div className="col-span-8 md:col-span-6 flex items-center gap-3">
+                  <div className="col-span-6 md:col-span-5 flex items-center gap-3 overflow-hidden">
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-50 group-hover:opacity-100 bg-white/80'}`}>
                       {selectedIds.has(file.id) && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -300,13 +313,18 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
                         </svg>
                       )}
                     </div>
-                    <FileIcon className="w-8 h-8 text-slate-400 shrink-0" />
+                    <FileIcon filename={file.name} className="w-5 h-5 shrink-0" />
                     <span className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</span>
                   </div>
-                  <div className="col-span-3 hidden md:flex items-center text-sm text-slate-500">
+                  <div className="col-span-3 md:col-span-2 hidden md:flex items-center text-sm text-slate-500">
                     {new Date(file.deletedAt).toLocaleDateString()}
                   </div>
-                  <div className="col-span-4 md:col-span-3 flex items-center justify-end text-sm text-slate-500">
+                  <div className="col-span-3 md:col-span-3 flex items-center justify-end">
+                    <span className="bg-red-50 text-red-600 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                      {daysLeft(file.deletedAt)} días
+                    </span>
+                  </div>
+                  <div className="col-span-3 md:col-span-2 flex items-center justify-end text-sm text-slate-500">
                     {formatSize(file.size)}
                   </div>
                 </div>
@@ -314,31 +332,72 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-            {sortedFiles.map(file => (
-              <div 
-                key={file.id} 
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${
-                  selectedIds.has(file.id) ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
-                }`}
-                onClick={() => toggleSelect(file.id)}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {sortedFiles.map(doc => (
+              <div
+                key={doc.id}
+                onClick={() => toggleSelect(doc.id)}
+                className={`flex flex-col rounded-2xl border cursor-pointer select-none overflow-hidden transition-all bg-white group relative ${selectedIds.has(doc.id) ? 'bg-blue-50/10 border-blue-500 ring-1 ring-blue-500' : 'border-slate-200 hover:bg-slate-50 hover:shadow-sm'}`}
               >
-                <div className="w-full flex items-center justify-center mb-3 text-slate-400 group-hover:text-slate-500">
-                  <FileIcon className="w-12 h-12 stroke-[1.5]" />
-                </div>
-                <div className="w-full text-center">
-                  <p className="text-sm font-medium text-slate-800 truncate" title={file.name}>{file.name}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{formatSize(file.size)}</p>
+                {/* 60 days badge */}
+                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md z-20 shadow-sm pointer-events-none">
+                  {daysLeft(doc.deletedAt)} días
                 </div>
                 
                 {/* Checkbox circular top-left */}
-                <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-0 group-hover:opacity-100 bg-white/80'
+                <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors z-20 ${
+                  selectedIds.has(doc.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 opacity-0 group-hover:opacity-100 bg-white/80'
                 }`}>
-                  {selectedIds.has(file.id) && (
+                  {selectedIds.has(doc.id) && (
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
+                  )}
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-white group-hover:bg-slate-50 transition-colors z-10">
+                  <div className="flex items-center gap-2.5 overflow-hidden pr-8">
+                    <FileIcon filename={doc.name} className="w-5 h-5 shrink-0" />
+                    <p className="font-medium text-slate-700 text-[13px] truncate" title={doc.name}>{doc.name}</p>
+                  </div>
+                </div>
+                
+                {/* Preview Area */}
+                <div className="h-40 bg-slate-50 flex items-center justify-center relative overflow-hidden group-hover:bg-slate-100/50 transition-colors">
+                  {doc.extension?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                    <div className="w-full h-full p-2 bg-slate-100 pattern-dots-sm text-slate-200 flex items-center justify-center relative">
+                      {doc.blurhash && (
+                        <div className="absolute inset-0 z-0">
+                          <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                        </div>
+                      )}
+                      <img 
+                        src={`/uploads/${doc.savedName}`} 
+                        alt={doc.name}
+                        className="max-w-full max-h-full object-contain drop-shadow-sm rounded relative z-10"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <FileIcon filename={doc.name} className="w-16 h-16 opacity-30 absolute" />
+                      {doc.thumbnailName && (
+                        <div className="absolute inset-0 z-10">
+                          {doc.blurhash && (
+                            <div className="absolute inset-0 z-0">
+                              <Blurhash hash={doc.blurhash} width="100%" height="100%" resolutionX={32} resolutionY={32} punch={1} />
+                            </div>
+                          )}
+                          <img 
+                            src={`/uploads/${doc.thumbnailName}`} 
+                            alt={`${doc.name} thumbnail`}
+                            className="w-full h-full object-cover relative z-10"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
