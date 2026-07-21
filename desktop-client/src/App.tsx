@@ -64,8 +64,7 @@ export default function App() {
       }
     });
 
-    es.addEventListener('scan_done', (e: any) => {
-      const data = JSON.parse(e.data);
+    es.addEventListener('scan_done', () => {
       setTimeout(() => {
         setProgress(null);
         const now = new Date();
