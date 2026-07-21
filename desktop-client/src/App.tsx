@@ -61,14 +61,14 @@ export default function App() {
     const unsubscribeSSE = (window as any).electronAPI.onSSEEvent((_: any, payload: { event: string; data: any }) => {
       const { event, data } = payload;
       if (event === 'scan_start') {
-        setProgress({ total: data.total, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: '', stepInfo: null });
+        setProgress({ total: data.total, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: '', stepInfo: null, isBatch: true });
         addLog('info', `Iniciando escaneo: ${data.total} archivos detectados`);
       } else if (event === 'scan_progress') {
         if (data.queued % 10 === 0) addLog('info', `Encolando lote: ${data.queued} / ${data.total}`);
       } else if (event === 'upload_started') {
         setProgress(prev => prev
-          ? { ...prev, total: data.total ? Math.max(prev.total, data.total) : prev.total, currentFile: data.originalName }
-          : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null }
+          ? { ...prev, total: prev.isBatch ? Math.max(prev.total, data.total || prev.total) : Math.max(prev.total, data.total || prev.total + 1), currentFile: data.originalName }
+          : { total: data.total || 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null, isBatch: false }
         );
         addLog('info', `Copiando: ${data.originalName || 'archivo'}`);
       } else if (event === 'worker_step') {
