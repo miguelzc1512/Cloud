@@ -639,7 +639,7 @@ export const PhotoViewerUI = ({ onDelete, files, onNavigateToPerson }: { onDelet
             minScale={0.5}
             maxScale={5}
             centerOnInit
-            wheel={{ step: 0.1 }}
+            wheel={{ step: 0.1, smoothStep: 0.005 }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
