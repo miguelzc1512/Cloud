@@ -119,6 +119,15 @@ export default function App() {
       });
     });
 
+    eventSource.addEventListener('worker_step', (e: any) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.contentType === 'drive') {
+          setRefreshTrigger(prev => prev + 1);
+        }
+      } catch (err) {}
+    });
+
     eventSource.addEventListener('powerModeChanged', (e) => {
       try {
         const data = JSON.parse(e.data);
