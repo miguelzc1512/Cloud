@@ -12,6 +12,7 @@ services:
 
   backend-api:
     build: ./backend
+    image: cloud-backend:latest
     container_name: cloud-backend-api
     command: npm start
     ports:
@@ -26,7 +27,7 @@ services:
     restart: unless-stopped
 
   backend-worker:
-    build: ./backend
+    image: cloud-backend:latest
     container_name: cloud-backend-worker
     command: npm run start:worker
     environment:
@@ -35,6 +36,7 @@ services:
     volumes:
       - ./storage:/app/storage
     depends_on:
+      - backend-api
       - redis
     restart: unless-stopped
 
