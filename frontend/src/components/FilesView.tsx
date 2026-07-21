@@ -557,7 +557,7 @@ export default function FilesView({
                       <div className="col-span-1 text-right"></div>
                     </div>
                     
-                    <div className="divide-y divide-slate-100">
+                    <div className="flex flex-col">
                       {currentFolders.map(folder => (
                         <div 
                           key={folder.id}
@@ -565,7 +565,7 @@ export default function FilesView({
                           onDoubleClick={() => setCurrentFolderId(folder.id)}
                           onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDrop={(e) => handleFolderDrop(e, folder.id)}
-                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-pointer select-none ${selectedIds.has(folder.id) ? 'bg-blue-50/80 border-b border-transparent' : 'hover:bg-slate-50 border-b border-transparent'}`}
+                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${selectedIds.has(folder.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                         >
                           <div className="col-span-8 md:col-span-6 flex items-center gap-4 overflow-hidden">
                             <Folder className="w-7 h-7 text-slate-400 fill-slate-400 shrink-0" />
@@ -595,7 +595,7 @@ export default function FilesView({
                           draggable
                           onClick={(e) => handleSelect(e, doc.id)}
                           onDragStart={(e) => handleDragStart(e, doc.id)}
-                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-grab active:cursor-grabbing select-none ${selectedIds.has(doc.id) ? 'bg-blue-50/80 border-b border-transparent' : 'hover:bg-slate-50 border-b border-transparent'}`}
+                          className={`grid grid-cols-12 gap-4 px-4 py-2.5 items-center transition-colors group cursor-grab active:cursor-grabbing select-none border-b border-slate-200 ${selectedIds.has(doc.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                         >
                           <div className="col-span-8 md:col-span-6 flex items-center gap-4 overflow-hidden">
                             <FileIcon filename={doc.name} className="w-7 h-7 shrink-0" />

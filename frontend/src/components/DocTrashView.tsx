@@ -326,12 +326,12 @@ export default function DocTrashView({ onRefresh, setHeaderActions }: DocTrashVi
               </div>
             </div>
             
-            <div className="divide-y divide-slate-100">
+            <div className="flex flex-col">
               {sortedFiles.map(file => (
                 <div 
                   key={file.id}
                   onClick={(e) => handleSelect(e, file.id)}
-                  className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                  className={`grid grid-cols-12 gap-4 px-4 py-3 items-center transition-colors group cursor-pointer select-none border-b border-slate-200 ${selectedIds.has(file.id) ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="col-span-6 md:col-span-5 flex items-center gap-3 overflow-hidden">
                     <FileIcon filename={file.name} className="w-5 h-5 shrink-0" />
