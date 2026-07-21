@@ -91,7 +91,7 @@ const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 const worker = new Worker('image-processing', async job => {
   const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
   const start = Date.now();
-  let filePath = absolutePath || path.join(absoluteStoragePath, savedName);
+  let filePath = (absolutePath && fs.existsSync(absolutePath)) ? absolutePath : path.join(absoluteStoragePath, savedName);
   let tempJpegPath: string | null = null;
   const thumbnailName = `thumbnails/thumb-${savedName}.webp`;
   const thumbnailPath = path.join(absoluteStoragePath, thumbnailName);

@@ -319,7 +319,7 @@ app.get('/api/download/zip', (req: Request, res: Response): void => {
       file = docDb.prepare(`SELECT * FROM docs WHERE id = ?`).get(id) as any;
     }
     if (file) {
-      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      const filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
       if (fs.existsSync(filePath)) {
         validFiles.push({ filePath, name: file.originalName || file.name || file.savedName });
       }
@@ -375,7 +375,7 @@ app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
     if (!file) { res.status(404).json({ error: 'File not found' }); return; }
 
     if (type === 'original') {
-      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      const filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
       if (fs.existsSync(filePath)) {
         res.sendFile(filePath);
       } else {
@@ -400,7 +400,7 @@ app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
         if (fs.existsSync(webPath)) { res.sendFile(webPath); return; }
       }
       // Fallback to original
-      const filePath = file.absolutePath || path.join(absoluteStoragePath, file.savedName);
+      const filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
       if (fs.existsSync(filePath)) res.sendFile(filePath);
       else res.status(404).json({ error: 'Web file missing' });
     } else {
@@ -539,7 +539,7 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       size: req.file.size,
       createdAt: new Date().toISOString(),
       uploadSource,
-      absolutePath: relativePath || null
+      absolutePath: req.file ? path.resolve(req.file.path) : null
     };
 
     const contentType = req.body.contentType || 'gallery';
