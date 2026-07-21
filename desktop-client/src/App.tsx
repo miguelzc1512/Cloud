@@ -85,11 +85,12 @@ export default function App() {
           return null;
         });
         if (data.step === 'done') {
-          addLog('success', `Completado: ${data.originalName || 'Archivo procesado'}`);
+          addLog('success', `Concluido con éxito: ${data.originalName || 'Archivo procesado'}`);
           setTimeout(() => {
             setProgress(prev => {
               if (!prev) return null;
-              if (prev.current >= prev.total) {
+              // Clear progress if it's a single file or we reached the total
+              if (prev.total === 1 || prev.current >= prev.total) {
                 const now = new Date();
                 setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
                 return null;
