@@ -32,6 +32,7 @@ services:
     command: npm run start:worker
     environment:
       - REDIS_HOST=redis
+      - API_HOST=backend-api
       - STORAGE_PATH=/app/storage
     volumes:
       - ./storage:/app/storage

@@ -15,9 +15,11 @@ import './docProcessor';
 // ─── SSE helper: envía eventos de progreso al backend principal ─────────────
 function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string, retries = 3) {
   const body = JSON.stringify({ fileId, step, label, originalName });
+  const hostname = process.env.API_HOST || (process.env.REDIS_HOST === 'redis' ? 'backend-api' : '127.0.0.1');
+  const port = Number(process.env.PORT || 3001);
   const options = {
-    hostname: '127.0.0.1',
-    port: Number(process.env.PORT || 3001),
+    hostname,
+    port,
     path: '/api/worker-event',
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
@@ -27,7 +29,7 @@ function emitWorkerStep(fileId: string, step: string, label: string, originalNam
     if (retries > 0) {
       setTimeout(() => emitWorkerStep(fileId, step, label, originalName, retries - 1), 500);
     } else {
-      console.error(`[Worker] Falló emitir evento SSE tras varios intentos: ${e.message}`);
+      console.error(`[Worker] Falló emitir evento SSE a ${hostname}:${port} tras varios intentos: ${e.message}`);
     }
   });
   req.write(body);
