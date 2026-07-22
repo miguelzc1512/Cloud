@@ -854,12 +854,26 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
   if (directoryPath) {
     directoryPath = directoryPath.replace(/^["']|["']$/g, '').trim();
     
-    // Si el backend corre en Linux/Docker y la ruta es de Windows (ej: D:\Fotos...)
-    if (process.platform !== 'win32' && /^[a-zA-Z]:[/\\]/.test(directoryPath)) {
-      res.status(400).json({ 
-        error: `El servidor corre en Docker/Linux y no tiene acceso directo al disco local '${directoryPath.substring(0, 2)}' de tu PC. Usa el botón azul 'Sincronizar carpeta' para subir tus fotos a la nube.` 
-      });
-      return;
+    // Si corre en Linux/Docker y recibe una ruta de Windows (ej: D:\Fotos\...)
+    if (process.platform !== 'win32') {
+      const match = directoryPath.match(/^([a-zA-Z]):[/\\](.*)/);
+      if (match) {
+        const drive = match[1].toLowerCase(); // e.g. 'd'
+        const rel = match[2].replace(/\\/g, '/'); // e.g. 'Fotos/agosto 2021'
+
+        // Probar posibles puntos de montaje en Docker
+        const possibleMounts = [
+          path.join('/', `host_${drive}`, rel), // /host_d/Fotos/...
+          path.join('/', 'mnt', drive, rel),     // /mnt/d/Fotos/...
+          path.join('/', drive, rel),            // /d/Fotos/...
+          path.join('/', rel)                    // /Fotos/...
+        ];
+
+        let foundMount = possibleMounts.find(p => fs.existsSync(p));
+        if (foundMount) {
+          directoryPath = foundMount;
+        }
+      }
     }
     
     directoryPath = path.resolve(directoryPath);
