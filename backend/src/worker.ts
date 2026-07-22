@@ -13,8 +13,8 @@ import crypto from 'crypto';
 import './docProcessor';
 
 // ─── SSE helper: envía eventos de progreso al backend principal ─────────────
-function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string, retries = 3) {
-  const body = JSON.stringify({ fileId, step, label, originalName });
+function emitWorkerStep(fileId: string, step: string, label: string, originalName?: string, contentType: string = 'gallery', retries = 3) {
+  const body = JSON.stringify({ fileId, step, label, originalName, contentType });
   const hostname = process.env.API_HOST || (process.env.REDIS_HOST === 'redis' ? 'backend-api' : '127.0.0.1');
   const port = Number(process.env.PORT || 3001);
   const options = {
@@ -27,7 +27,7 @@ function emitWorkerStep(fileId: string, step: string, label: string, originalNam
   const req = http.request(options);
   req.on('error', (e) => {
     if (retries > 0) {
-      setTimeout(() => emitWorkerStep(fileId, step, label, originalName, retries - 1), 500);
+      setTimeout(() => emitWorkerStep(fileId, step, label, originalName, contentType, retries - 1), 500);
     } else {
       console.error(`[Worker] Falló emitir evento SSE a ${hostname}:${port} tras varios intentos: ${e.message}`);
     }
@@ -91,7 +91,7 @@ const updateFileReadyStmt = db.prepare(`
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 
 const worker = new Worker('image-processing', async job => {
-  const { fileId, savedName, originalName, mimeType, absolutePath } = job.data;
+  const { fileId, savedName, originalName, mimeType, absolutePath, contentType } = job.data;
   const start = Date.now();
   let filePath = (absolutePath && fs.existsSync(absolutePath)) ? absolutePath : path.join(absoluteStoragePath, savedName);
   let tempJpegPath: string | null = null;
@@ -142,10 +142,10 @@ const worker = new Worker('image-processing', async job => {
        });
        updateFileEmbeddingStmt.run({ id: fileId, embedding: null });
        updateFileReadyStmt.run({ id: fileId });
-       emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura de video lista', originalName);
-       emitWorkerStep(fileId, 'embedding_done', 'Omitido para video', originalName);
-       emitWorkerStep(fileId, 'faces_done', 'Omitido para video', originalName);
-       emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
+       emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura de video lista', originalName, contentType);
+       emitWorkerStep(fileId, 'embedding_done', 'Omitido para video', originalName, contentType);
+       emitWorkerStep(fileId, 'faces_done', 'Omitido para video', originalName, contentType);
+       emitWorkerStep(fileId, 'done', '¡Listo!', originalName, contentType);
        return;
     }
 
@@ -174,7 +174,7 @@ const worker = new Worker('image-processing', async job => {
           fs.mkdirSync(thumbnailsDir, { recursive: true });
         }
 
-        emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
+        emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName, contentType);
         await image.clone()
           .resize({ width: 800, withoutEnlargement: true })
           .webp({ quality: 80 })
@@ -225,13 +225,13 @@ const worker = new Worker('image-processing', async job => {
 
         // Chain next job
         await imageQueue.add('generate-embedding', job.data, { priority: 2, jobId: `embed-${fileId}` });
-        emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura lista', originalName);
+        emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura lista', originalName, contentType);
       } catch (imgErr: any) {
         console.error(`[Worker] Error procesando miniatura ${originalName}:`, imgErr.message);
-        emitWorkerStep(fileId, 'thumbnail_done', 'Error de formato', originalName);
-        emitWorkerStep(fileId, 'embedding_done', 'Omitido', originalName);
-        emitWorkerStep(fileId, 'faces_done', 'Omitido', originalName);
-        emitWorkerStep(fileId, 'done', 'Error de formato', originalName);
+        emitWorkerStep(fileId, 'thumbnail_done', 'Error de formato', originalName, contentType);
+        emitWorkerStep(fileId, 'embedding_done', 'Omitido', originalName, contentType);
+        emitWorkerStep(fileId, 'faces_done', 'Omitido', originalName, contentType);
+        emitWorkerStep(fileId, 'done', 'Error de formato', originalName, contentType);
       }
 
     } else if (job.name === 'generate-embedding') {
@@ -242,7 +242,7 @@ const worker = new Worker('image-processing', async job => {
         filePath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
       }
 
-      emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName);
+      emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName, contentType);
       let embeddingStr = null;
       if (visionPipeline) {
         try {
@@ -260,11 +260,11 @@ const worker = new Worker('image-processing', async job => {
 
       // Chain next job
       await imageQueue.add('detect-faces', job.data, { priority: 3, jobId: `faces-${fileId}` });
-      emitWorkerStep(fileId, 'embedding_done', 'Embedding listo', originalName);
+      emitWorkerStep(fileId, 'embedding_done', 'Embedding listo', originalName, contentType);
 
     } else if (job.name === 'detect-faces') {
       console.log(`[Worker] Detectando rostros en ${originalName} (${fileId})`);
-      emitWorkerStep(fileId, 'faces', 'Detectando rostros...', originalName);
+      emitWorkerStep(fileId, 'faces', 'Detectando rostros...', originalName, contentType);
       try {
         const faces = await detectFacesInImage(thumbnailPath);
         
@@ -307,19 +307,19 @@ const worker = new Worker('image-processing', async job => {
           }
           
           updateFacesStmt.run(JSON.stringify(faces.map(f => f.box)), fileId);
-          emitWorkerStep(fileId, 'faces', `Se ${faces.length === 1 ? 'encontró 1 rostro' : `encontraron ${faces.length} rostros`}`, originalName);
+          emitWorkerStep(fileId, 'faces', `Se ${faces.length === 1 ? 'encontró 1 rostro' : `encontraron ${faces.length} rostros`}`, originalName, contentType);
         } else {
-          emitWorkerStep(fileId, 'faces', 'No se detectaron rostros', originalName);
+          emitWorkerStep(fileId, 'faces', 'No se detectaron rostros', originalName, contentType);
         }
       } catch (e) {
         console.error(`[Worker] Local face API falló para ${originalName}:`, e);
-        emitWorkerStep(fileId, 'faces', 'No se pudieron detectar rostros (error interno)', originalName);
+        emitWorkerStep(fileId, 'faces', 'No se pudieron detectar rostros (error interno)', originalName, contentType);
       }
 
       updateFileReadyStmt.run({ id: fileId });
       console.log(`[Worker] Finalizado con éxito ${originalName}`);
-      emitWorkerStep(fileId, 'faces_done', 'Rostros analizados', originalName);
-      emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
+      emitWorkerStep(fileId, 'faces_done', 'Rostros analizados', originalName, contentType);
+      emitWorkerStep(fileId, 'done', '¡Listo!', originalName, contentType);
     }
   } catch (error) {
     console.error(`[Worker] Error crítico procesando ${originalName}`, error);
