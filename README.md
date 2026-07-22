@@ -68,6 +68,32 @@ docker compose up -d --build
 
 ---
 
+### 💾 Cómo dar acceso a Docker a discos locales (ej. D:\ o C:\) para "Solo Indexar"
+
+Si deseas usar la función **"Solo Indexar (No subir)"** con carpetas guardadas en discos secundarios (como `D:\` o `C:\`), debes dar acceso a Docker a esa unidad editando `docker-compose.yml`:
+
+1. Abre `docker-compose.yml` y añade tu disco en los `volumes` de `backend-api` y `backend-worker`:
+   ```yaml
+   backend-api:
+     ...
+     volumes:
+       - ./storage:/app/storage
+       - D:\:/host_d     # Monta el disco D:\ como /host_d en Docker
+
+   backend-worker:
+     ...
+     volumes:
+       - ./storage:/app/storage
+       - D:\:/host_d     # Monta el disco D:\ en el worker también
+   ```
+2. Reinicia los contenedores de Docker:
+   ```bash
+   docker compose up -d --build
+   ```
+3. ¡Listo! Al seleccionar cualquier carpeta de `D:\Fotos\...` desde el cliente de escritorio, el sistema la indexará directamente sin duplicar espacio.
+
+---
+
 ¡Listo! Cuando los contenedores estén corriendo, abre tu navegador y visita:
 👉 **[http://localhost](http://localhost)**
 
