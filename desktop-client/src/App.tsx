@@ -111,12 +111,15 @@ export default function App() {
           return nextState;
         });
 
-        if (data.step === 'done' || data.step === 'upload_done') {
+        if (data.step === 'done') {
           addLog('success', `Concluido con éxito: ${data.originalName || 'Archivo procesado'}`, data.contentType);
           setTimeout(() => {
             setProg((prev: any) => {
               if (!prev) return null;
-              if (prev.facesCompleted >= prev.total) {
+              const isAllDone = prev.thumbCompleted >= prev.total && 
+                                prev.embedCompleted >= prev.total && 
+                                prev.facesCompleted >= prev.total;
+              if (isAllDone) {
                 const now = new Date();
                 setLastSyncTime(`Última actualización: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
                 return null;
@@ -127,6 +130,8 @@ export default function App() {
               return { ...prev, stepInfo: null };
             });
           }, 1500);
+        } else if (data.step === 'upload_done') {
+          addLog('success', `Copiado al servidor: ${data.originalName || 'Archivo'}`, data.contentType);
         } else if (data.step === 'thumbnail_done' || data.step === 'embedding_done') {
           // Silent internal updates for counts
         } else {
