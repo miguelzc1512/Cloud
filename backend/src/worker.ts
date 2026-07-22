@@ -268,6 +268,7 @@ const worker = new Worker('image-processing', async job => {
 
       updateFileReadyStmt.run({ id: fileId });
       console.log(`[Worker] Finalizado con éxito ${originalName}`);
+      emitWorkerStep(fileId, 'faces_done', 'Rostros analizados', originalName);
       emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
     }
   } catch (error) {
