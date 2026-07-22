@@ -34,14 +34,18 @@ export const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrent read performance
 db.pragma('journal_mode = WAL');
-db.pragma('busy_timeout = 5000');
+db.pragma('synchronous = NORMAL');
+db.pragma('busy_timeout = 10000');
+db.pragma('temp_store = MEMORY');
 db.pragma('foreign_keys = ON');
 
 // Create tables
 const docDbPath = path.resolve(STORAGE_PATH, 'documents.db');
 export const docDb = new Database(docDbPath);
 docDb.pragma('journal_mode = WAL');
-docDb.pragma('busy_timeout = 5000');
+docDb.pragma('synchronous = NORMAL');
+docDb.pragma('busy_timeout = 10000');
+docDb.pragma('temp_store = MEMORY');
 docDb.pragma('foreign_keys = ON');
 
 docDb.exec(`

@@ -48,6 +48,9 @@ const STORAGE_PATH = process.env.STORAGE_PATH || path.resolve(__dirname, '..', '
 const dbPath = path.resolve(STORAGE_PATH, 'nube.db');
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('busy_timeout = 10000');
+db.pragma('temp_store = MEMORY');
 
 // ─── AI Models (Singleton for the worker) ─────────────────────────────
 let visionPipeline: any = null;
@@ -254,7 +257,10 @@ const worker = new Worker('image-processing', async job => {
       let embeddingStr = null;
       if (visionPipeline) {
         try {
-           const output = await visionPipeline(filePath);
+           const clipBuffer = await sharp(filePath)
+             .resize(224, 224, { fit: 'cover' })
+             .toBuffer();
+           const output = await visionPipeline(clipBuffer);
            embeddingStr = JSON.stringify(Array.from(output.data));
         } catch (e) {
            console.error('[Worker] Falló embedding para', originalName);
@@ -334,10 +340,13 @@ const worker = new Worker('image-processing', async job => {
     db.prepare(`UPDATE files SET status = 'ERROR' WHERE id = ?`).run(fileId);
     emitWorkerStep(fileId, 'done', 'Error de archivo', originalName);
   }
-}, { connection: redisConnection as any });
+}, { 
+  connection: redisConnection as any,
+  concurrency: Number(process.env.WORKER_CONCURRENCY || 4)
+});
 
 worker.on('failed', (job, err) => {
   console.error(`[Worker] Job ${job?.id} falló con ${err.message}`);
 });
 
-console.log('[Worker] Escuchando tareas...');
+console.log(`[Worker] Escuchando tareas con concurrencia ${process.env.WORKER_CONCURRENCY || 4}...`);
