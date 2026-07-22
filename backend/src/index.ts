@@ -640,7 +640,8 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
           savedName: fileMeta.savedName,
           originalName: fileMeta.originalName,
           mimeType: fileMeta.mimeType,
-          absolutePath: fileMeta.absolutePath
+          absolutePath: fileMeta.absolutePath,
+          contentType
         }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
       } catch (err) {
         console.error('Redis Queue Error (imageQueue):', err);
@@ -1027,7 +1028,8 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
             savedName: fileMeta.savedName,
             originalName: fileMeta.originalName,
             mimeType: fileMeta.mimeType,
-            absolutePath: fileMeta.absolutePath
+            absolutePath: fileMeta.absolutePath,
+            contentType
           }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
         } catch (err) {
           console.error('Queue Error during scan:', err);
