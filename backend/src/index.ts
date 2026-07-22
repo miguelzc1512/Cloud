@@ -400,44 +400,64 @@ app.get('/api/download/zip', (req: Request, res: Response): void => {
 });
 
 // GET /api/media/:id/:type
-app.get('/api/media/:id/:type', (req: Request, res: Response): void => {
+app.get('/api/media/:id/:type', async (req: Request, res: Response): Promise<void> => {
   const { id, type } = req.params;
   try {
     const file = stmts.getFileById.get(id) as any;
     if (!file) { res.status(404).json({ error: 'File not found' }); return; }
 
-    if (type === 'original') {
-      const filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
-      if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-      } else {
-        res.status(404).json({ error: 'Original file missing on disk' });
+    // 1. Miniatura (800px)
+    if (type === 'thumbnail') {
+      const thumbName = file.thumbnailName || `thumbnails/thumb-${file.savedName}.webp`;
+      let thumbPath = path.join(absoluteStoragePath, thumbName);
+      if (!fs.existsSync(thumbPath)) {
+        thumbPath = path.join(absoluteStoragePath, 'thumbnails', `thumb-${file.id}.jpg.webp`);
       }
-    } else if (type === 'thumbnail') {
-      const thumbName = file.thumbnailName || file.savedName;
-      const thumbPath = path.join(absoluteStoragePath, thumbName);
       if (fs.existsSync(thumbPath)) {
         res.sendFile(thumbPath);
-      } else if (file.absolutePath && fs.existsSync(file.absolutePath)) {
-        res.sendFile(file.absolutePath); // Fallback to original if thumb is missing
-      } else {
-        res.sendFile(path.join(absoluteStoragePath, file.savedName)); // Fallback to savedName
+        return;
       }
-    } else if (type === 'web') {
-      if (file.mimeType?.startsWith('video/')) {
-        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${file.savedName}.webm`);
-        if (fs.existsSync(webPath)) { res.sendFile(webPath); return; }
-      } else if (file.mimeType?.startsWith('image/heic') || file.mimeType?.startsWith('image/heif')) {
-        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${file.savedName}.webp`);
-        if (fs.existsSync(webPath)) { res.sendFile(webPath); return; }
-      }
-      // Fallback to original
-      const filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
-      if (fs.existsSync(filePath)) res.sendFile(filePath);
-      else res.status(404).json({ error: 'Web file missing' });
-    } else {
-      res.status(400).json({ error: 'Invalid type' });
     }
+
+    // 2. Comprobar si existe la versión JPG convertida de HEIC en fotos/
+    const convertedJpgPath = path.join(absoluteStoragePath, 'fotos', `${file.id}.jpg`);
+    if (fs.existsSync(convertedJpgPath)) {
+      res.contentType('image/jpeg').sendFile(convertedJpgPath);
+      return;
+    }
+
+    // 3. Buscar el archivo en la ruta absoluta o en storage/
+    let filePath = (file.absolutePath && fs.existsSync(file.absolutePath)) ? file.absolutePath : path.join(absoluteStoragePath, file.savedName);
+    if (!fs.existsSync(filePath)) {
+      filePath = path.join(absoluteStoragePath, 'fotos', file.savedName);
+    }
+
+    if (fs.existsSync(filePath)) {
+      const isHeic = filePath.toLowerCase().endsWith('.heic') || file.mimeType?.includes('heic') || file.originalName?.toLowerCase().endsWith('.heic');
+      
+      // Si el archivo es HEIC y se solicita para mostrar en web u original:
+      if (isHeic) {
+        try {
+          const heicConvert = require('heic-convert');
+          const inputBuf = fs.readFileSync(filePath);
+          const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.92 });
+          
+          const fotosDir = path.join(absoluteStoragePath, 'fotos');
+          if (!fs.existsSync(fotosDir)) fs.mkdirSync(fotosDir, { recursive: true });
+          
+          fs.writeFileSync(convertedJpgPath, outputBuf);
+          res.contentType('image/jpeg').sendFile(convertedJpgPath);
+          return;
+        } catch (heicErr: any) {
+          console.error('[Media] Error en conversión al vuelo de HEIC:', heicErr.message);
+        }
+      }
+
+      res.sendFile(filePath);
+      return;
+    }
+
+    res.status(404).json({ error: 'Media file missing on disk' });
   } catch (error) {
     console.error('Media endpoint error:', error);
     res.status(500).json({ error: 'Failed to serve media' });
