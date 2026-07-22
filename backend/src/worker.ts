@@ -93,11 +93,11 @@ const updateFileReadyStmt = db.prepare(`
 
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 
-const cpuCores = require('os').cpus().length || 4;
-const autoConcurrency = Math.max(4, Math.min(16, cpuCores - 4));
-const activeConcurrency = Number(process.env.WORKER_CONCURRENCY || autoConcurrency);
+const cpuCores = require('os').cpus().length || 8;
+const envConcurrency = Number(process.env.WORKER_CONCURRENCY);
+const activeConcurrency = !isNaN(envConcurrency) && envConcurrency > 0 ? envConcurrency : 16;
 
-sharp.concurrency(2);
+sharp.concurrency(0);
 
 const worker = new Worker('image-processing', async job => {
   const { fileId, savedName, originalName, mimeType, absolutePath, contentType } = job.data;
