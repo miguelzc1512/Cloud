@@ -990,7 +990,6 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     });
 
     const total = supportedFiles.length;
-    let queued = 0;
 
     if (total === 0) {
       broadcastSSE('log', { type: 'warning', message: `No se encontraron archivos compatibles (.jpg, .png, .pdf, etc.) en la carpeta ${path.basename(directoryPath)}.`, contentType });
@@ -1005,10 +1004,14 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     // Avisar al cliente cuántos archivos hay en total para la barra de progreso
     broadcastSSE('scan_start', { total, directoryPath, contentType });
 
+    const mediaMetas: any[] = [];
+    const mediaJobs: any[] = [];
+    const docMetas: any[] = [];
+    const docJobs: any[] = [];
+
     for (const filePath of supportedFiles) {
       const ext = path.extname(filePath).toLowerCase();
       const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext) && contentType !== 'drive';
-      const isDoc = ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv', '.md'].includes(ext) || (!isMedia);
 
       const stat = fs.statSync(filePath);
       const originalName = path.basename(filePath);
@@ -1027,35 +1030,22 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
         const fileMeta = {
           id: fileId,
-          originalName: originalName,
-          savedName: savedName,
+          originalName,
+          savedName,
           mimeType,
           size: stat.size,
           createdAt: new Date().toISOString(),
           uploadSource: 'Directorio Local',
           absolutePath: filePath
         };
+        mediaMetas.push(fileMeta);
 
-        stmts.insertFile.run(fileMeta);
-        broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total, contentType });
-
-        const isVideo = fileMeta.mimeType.startsWith('video/');
-        const jobPriority = isVideo ? 10 : 1;
-
-        try {
-          await imageQueue.add('generate-thumbnail', {
-            fileId: fileMeta.id,
-            savedName: fileMeta.savedName,
-            originalName: fileMeta.originalName,
-            mimeType: fileMeta.mimeType,
-            absolutePath: fileMeta.absolutePath,
-            contentType
-          }, { priority: jobPriority, jobId: `thumb-${fileMeta.id}` });
-        } catch (err) {
-          console.error('Queue Error during scan:', err);
-          stmts.hardDelete.run(fileMeta.id);
-          continue;
-        }
+        const isVideo = mimeType.startsWith('video/');
+        mediaJobs.push({
+          name: 'generate-thumbnail',
+          data: { fileId, savedName, originalName, mimeType, absolutePath: filePath, contentType },
+          opts: { priority: isVideo ? 10 : 1, jobId: `thumb-${fileId}` }
+        });
       } else {
         let mimeType = 'application/octet-stream';
         if (ext === '.pdf') mimeType = 'application/pdf';
@@ -1075,28 +1065,43 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
           finalClusterId = resolveFoldersTransaction(relativePath, null);
         }
 
-        docDb.prepare(`
-          INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
-        `).run(fileId, originalName, savedName, ext.substring(1) || 'file', mimeType, stat.size, filePath, finalClusterId, new Date().toISOString());
-
-        try {
-          await docQueue.add('process-doc', { id: fileId, absolutePath: filePath }, { jobId: fileId });
-        } catch (err) {
-          console.error('Queue Error during doc scan:', err);
-          docDb.prepare(`DELETE FROM docs WHERE id = ?`).run(fileId);
-          continue;
-        }
-
-        broadcastSSE('upload_started', { id: fileId, originalName: originalName, queued: queued + 1, total, contentType });
+        docMetas.push({ fileId, originalName, savedName, ext: ext.substring(1) || 'file', mimeType, size: stat.size, absolutePath: filePath, clusterId: finalClusterId, createdAt: new Date().toISOString() });
+        docJobs.push({
+          name: 'process-doc',
+          data: { id: fileId, absolutePath: filePath },
+          opts: { jobId: fileId }
+        });
       }
-      
-      queued++;
-      broadcastSSE('scan_progress', { queued, total, contentType });
     }
 
-    broadcastSSE('scan_done', { total, queued, contentType });
-    res.json({ success: true, filesQueued: queued, total, message: `Queued ${queued} files for indexing` });
+    // Insertar registros en SQLite en 1 sola transacción ultra rápida (5ms)
+    if (mediaMetas.length > 0) {
+      const insertMediaTx = db.transaction((metas: any[]) => {
+        for (const m of metas) stmts.insertFile.run(m);
+      });
+      insertMediaTx(mediaMetas);
+
+      // Encolar todos los trabajos en BullMQ en 1 sola llamada Bulk (10ms)
+      await imageQueue.addBulk(mediaJobs);
+    }
+
+    if (docMetas.length > 0) {
+      const insertDocsTx = docDb.transaction((metas: any[]) => {
+        const stmt = docDb.prepare(`
+          INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
+        `);
+        for (const d of metas) {
+          stmt.run(d.fileId, d.originalName, d.savedName, d.ext, d.mimeType, d.size, d.absolutePath, d.clusterId, d.createdAt);
+        }
+      });
+      insertDocsTx(docMetas);
+
+      await docQueue.addBulk(docJobs);
+    }
+
+    broadcastSSE('scan_done', { total, queued: total, contentType });
+    res.json({ success: true, filesQueued: total, total, message: `Queued ${total} files for indexing` });
   } catch (error) {
     console.error('Scan error:', error);
     res.status(500).json({ error: 'Failed to scan directory' });
