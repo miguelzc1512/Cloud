@@ -627,6 +627,11 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
     };
 
     if (isMedia) {
+      try {
+        await imageQueue.resume();
+        await docQueue.resume();
+      } catch (e) {}
+
       // 1. Guardar registro inicial en la DB rápida
       stmts.insertFile.run(fileMeta);
 
@@ -984,6 +989,12 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     if (total === 0) {
       broadcastSSE('log', { type: 'warning', message: `No se encontraron archivos compatibles (.jpg, .png, .pdf, etc.) en la carpeta ${path.basename(directoryPath)}.`, contentType });
     }
+
+    // Asegurar que las colas de BullMQ en Redis estén activas al iniciar un nuevo escaneo
+    try {
+      await imageQueue.resume();
+      await docQueue.resume();
+    } catch (e) {}
 
     // Avisar al cliente cuántos archivos hay en total para la barra de progreso
     broadcastSSE('scan_start', { total, directoryPath, contentType });
