@@ -27,8 +27,8 @@ export async function detectFacesInImage(imagePath: string) {
 
   let tensor: tf.Tensor3D | null = null;
   try {
-    // Redimensionar a máx 640px para acelerar la detección de 60s a 0.2s por imagen
-    const image = sharp(imagePath).resize({ width: 640, withoutEnlargement: true });
+    // Usar la miniatura directamente (800px) para mantener las coordenadas 100% exactas con la imagen mostrada
+    const image = sharp(imagePath);
     const { data, info } = await image.raw().ensureAlpha().toBuffer({ resolveWithObject: true });
 
     // ensureAlpha makes it 4 channels (RGBA) -> convert to 3 channels (RGB)
@@ -41,7 +41,9 @@ export async function detectFacesInImage(imagePath: string) {
 
     tensor = tf.tensor3d(rgbData, [info.height, info.width, 3], 'int32');
     
-    const detectionPromise = faceapi.detectAllFaces(tensor as any)
+    // Usar minConfidence: 0.5 para filtrar falsos positivos en sombras u objetos de fondo
+    const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+    const detectionPromise = faceapi.detectAllFaces(tensor as any, options)
       .withFaceLandmarks()
       .withFaceDescriptors();
       
