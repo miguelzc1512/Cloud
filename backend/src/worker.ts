@@ -100,89 +100,118 @@ const worker = new Worker('image-processing', async job => {
 
   try {
     if (!mimeType.startsWith('image/')) {
+       let generatedThumb: string | null = null;
+       if (mimeType.startsWith('video/')) {
+         try {
+           const ffmpegPath = require('ffmpeg-static');
+           const { execSync } = require('child_process');
+           const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
+           if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
+           
+           execSync(`"${ffmpegPath}" -y -i "${filePath}" -ss 00:00:01 -vframes 1 "${thumbnailPath}"`);
+           if (fs.existsSync(thumbnailPath)) {
+             generatedThumb = thumbnailName;
+           }
+         } catch (vidErr: any) {
+           console.error(`[Worker] Error generando miniatura de video para ${originalName}:`, vidErr.message);
+         }
+       }
+
        updateFileThumbnailStmt.run({
-           id: fileId, thumbnailName: null, blurhash: null, width: null, height: null, 
+           id: fileId, thumbnailName: generatedThumb, blurhash: null, width: null, height: null, 
            takenAt: null, latitude: null, longitude: null
        });
        updateFileEmbeddingStmt.run({ id: fileId, embedding: null });
        updateFileReadyStmt.run({ id: fileId });
+       emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura de video lista', originalName);
+       emitWorkerStep(fileId, 'embedding_done', 'Omitido para video', originalName);
+       emitWorkerStep(fileId, 'faces_done', 'Omitido para video', originalName);
+       emitWorkerStep(fileId, 'done', '¡Listo!', originalName);
        return;
     }
 
     if (job.name === 'generate-thumbnail') {
       console.log(`[Worker] Empezando a procesar miniatura ${originalName} (${fileId})`);
       
-      if (originalName.toLowerCase().endsWith('.heic')) {
-        try {
-          const { execSync } = require('child_process');
-          tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
-          execSync(`sips -s format jpeg "${filePath}" --out "${tempJpegPath}"`);
-          filePath = tempJpegPath;
-        } catch (e) {
-          console.error(`[Worker] Error convirtiendo HEIC a JPG con sips para ${originalName}`, e);
-        }
-      }
-
-      const image = sharp(filePath, { unlimited: true }).rotate();
-      const metadata = await image.metadata();
-      
-      const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
-      if (!fs.existsSync(thumbnailsDir)) {
-        fs.mkdirSync(thumbnailsDir, { recursive: true });
-      }
-
-      emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
-      await image.clone()
-        .resize({ width: 800, withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toFile(thumbnailPath);
-
-      if (originalName.toLowerCase().endsWith('.heic')) {
-        const webPath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
-        await image.clone()
-          .resize({ width: 2560, withoutEnlargement: true })
-          .webp({ quality: 90 })
-          .toFile(webPath);
-      }
-
-      const { data: rawData, info: rawInfo } = await image.clone()
-        .raw()
-        .ensureAlpha()
-        .resize(32, 32, { fit: 'inside' })
-        .toBuffer({ resolveWithObject: true });
-      
-      const blurhashStr = encode(new Uint8ClampedArray(rawData), rawInfo.width, rawInfo.height, 4, 4);
-
-      let takenAt = null;
-      let latitude = null;
-      let longitude = null;
       try {
-        const exifData = await exifr.parse(filePath);
-        if (exifData) {
-          if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
-          if (exifData.latitude !== undefined) latitude = exifData.latitude;
-          if (exifData.longitude !== undefined) longitude = exifData.longitude;
+        if (originalName.toLowerCase().endsWith('.heic')) {
+          try {
+            const { execSync } = require('child_process');
+            tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
+            execSync(`sips -s format jpeg "${filePath}" --out "${tempJpegPath}"`);
+            filePath = tempJpegPath;
+          } catch (e) {
+            console.error(`[Worker] Error convirtiendo HEIC a JPG con sips para ${originalName}`, e);
+          }
         }
-      } catch(e) {}
 
-      updateFileThumbnailStmt.run({
-        id: fileId,
-        thumbnailName,
-        blurhash: blurhashStr,
-        width: metadata.width,
-        height: metadata.height,
-        takenAt,
-        latitude,
-        longitude
-      });
+        const image = sharp(filePath, { unlimited: true }).rotate();
+        const metadata = await image.metadata();
+        
+        const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
+        if (!fs.existsSync(thumbnailsDir)) {
+          fs.mkdirSync(thumbnailsDir, { recursive: true });
+        }
 
-      if (tempJpegPath) {
-        try { fs.unlinkSync(tempJpegPath); } catch(e) {}
+        emitWorkerStep(fileId, 'thumbnail', 'Creando miniatura...', originalName);
+        await image.clone()
+          .resize({ width: 800, withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(thumbnailPath);
+
+        if (originalName.toLowerCase().endsWith('.heic')) {
+          const webPath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
+          await image.clone()
+            .resize({ width: 2560, withoutEnlargement: true })
+            .webp({ quality: 90 })
+            .toFile(webPath);
+        }
+
+        const { data: rawData, info: rawInfo } = await image.clone()
+          .raw()
+          .ensureAlpha()
+          .resize(32, 32, { fit: 'inside' })
+          .toBuffer({ resolveWithObject: true });
+        
+        const blurhashStr = encode(new Uint8ClampedArray(rawData), rawInfo.width, rawInfo.height, 4, 4);
+
+        let takenAt = null;
+        let latitude = null;
+        let longitude = null;
+        try {
+          const exifData = await exifr.parse(filePath);
+          if (exifData) {
+            if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
+            if (exifData.latitude !== undefined) latitude = exifData.latitude;
+            if (exifData.longitude !== undefined) longitude = exifData.longitude;
+          }
+        } catch(e) {}
+
+        updateFileThumbnailStmt.run({
+          id: fileId,
+          thumbnailName,
+          blurhash: blurhashStr,
+          width: metadata.width,
+          height: metadata.height,
+          takenAt,
+          latitude,
+          longitude
+        });
+
+        if (tempJpegPath) {
+          try { fs.unlinkSync(tempJpegPath); } catch(e) {}
+        }
+
+        // Chain next job
+        await imageQueue.add('generate-embedding', job.data, { priority: 2, jobId: `embed-${fileId}` });
+        emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura lista', originalName);
+      } catch (imgErr: any) {
+        console.error(`[Worker] Error procesando miniatura ${originalName}:`, imgErr.message);
+        emitWorkerStep(fileId, 'thumbnail_done', 'Error de formato', originalName);
+        emitWorkerStep(fileId, 'embedding_done', 'Omitido', originalName);
+        emitWorkerStep(fileId, 'faces_done', 'Omitido', originalName);
+        emitWorkerStep(fileId, 'done', 'Error de formato', originalName);
       }
-
-      // Chain next job
-      await imageQueue.add('generate-embedding', job.data, { priority: 2, jobId: `embed-${fileId}` });
-      emitWorkerStep(fileId, 'thumbnail_done', 'Miniatura lista', originalName);
 
     } else if (job.name === 'generate-embedding') {
       console.log(`[Worker] Generando embedding para ${originalName} (${fileId})`);
