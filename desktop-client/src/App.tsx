@@ -105,7 +105,7 @@ export default function App() {
             nextState.thumbCompleted = Math.min(currentThumb + 1, base.total);
           } else if (data.step === 'embedding_done') {
             nextState.embedCompleted = Math.min(currentEmbed + 1, base.total);
-          } else if (data.step === 'faces_done' || data.step === 'done') {
+          } else if (data.step === 'faces_done') {
             nextState.facesCompleted = Math.min(currentFaces + 1, base.total);
           }
           return nextState;

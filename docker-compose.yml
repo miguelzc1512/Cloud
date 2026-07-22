@@ -22,6 +22,7 @@ services:
       - STORAGE_PATH=/app/storage
     volumes:
       - ./storage:/app/storage
+      - F:\:/host_d
     depends_on:
       - redis
     restart: unless-stopped
@@ -36,6 +37,7 @@ services:
       - STORAGE_PATH=/app/storage
     volumes:
       - ./storage:/app/storage
+      - F:\:/host_d 
     depends_on:
       - backend-api
       - redis
