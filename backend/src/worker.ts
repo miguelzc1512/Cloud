@@ -117,11 +117,13 @@ const worker = new Worker('image-processing', async job => {
        if (mimeType.startsWith('video/')) {
          try {
            const ffmpegPath = require('ffmpeg-static');
-           const { execSync } = require('child_process');
+           const { exec } = require('child_process');
+           const util = require('util');
+           const execAsync = util.promisify(exec);
            const thumbnailsDir = path.join(absoluteStoragePath, 'thumbnails');
            if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
            
-           execSync(`"${ffmpegPath}" -y -i "${filePath}" -ss 00:00:01 -vframes 1 "${thumbnailPath}"`);
+           await execAsync(`"${ffmpegPath}" -y -i "${filePath}" -ss 00:00:01 -vframes 1 "${thumbnailPath}"`);
            if (fs.existsSync(thumbnailPath)) {
              generatedThumb = thumbnailName;
              try {

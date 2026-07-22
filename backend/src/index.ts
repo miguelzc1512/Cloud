@@ -642,7 +642,9 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
       // Notificar al frontend que empezó la importación
       broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, contentType });
 
-      // 2. Encolar trabajo de procesamiento asíncrono
+      const isVideo = req.file.mimetype.startsWith('video/');
+      const jobPriority = isVideo ? 10 : 1;
+
       try {
         await imageQueue.add('generate-thumbnail', {
           fileId: fileMeta.id,
@@ -651,7 +653,7 @@ app.post('/api/upload', upload.single('file'), async (req: Request, res: Respons
           mimeType: fileMeta.mimeType,
           absolutePath: fileMeta.absolutePath,
           contentType
-        }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
+        }, { priority: jobPriority, jobId: `thumb-${fileMeta.id}` });
       } catch (err) {
         console.error('Redis Queue Error (imageQueue):', err);
         // Fallback or just continue (it will show as processing forever, or we could delete it)
@@ -1037,6 +1039,9 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         stmts.insertFile.run(fileMeta);
         broadcastSSE('upload_started', { id: fileMeta.id, originalName: fileMeta.originalName, queued: queued + 1, total, contentType });
 
+        const isVideo = fileMeta.mimeType.startsWith('video/');
+        const jobPriority = isVideo ? 10 : 1;
+
         try {
           await imageQueue.add('generate-thumbnail', {
             fileId: fileMeta.id,
@@ -1045,7 +1050,7 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
             mimeType: fileMeta.mimeType,
             absolutePath: fileMeta.absolutePath,
             contentType
-          }, { priority: 1, jobId: `thumb-${fileMeta.id}` });
+          }, { priority: jobPriority, jobId: `thumb-${fileMeta.id}` });
         } catch (err) {
           console.error('Queue Error during scan:', err);
           stmts.hardDelete.run(fileMeta.id);
