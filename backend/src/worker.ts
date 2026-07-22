@@ -157,10 +157,23 @@ const worker = new Worker('image-processing', async job => {
           try {
             const heicConvert = require('heic-convert');
             const inputBuf = fs.readFileSync(filePath);
-            const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.85 });
-            tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
-            fs.writeFileSync(tempJpegPath, outputBuf);
-            filePath = tempJpegPath;
+            const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.90 });
+            
+            // Si el archivo está guardado dentro del storage (es una subida directa o sync), reemplazamos el HEIC por el JPG
+            const fotosDir = path.join(absoluteStoragePath, 'fotos');
+            const targetJpgName = `${fileId}.jpg`;
+            const targetJpgPath = path.join(fotosDir, targetJpgName);
+            
+            fs.writeFileSync(targetJpgPath, outputBuf);
+            
+            // Si existía un archivo HEIC viejo en storage, lo eliminamos para no duplicar espacio
+            if (fs.existsSync(filePath) && filePath !== targetJpgPath && filePath.includes(absoluteStoragePath)) {
+              try { fs.unlinkSync(filePath); } catch(e) {}
+            }
+            
+            // Actualizar la base de datos con el nuevo nombre de archivo JPG
+            db.prepare(`UPDATE files SET savedName = ?, mimeType = 'image/jpeg' WHERE id = ?`).run(targetJpgName, fileId);
+            filePath = targetJpgPath;
           } catch (e: any) {
             console.error(`[Worker] Error convirtiendo HEIC para ${originalName}:`, e.message);
           }
@@ -179,14 +192,6 @@ const worker = new Worker('image-processing', async job => {
           .resize({ width: 800, withoutEnlargement: true })
           .webp({ quality: 80 })
           .toFile(thumbnailPath);
-
-        if (originalName.toLowerCase().endsWith('.heic')) {
-          const webPath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
-          await image.clone()
-            .resize({ width: 2560, withoutEnlargement: true })
-            .webp({ quality: 90 })
-            .toFile(webPath);
-        }
 
         const { data: rawData, info: rawInfo } = await image.clone()
           .raw()
@@ -237,9 +242,11 @@ const worker = new Worker('image-processing', async job => {
     } else if (job.name === 'generate-embedding') {
       console.log(`[Worker] Generando embedding para ${originalName} (${fileId})`);
       
-      if (originalName.toLowerCase().endsWith('.heic')) {
-        // We use the generated high-res webp for embedding HEIC
-        filePath = path.join(absoluteStoragePath, `thumbnails/web-${savedName}.webp`);
+      if (originalName.toLowerCase().endsWith('.heic') || mimeType === 'image/heic') {
+        const convertedJpg = path.join(absoluteStoragePath, 'fotos', `${fileId}.jpg`);
+        if (fs.existsSync(convertedJpg)) {
+          filePath = convertedJpg;
+        }
       }
 
       emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName, contentType);
