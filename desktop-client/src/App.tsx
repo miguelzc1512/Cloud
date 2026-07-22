@@ -88,14 +88,25 @@ export default function App() {
           if (!base) {
             base = { total: 1, thumbCompleted: 0, embedCompleted: 0, facesCompleted: 0, currentFile: data.originalName, stepInfo: null };
           }
-          let nextState = { ...base, stepInfo: { step: data.step, label: data.label, fileId: data.fileId }, currentFile: data.originalName || base.currentFile };
+          const currentThumb = Number.isFinite(base.thumbCompleted) ? base.thumbCompleted : 0;
+          const currentEmbed = Number.isFinite(base.embedCompleted) ? base.embedCompleted : 0;
+          const currentFaces = Number.isFinite(base.facesCompleted) ? base.facesCompleted : 0;
+
+          let nextState = {
+            ...base,
+            thumbCompleted: currentThumb,
+            embedCompleted: currentEmbed,
+            facesCompleted: currentFaces,
+            stepInfo: { step: data.step, label: data.label, fileId: data.fileId },
+            currentFile: data.originalName || base.currentFile
+          };
 
           if (data.step === 'thumbnail_done') {
-            nextState.thumbCompleted = Math.min(base.thumbCompleted + 1, base.total);
+            nextState.thumbCompleted = Math.min(currentThumb + 1, base.total);
           } else if (data.step === 'embedding_done') {
-            nextState.embedCompleted = Math.min(base.embedCompleted + 1, base.total);
+            nextState.embedCompleted = Math.min(currentEmbed + 1, base.total);
           } else if (data.step === 'done' || data.step === 'upload_done') {
-            nextState.facesCompleted = Math.min(base.facesCompleted + 1, base.total);
+            nextState.facesCompleted = Math.min(currentFaces + 1, base.total);
           }
           return nextState;
         });
