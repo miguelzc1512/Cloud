@@ -877,15 +877,23 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
   try {
     const walkAsync = async (dir: string, filelist: string[] = []): Promise<string[]> => {
-      const files = await fs.promises.readdir(dir);
-      for (const file of files) {
-        const filepath = path.join(dir, file);
-        const stat = await fs.promises.stat(filepath);
-        if (stat.isDirectory()) {
-          filelist = await walkAsync(filepath, filelist);
-        } else {
-          filelist.push(filepath);
+      try {
+        const files = await fs.promises.readdir(dir);
+        for (const file of files) {
+          const filepath = path.join(dir, file);
+          try {
+            const stat = await fs.promises.stat(filepath);
+            if (stat.isDirectory()) {
+              filelist = await walkAsync(filepath, filelist);
+            } else {
+              filelist.push(filepath);
+            }
+          } catch (e: any) {
+            console.warn('[Scan] Skipping inaccessible item:', filepath, e.message);
+          }
         }
+      } catch (e: any) {
+        console.warn('[Scan] Skipping inaccessible dir:', dir, e.message);
       }
       return filelist;
     };
@@ -900,6 +908,10 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
     const total = supportedFiles.length;
     let queued = 0;
+
+    if (total === 0) {
+      broadcastSSE('log', { type: 'warning', message: `No se encontraron archivos compatibles (.jpg, .png, .pdf, etc.) en la carpeta ${path.basename(directoryPath)}.`, contentType });
+    }
 
     // Avisar al cliente cuántos archivos hay en total para la barra de progreso
     broadcastSSE('scan_start', { total, directoryPath, contentType });

@@ -120,11 +120,16 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
     });
     console.log(`Indexed successfully: ${filePath}`);
   } catch (error: any) {
-    console.error(`Failed to index ${filePath}:`, error.message);
-    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'index' });
+    const errMsg = error.response?.data?.error || error.message || 'Error de conexión';
+    console.error(`Failed to index ${filePath}:`, errMsg);
+    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'index', contentType });
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sse-event', {
+        event: 'log',
+        data: { type: 'error', message: `Error indexando ${path.basename(filePath)}: ${errMsg}`, contentType }
+      });
       win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath), contentType });
     });
   }
@@ -171,11 +176,16 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
     });
     console.log(`Uploaded successfully: ${filePath}`);
   } catch (error: any) {
-    console.error(`Failed to upload ${filePath}:`, error.message);
-    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'sync' });
+    const errMsg = error.response?.data?.error || error.message || 'Error de conexión';
+    console.error(`Failed to upload ${filePath}:`, errMsg);
+    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'sync', contentType });
     isSyncPaused = true;
     notifySyncStatus();
     BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('sse-event', {
+        event: 'log',
+        data: { type: 'error', message: `Error subiendo ${path.basename(filePath)}: ${errMsg}`, contentType }
+      });
       win.webContents.send('sync-status', { status: 'error', file: path.basename(filePath), contentType });
     });
   }
@@ -484,9 +494,37 @@ ipcMain.handle('link-folder', (event, { path: folderPath, mode, contentType }) =
   
   // Si es index, corremos scan-local una vez para asegurar todo el árbol
   if (mode === 'index') {
-    axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath, contentType: contentType as 'gallery' | 'drive' }).catch(console.error);
+    axios.post(`${config.serverUrl}/api/scan-local`, { directoryPath: folderPath, contentType: contentType as 'gallery' | 'drive' })
+      .then(res => {
+        const count = res.data?.filesQueued || 0;
+        BrowserWindow.getAllWindows().forEach(win => {
+          win.webContents.send('sse-event', {
+            event: 'log',
+            data: { type: 'info', message: `Indexación iniciada: ${count} archivos detectados en ${path.basename(folderPath)}`, contentType }
+          });
+        });
+      })
+      .catch((error: any) => {
+        const errMsg = error.response?.data?.error || error.message || 'Error al conectar con el servidor';
+        console.error('Failed to run scan-local:', errMsg);
+        BrowserWindow.getAllWindows().forEach(win => {
+          win.webContents.send('sse-event', {
+            event: 'log',
+            data: { type: 'error', message: `Error en Solo Indexar (${path.basename(folderPath)}): ${errMsg}`, contentType }
+          });
+        });
+      });
   } else if (mode === 'sync') {
-    processExistingSyncFiles(folderPath, contentType as 'gallery' | 'drive').catch(console.error);
+    processExistingSyncFiles(folderPath, contentType as 'gallery' | 'drive').catch((error: any) => {
+      const errMsg = error.response?.data?.error || error.message || 'Error al sincronizar archivos';
+      console.error('Failed to process existing sync files:', errMsg);
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('sse-event', {
+          event: 'log',
+          data: { type: 'error', message: `Error en Sincronización (${path.basename(folderPath)}): ${errMsg}`, contentType }
+        });
+      });
+    });
   }
   return config;
 });

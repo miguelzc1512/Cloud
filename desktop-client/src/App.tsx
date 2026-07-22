@@ -123,6 +123,8 @@ export default function App() {
         }
       } else if (event === 'scan_done') {
         addLog('success', `Carpetas analizadas. ${data.total || 0} archivos en cola...`, data.contentType);
+      } else if (event === 'log') {
+        addLog(data.type || 'info', data.message, data.contentType);
       }
     });
 
