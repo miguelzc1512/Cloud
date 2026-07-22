@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Sparkles, Info, AlertCircle, Terminal } from 'lucide-react';
+import { Cloud, FolderPlus, CheckCircle2, XCircle, ExternalLink, Folder, Pause, Play, Image, Brain, Users, Info, AlertCircle, Terminal } from 'lucide-react';
 
 type StepInfo = {
   step: 'thumbnail' | 'embedding' | 'faces' | 'done';
@@ -8,10 +8,14 @@ type StepInfo = {
 };
 
 type ProgressState = {
-  current: number;
+  current?: number;
   total: number;
+  thumbCompleted?: number;
+  embedCompleted?: number;
+  facesCompleted?: number;
   currentFile: string;
   stepInfo: StepInfo | null;
+  isBatch?: boolean;
 };
 
 type LogEntry = {
@@ -21,17 +25,8 @@ type LogEntry = {
   message: string;
 };
 
-const STEP_ICONS: Record<string, React.ReactNode> = {
-  thumbnail: <Image className="w-3.5 h-3.5" />,
-  embedding: <Brain className="w-3.5 h-3.5" />,
-  faces: <Users className="w-3.5 h-3.5" />,
-  done: <Sparkles className="w-3.5 h-3.5" />,
-};
-
-
-
 export default function App() {
-  const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync' }[], powerMode?: 'eco' | 'max' } | null>(null);
+  const [config, setConfig] = useState<{ serverUrl: string, linkedFolders: { path: string, mode: 'index' | 'sync', contentType?: 'gallery' | 'drive' }[], powerMode?: 'eco' | 'max' } | null>(null);
   const [activeTab, setActiveTab] = useState<'gallery' | 'drive'>('gallery');
 
   const [galleryProgress, setGalleryProgress] = useState<ProgressState | null>(null);
@@ -392,8 +387,8 @@ export default function App() {
                     </span>
                     <span className="text-xs text-slate-400 font-medium">
                       {activeTab === 'gallery'
-                        ? Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))
-                        : Math.round(((progress.facesCompleted) * 100) / progress.total)}%
+                        ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
+                        : Math.round((((progress.facesCompleted || 0)) * 100) / progress.total)}%
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
@@ -401,8 +396,8 @@ export default function App() {
                       className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                       style={{
                         width: `${activeTab === 'gallery'
-                          ? Math.round(((progress.thumbCompleted + progress.embedCompleted + progress.facesCompleted) * 100) / (progress.total * 3))
-                          : Math.round(((progress.facesCompleted) * 100) / progress.total)}%`
+                          ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
+                          : Math.round((((progress.facesCompleted || 0)) * 100) / progress.total)}%`
                       }}
                     />
                   </div>
@@ -416,10 +411,10 @@ export default function App() {
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Image className="w-3.5 h-3.5 text-indigo-500" />
                         <span className="text-[10px] font-medium text-slate-600 truncate">1. Miniaturas</span>
-                        <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted}/{progress.total}</span>
+                        <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.thumbCompleted * 100) / progress.total)}%` }} />
+                        <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.thumbCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                     {/* Fase 2: Embeddings */}
@@ -427,10 +422,10 @@ export default function App() {
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Brain className="w-3.5 h-3.5 text-purple-500" />
                         <span className="text-[10px] font-medium text-slate-600 truncate">2. Análisis IA</span>
-                        <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted}/{progress.total}</span>
+                        <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.embedCompleted * 100) / progress.total)}%` }} />
+                        <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.embedCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                     {/* Fase 3: Rostros */}
@@ -438,10 +433,10 @@ export default function App() {
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Users className="w-3.5 h-3.5 text-emerald-500" />
                         <span className="text-[10px] font-medium text-slate-600 truncate">3. Rostros</span>
-                        <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted}/{progress.total}</span>
+                        <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round((progress.facesCompleted * 100) / progress.total)}%` }} />
+                        <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.facesCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                   </div>
