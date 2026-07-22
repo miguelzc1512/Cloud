@@ -101,6 +101,10 @@ const worker = new Worker('image-processing', async job => {
   try {
     if (!mimeType.startsWith('image/')) {
        let generatedThumb: string | null = null;
+       let videoBlurhash: string | null = null;
+       let videoWidth: number | null = null;
+       let videoHeight: number | null = null;
+
        if (mimeType.startsWith('video/')) {
          try {
            const ffmpegPath = require('ffmpeg-static');
@@ -111,6 +115,21 @@ const worker = new Worker('image-processing', async job => {
            execSync(`"${ffmpegPath}" -y -i "${filePath}" -ss 00:00:01 -vframes 1 "${thumbnailPath}"`);
            if (fs.existsSync(thumbnailPath)) {
              generatedThumb = thumbnailName;
+             try {
+               const vImage = sharp(thumbnailPath);
+               const vMeta = await vImage.metadata();
+               videoWidth = vMeta.width || null;
+               videoHeight = vMeta.height || null;
+
+               const { data: vRaw, info: vInfo } = await vImage.clone()
+                 .raw()
+                 .ensureAlpha()
+                 .resize(32, 32, { fit: 'inside' })
+                 .toBuffer({ resolveWithObject: true });
+               videoBlurhash = encode(new Uint8ClampedArray(vRaw), vInfo.width, vInfo.height, 4, 4);
+             } catch (vErr) {
+               console.error(`[Worker] Error calculando blurhash de video para ${originalName}`, vErr);
+             }
            }
          } catch (vidErr: any) {
            console.error(`[Worker] Error generando miniatura de video para ${originalName}:`, vidErr.message);
@@ -118,7 +137,7 @@ const worker = new Worker('image-processing', async job => {
        }
 
        updateFileThumbnailStmt.run({
-           id: fileId, thumbnailName: generatedThumb, blurhash: null, width: null, height: null, 
+           id: fileId, thumbnailName: generatedThumb, blurhash: videoBlurhash, width: videoWidth, height: videoHeight, 
            takenAt: null, latitude: null, longitude: null
        });
        updateFileEmbeddingStmt.run({ id: fileId, embedding: null });
@@ -134,14 +153,16 @@ const worker = new Worker('image-processing', async job => {
       console.log(`[Worker] Empezando a procesar miniatura ${originalName} (${fileId})`);
       
       try {
-        if (originalName.toLowerCase().endsWith('.heic')) {
+        if (originalName.toLowerCase().endsWith('.heic') || mimeType === 'image/heic') {
           try {
-            const { execSync } = require('child_process');
+            const heicConvert = require('heic-convert');
+            const inputBuf = fs.readFileSync(filePath);
+            const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.85 });
             tempJpegPath = path.join(absoluteStoragePath, `temp_${fileId}.jpg`);
-            execSync(`sips -s format jpeg "${filePath}" --out "${tempJpegPath}"`);
+            fs.writeFileSync(tempJpegPath, outputBuf);
             filePath = tempJpegPath;
-          } catch (e) {
-            console.error(`[Worker] Error convirtiendo HEIC a JPG con sips para ${originalName}`, e);
+          } catch (e: any) {
+            console.error(`[Worker] Error convirtiendo HEIC para ${originalName}:`, e.message);
           }
         }
 
