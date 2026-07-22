@@ -1005,7 +1005,8 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     broadcastSSE('scan_start', { total, directoryPath, contentType });
 
     const mediaMetas: any[] = [];
-    const mediaJobs: any[] = [];
+    const photoJobs: any[] = [];
+    const videoJobs: any[] = [];
     const docMetas: any[] = [];
     const docJobs: any[] = [];
 
@@ -1027,6 +1028,7 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         else if (ext === '.mp4') mimeType = 'video/mp4';
         else if (ext === '.mov') mimeType = 'video/quicktime';
         else if (ext === '.webm') mimeType = 'video/webm';
+        else if (ext === '.avi') mimeType = 'video/x-msvideo';
 
         const fileMeta = {
           id: fileId,
@@ -1040,12 +1042,18 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
         };
         mediaMetas.push(fileMeta);
 
-        const isVideo = mimeType.startsWith('video/');
-        mediaJobs.push({
+        const isVideo = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v', '.3gp', '.wmv', '.flv'].includes(ext) || mimeType.startsWith('video/');
+        const job = {
           name: 'generate-thumbnail',
           data: { fileId, savedName, originalName, mimeType, absolutePath: filePath, contentType },
-          opts: { priority: isVideo ? 10 : 1, jobId: `thumb-${fileId}` }
-        });
+          opts: { priority: isVideo ? 100 : 1, jobId: `thumb-${fileId}` }
+        };
+
+        if (isVideo) {
+          videoJobs.push(job);
+        } else {
+          photoJobs.push(job);
+        }
       } else {
         let mimeType = 'application/octet-stream';
         if (ext === '.pdf') mimeType = 'application/pdf';
@@ -1081,8 +1089,9 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       });
       insertMediaTx(mediaMetas);
 
-      // Encolar todos los trabajos en BullMQ en 1 sola llamada Bulk (10ms)
-      await imageQueue.addBulk(mediaJobs);
+      // Encolar primero TODAS las fotos y al final TODOS los videos
+      const allMediaJobs = [...photoJobs, ...videoJobs];
+      await imageQueue.addBulk(allMediaJobs);
     }
 
     if (docMetas.length > 0) {
