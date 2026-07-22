@@ -853,6 +853,15 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
   // Clean up quotes if user accidentally pasted them
   if (directoryPath) {
     directoryPath = directoryPath.replace(/^["']|["']$/g, '').trim();
+    
+    // Si el backend corre en Linux/Docker y la ruta es de Windows (ej: D:\Fotos...)
+    if (process.platform !== 'win32' && /^[a-zA-Z]:[/\\]/.test(directoryPath)) {
+      res.status(400).json({ 
+        error: `El servidor corre en Docker/Linux y no tiene acceso directo al disco local '${directoryPath.substring(0, 2)}' de tu PC. Usa el botón azul 'Sincronizar carpeta' para subir tus fotos a la nube.` 
+      });
+      return;
+    }
+    
     directoryPath = path.resolve(directoryPath);
   }
 
