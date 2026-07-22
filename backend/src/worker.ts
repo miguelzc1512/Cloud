@@ -155,6 +155,7 @@ const worker = new Worker('image-processing', async job => {
       try {
         if (originalName.toLowerCase().endsWith('.heic') || mimeType === 'image/heic') {
           try {
+            emitWorkerStep(fileId, 'thumbnail', 'Convirtiendo HEIC a JPG...', originalName, contentType);
             const heicConvert = require('heic-convert');
             const inputBuf = fs.readFileSync(filePath);
             const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.90 });
