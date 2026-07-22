@@ -512,6 +512,34 @@ app.post('/api/worker-event', (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// POST /api/queue/pause (pausa el procesador de IA y miniaturas en BullMQ)
+app.post('/api/queue/pause', async (_req: Request, res: Response) => {
+  try {
+    await imageQueue.pause();
+    await docQueue.pause();
+    broadcastSSE('queue_status', { paused: true });
+    console.log('[Queue] BullMQ queues PAUSED');
+    res.json({ success: true, paused: true });
+  } catch (error: any) {
+    console.error('[Queue] Error pausing queue:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/queue/resume (reanuda el procesador de IA y miniaturas en BullMQ)
+app.post('/api/queue/resume', async (_req: Request, res: Response) => {
+  try {
+    await imageQueue.resume();
+    await docQueue.resume();
+    broadcastSSE('queue_status', { paused: false });
+    console.log('[Queue] BullMQ queues RESUMED');
+    res.json({ success: true, paused: false });
+  } catch (error: any) {
+    console.error('[Queue] Error resuming queue:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Función para crear/buscar la estructura de carpetas en una transacción
 const resolveFoldersTransaction = docDb.transaction((relativePath: string, targetFolderId: string | null) => {
   if (!relativePath) return targetFolderId;

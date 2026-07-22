@@ -389,15 +389,21 @@ ipcMain.handle('get-sync-state', () => {
   return { paused: isSyncPaused, pendingCount: pendingUploads.length, pendingFiles: pendingUploads };
 });
 
-ipcMain.handle('pause-sync', () => {
+ipcMain.handle('pause-sync', async () => {
   isSyncPaused = true;
   notifySyncStatus();
+  if (config.serverUrl) {
+    axios.post(`${config.serverUrl}/api/queue/pause`).catch(console.error);
+  }
   return { paused: true, pendingCount: pendingUploads.length, pendingFiles: pendingUploads };
 });
 
 ipcMain.handle('resume-sync', async () => {
   isSyncPaused = false;
   notifySyncStatus();
+  if (config.serverUrl) {
+    axios.post(`${config.serverUrl}/api/queue/resume`).catch(console.error);
+  }
   
   const toUpload = [...pendingUploads];
   pendingUploads = [];
