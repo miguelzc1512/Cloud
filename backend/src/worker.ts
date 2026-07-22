@@ -93,6 +93,12 @@ const updateFileReadyStmt = db.prepare(`
 
 const updateFacesStmt = db.prepare(`UPDATE files SET faces = ? WHERE id = ?`);
 
+const cpuCores = require('os').cpus().length || 4;
+const autoConcurrency = Math.max(4, Math.min(16, cpuCores - 4));
+const activeConcurrency = Number(process.env.WORKER_CONCURRENCY || autoConcurrency);
+
+sharp.concurrency(2);
+
 const worker = new Worker('image-processing', async job => {
   const { fileId, savedName, originalName, mimeType, absolutePath, contentType } = job.data;
   const start = Date.now();
@@ -342,11 +348,11 @@ const worker = new Worker('image-processing', async job => {
   }
 }, { 
   connection: redisConnection as any,
-  concurrency: Number(process.env.WORKER_CONCURRENCY || 4)
+  concurrency: activeConcurrency
 });
 
 worker.on('failed', (job, err) => {
   console.error(`[Worker] Job ${job?.id} falló con ${err.message}`);
 });
 
-console.log(`[Worker] Escuchando tareas con concurrencia ${process.env.WORKER_CONCURRENCY || 4}...`);
+console.log(`[Worker] Escuchando tareas con concurrencia ${activeConcurrency} (Detectados ${cpuCores} núcleos de CPU)...`);
