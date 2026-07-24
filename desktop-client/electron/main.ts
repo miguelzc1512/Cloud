@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import chokidar from 'chokidar';
 import axios from 'axios';
 import FormData from 'form-data';
+app.setName('AURORA');
 const isDev = process.env.NODE_ENV !== 'production';
 
 // Cliente de Escritorio - Sin servidor local (se conecta al backend principal)
@@ -265,12 +266,15 @@ let tray: Tray | null = null;
 let isQuitting = false;
 
 function createWindow() {
+  const appIconPath = path.join(__dirname, '..', 'build', 'icon.png');
+
   const splash = new BrowserWindow({
-    width: 400,
-    height: 400,
+    width: 520,
+    height: 520,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
+    icon: appIconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -290,6 +294,7 @@ function createWindow() {
     frame: false,           // Sin barra de titulo nativa en todas las plataformas
     titleBarStyle: 'hidden', // macOS: sin barra pero con semáforos
     backgroundColor: '#f8fafc',
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -322,18 +327,26 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const appIconPath = path.join(__dirname, '..', 'build', 'icon.png');
+  if (process.platform === 'darwin' && app.dock && fs.existsSync(appIconPath)) {
+    app.dock.setIcon(appIconPath);
+  }
+
   const mainWindow = createWindow();
 
   const trayIconPath = path.join(__dirname, '..', 'public', 'tray.png');
-  const trayIcon = nativeImage.createFromPath(trayIconPath);
+  let trayIcon = nativeImage.createFromPath(trayIconPath);
+  if (!trayIcon.isEmpty()) {
+    trayIcon = trayIcon.resize({ width: 18, height: 18 });
+    trayIcon.setTemplateImage(true);
+  }
   tray = new Tray(trayIcon);
-  tray.setTitle('\u2601\uFE0E'); // Cloud symbol text-presentation (minimalist)
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Mostrar Cloud Sync', click: () => { mainWindow.show(); } },
+    { label: 'Mostrar AURORA', click: () => { mainWindow.show(); } },
     { type: 'separator' },
     { label: 'Salir', click: () => { isQuitting = true; app.quit(); } }
   ]);
-  tray.setToolTip('Cloud Sync');
+  tray.setToolTip('AURORA');
   tray.setContextMenu(contextMenu);
   tray.on('click', () => {
     mainWindow.show();
@@ -362,9 +375,19 @@ app.on('window-all-closed', () => {
 // IPC Handlers
 // (updatePowerMode would now go to central backend via API if needed)
 
-// Controles de ventana para Windows (frame: false)
+// Controles de ventana para Windows / Linux (frame: false)
 ipcMain.on('window-minimize', () => {
   BrowserWindow.getFocusedWindow()?.minimize();
+});
+ipcMain.on('window-maximize', () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  }
 });
 ipcMain.on('window-close', () => {
   BrowserWindow.getFocusedWindow()?.hide();

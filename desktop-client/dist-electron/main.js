@@ -16559,6 +16559,7 @@ axios.HttpStatusCode = HttpStatusCode;
 axios.default = axios;
 //#endregion
 //#region electron/main.ts
+electron.app.setName("AURORA");
 process.env.NODE_ENV;
 var configPath = node_path.join(electron.app.getPath("userData"), "sync-config.json");
 var statePath = node_path.join(electron.app.getPath("userData"), "sync-state.json");
@@ -16680,14 +16681,24 @@ async function indexFile(filePath, contentType = "gallery") {
 		});
 		console.log(`Indexed successfully: ${filePath}`);
 	} catch (error) {
-		console.error(`Failed to index ${filePath}:`, error.message);
+		const errMsg = error.response?.data?.error || error.message || "Error de conexión";
+		console.error(`Failed to index ${filePath}:`, errMsg);
 		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
 			path: filePath,
-			mode: "index"
+			mode: "index",
+			contentType
 		});
 		isSyncPaused = true;
 		notifySyncStatus();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "log",
+				data: {
+					type: "error",
+					message: `Error indexando ${node_path.basename(filePath)}: ${errMsg}`,
+					contentType
+				}
+			});
 			win.webContents.send("sync-status", {
 				status: "error",
 				file: node_path.basename(filePath),
@@ -16744,14 +16755,24 @@ async function uploadFile(filePath, contentType = "gallery") {
 		});
 		console.log(`Uploaded successfully: ${filePath}`);
 	} catch (error) {
-		console.error(`Failed to upload ${filePath}:`, error.message);
+		const errMsg = error.response?.data?.error || error.message || "Error de conexión";
+		console.error(`Failed to upload ${filePath}:`, errMsg);
 		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
 			path: filePath,
-			mode: "sync"
+			mode: "sync",
+			contentType
 		});
 		isSyncPaused = true;
 		notifySyncStatus();
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "log",
+				data: {
+					type: "error",
+					message: `Error subiendo ${node_path.basename(filePath)}: ${errMsg}`,
+					contentType
+				}
+			});
 			win.webContents.send("sync-status", {
 				status: "error",
 				file: node_path.basename(filePath),
@@ -16807,12 +16828,14 @@ electron.app.whenReady().then(() => {
 var tray = null;
 var isQuitting = false;
 function createWindow() {
+	const appIconPath = node_path.join(__dirname, "..", "build", "icon.png");
 	const splash = new electron.BrowserWindow({
-		width: 400,
-		height: 400,
+		width: 520,
+		height: 520,
 		transparent: true,
 		frame: false,
 		alwaysOnTop: true,
+		icon: appIconPath,
 		webPreferences: {
 			nodeIntegration: false,
 			contextIsolation: true
@@ -16827,6 +16850,7 @@ function createWindow() {
 		frame: false,
 		titleBarStyle: "hidden",
 		backgroundColor: "#f8fafc",
+		icon: appIconPath,
 		webPreferences: {
 			preload: node_path.join(__dirname, "preload.js"),
 			nodeIntegration: false,
@@ -16850,13 +16874,22 @@ function createWindow() {
 	return mainWindow;
 }
 electron.app.whenReady().then(() => {
+	const appIconPath = node_path.join(__dirname, "..", "build", "icon.png");
+	if (process.platform === "darwin" && electron.app.dock && fs.existsSync(appIconPath)) electron.app.dock.setIcon(appIconPath);
 	const mainWindow = createWindow();
 	const trayIconPath = node_path.join(__dirname, "..", "public", "tray.png");
-	tray = new electron.Tray(electron.nativeImage.createFromPath(trayIconPath));
-	tray.setTitle("☁︎");
+	let trayIcon = electron.nativeImage.createFromPath(trayIconPath);
+	if (!trayIcon.isEmpty()) {
+		trayIcon = trayIcon.resize({
+			width: 18,
+			height: 18
+		});
+		trayIcon.setTemplateImage(true);
+	}
+	tray = new electron.Tray(trayIcon);
 	const contextMenu = electron.Menu.buildFromTemplate([
 		{
-			label: "Mostrar Cloud Sync",
+			label: "Mostrar AURORA",
 			click: () => {
 				mainWindow.show();
 			}
@@ -16870,7 +16903,7 @@ electron.app.whenReady().then(() => {
 			}
 		}
 	]);
-	tray.setToolTip("Cloud Sync");
+	tray.setToolTip("AURORA");
 	tray.setContextMenu(contextMenu);
 	tray.on("click", () => {
 		mainWindow.show();
@@ -16888,6 +16921,11 @@ electron.app.on("window-all-closed", () => {
 });
 electron.ipcMain.on("window-minimize", () => {
 	electron.BrowserWindow.getFocusedWindow()?.minimize();
+});
+electron.ipcMain.on("window-maximize", () => {
+	const win = electron.BrowserWindow.getFocusedWindow();
+	if (win) if (win.isMaximized()) win.unmaximize();
+	else win.maximize();
 });
 electron.ipcMain.on("window-close", () => {
 	electron.BrowserWindow.getFocusedWindow()?.hide();
@@ -16910,9 +16948,10 @@ electron.ipcMain.handle("get-sync-state", () => {
 		pendingFiles: pendingUploads
 	};
 });
-electron.ipcMain.handle("pause-sync", () => {
+electron.ipcMain.handle("pause-sync", async () => {
 	isSyncPaused = true;
 	notifySyncStatus();
+	if (config.serverUrl) axios.post(`${config.serverUrl}/api/queue/pause`).catch(console.error);
 	return {
 		paused: true,
 		pendingCount: pendingUploads.length,
@@ -16922,6 +16961,7 @@ electron.ipcMain.handle("pause-sync", () => {
 electron.ipcMain.handle("resume-sync", async () => {
 	isSyncPaused = false;
 	notifySyncStatus();
+	if (config.serverUrl) axios.post(`${config.serverUrl}/api/queue/resume`).catch(console.error);
 	const toUpload = [...pendingUploads];
 	pendingUploads = [];
 	(async () => {
@@ -17032,8 +17072,46 @@ electron.ipcMain.handle("link-folder", (event, { path: folderPath, mode, content
 	if (mode === "index") axios.post(`${config.serverUrl}/api/scan-local`, {
 		directoryPath: folderPath,
 		contentType
-	}).catch(console.error);
-	else if (mode === "sync") processExistingSyncFiles(folderPath, contentType).catch(console.error);
+	}).then((res) => {
+		const count = res.data?.filesQueued || 0;
+		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "log",
+				data: {
+					type: "info",
+					message: `Indexación iniciada: ${count} archivos detectados en ${node_path.basename(folderPath)}`,
+					contentType
+				}
+			});
+		});
+	}).catch((error) => {
+		const errMsg = error.response?.data?.error || error.message || "Error al conectar con el servidor";
+		console.error("Failed to run scan-local:", errMsg);
+		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "log",
+				data: {
+					type: "error",
+					message: `Error en Solo Indexar (${node_path.basename(folderPath)}): ${errMsg}`,
+					contentType
+				}
+			});
+		});
+	});
+	else if (mode === "sync") processExistingSyncFiles(folderPath, contentType).catch((error) => {
+		const errMsg = error.response?.data?.error || error.message || "Error al sincronizar archivos";
+		console.error("Failed to process existing sync files:", errMsg);
+		electron.BrowserWindow.getAllWindows().forEach((win) => {
+			win.webContents.send("sse-event", {
+				event: "log",
+				data: {
+					type: "error",
+					message: `Error en Sincronización (${node_path.basename(folderPath)}): ${errMsg}`,
+					contentType
+				}
+			});
+		});
+	});
 	return config;
 });
 electron.ipcMain.handle("unlink-folder", async (event, { folderPath, deleteFromCloud }) => {

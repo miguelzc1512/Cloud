@@ -240,20 +240,27 @@ export default function App() {
         <div className="flex items-center gap-2 non-draggable" style={{ WebkitAppRegion: 'no-drag' } as any}>
           {/* En Mac los semáforos van aquí automáticamente via titleBarStyle:hidden */}
         </div>
-        <span className="text-xs text-slate-400 font-medium tracking-wide select-none">Cloud Sync</span>
-        {/* Botones de control para Windows */}
-        <div className="flex items-center gap-1 non-draggable" style={{ WebkitAppRegion: 'no-drag' } as any}>
-          <button
-            onClick={() => (window as any).electronAPI.minimizeWindow()}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors text-lg leading-none"
-            title="Minimizar"
-          >─</button>
-          <button
-            onClick={() => (window as any).electronAPI.closeWindow()}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors text-base leading-none"
-            title="Cerrar"
-          >✕</button>
-        </div>
+        <span className="text-xs text-slate-500 font-bold tracking-widest select-none uppercase">A.U.R.O.R.A</span>
+        {/* Botones de control (Solo para Windows/Linux, ocultos en macOS) */}
+        {!(window as any).electronAPI?.isMac && (
+          <div className="flex items-center gap-1 non-draggable" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            <button
+              onClick={() => (window as any).electronAPI?.minimizeWindow()}
+              className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors text-lg leading-none"
+              title="Minimizar"
+            >─</button>
+            <button
+              onClick={() => (window as any).electronAPI?.maximizeWindow()}
+              className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors text-xs leading-none"
+              title="Maximizar / Restaurar"
+            >❐</button>
+            <button
+              onClick={() => (window as any).electronAPI?.closeWindow()}
+              className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors text-base leading-none"
+              title="Cerrar"
+            >✕</button>
+          </div>
+        )}
       </div>
 
       {/* ── Contenido principal ───────────────────────────────────────────── */}
@@ -263,32 +270,33 @@ export default function App() {
 
           {/* Logo under traffic lights aligned left */}
           <div className="flex items-center justify-left gap-3 mb-6 px-1 pb-3 non-draggable">
-            {/* Agregamos text-xl para agrandar el texto */}
             <span className="text-4xl">
               <span className="font-bold">Hola</span> Miguel!
             </span>
           </div>
 
-          {/* Tab Toggle */}
-          <div className="flex bg-slate-100/80 rounded-xl p-1 mb-6 non-draggable">
+          {/* Tab Toggle (Segmented Control macOS) */}
+          <div className="w-full flex bg-slate-200/60 p-1 rounded-xl mb-6 non-draggable">
             <button
               onClick={() => setActiveTab('gallery')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'gallery' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+              className={`flex-1 min-w-0 py-2 px-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'gallery' ? 'bg-black text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'}`}
             >
-              <Image className="w-3.5 h-3.5" /> Fotos
+              <Image className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Fotos</span>
             </button>
             <button
               onClick={() => setActiveTab('drive')}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'drive' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+              className={`flex-1 min-w-0 py-2 px-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${activeTab === 'drive' ? 'bg-black text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'}`}
             >
-              <Folder className="w-3.5 h-3.5" /> Documentos
+              <Folder className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Documentos</span>
             </button>
           </div>
 
           <div className="flex flex-col gap-2 mb-6 non-draggable">
             <button
               onClick={() => handleLinkFolder('sync')}
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md text-white font-medium px-4 py-3.5 rounded-2xl transition-all"
+              className="flex items-center justify-center gap-2 bg-black hover:bg-slate-900 shadow-sm hover:shadow-md text-white font-medium px-4 py-3.5 rounded-2xl transition-all"
               title="Sube los archivos de esta carpeta a la nube y los mantiene sincronizados"
             >
               <Cloud className="w-5 h-5 shrink-0" />
@@ -297,10 +305,10 @@ export default function App() {
 
             <button
               onClick={() => handleLinkFolder('index')}
-              className="flex items-center justify-center gap-2 bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-sm hover:border-blue-100 hover:bg-slate-50 text-slate-700 font-medium px-4 py-3 rounded-2xl transition-all"
+              className="flex items-center justify-center gap-2 bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-sm hover:border-slate-300 hover:bg-slate-100 text-slate-800 font-medium px-4 py-3 rounded-2xl transition-all"
               title="Solo analiza rostros y metadatos localmente para buscar, sin subir fotos a la nube (ahorra espacio)"
             >
-              <FolderPlus className="w-5 h-5 text-blue-600 shrink-0" />
+              <FolderPlus className="w-5 h-5 text-slate-900 shrink-0" />
               <span className="truncate">Solo indexar (No subir)</span>
             </button>
           </div>
@@ -318,10 +326,10 @@ export default function App() {
                     {config.linkedFolders.filter(f => f.contentType === (activeTab === 'gallery' ? undefined : 'drive') || (activeTab === 'gallery' && f.contentType !== 'drive')).map(folderObj => (
                       <div key={folderObj.path} className="flex flex-col p-3 rounded-xl hover:bg-slate-50 border border-slate-100 group transition-all relative">
                         <div className="flex items-center gap-2 overflow-hidden mb-1">
-                          <Folder className={`w-4 h-4 shrink-0 ${activeTab === 'gallery' ? 'text-blue-500' : 'text-slate-500'}`} />
-                          <p className="text-sm font-medium text-slate-700 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
+                          <Folder className="w-4 h-4 shrink-0 text-slate-700" />
+                          <p className="text-sm font-medium text-slate-800 truncate" title={folderObj.path}>{folderObj.path.split(/[/\\]/).pop()}</p>
                         </div>
-                        <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded w-max ${folderObj.mode === 'sync' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'}`}>
                           {folderObj.mode === 'sync' ? 'Sincronizar' : 'Indexar'}
                         </span>
                         <button
@@ -341,17 +349,17 @@ export default function App() {
 
           <div className="flex flex-col gap-2 mt-4 non-draggable">
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider pl-2 mb-1">Rendimiento (Fotos)</p>
-            <div className="flex bg-slate-100/80 rounded-xl p-1 mx-1 mb-2">
+            <div className="w-full flex bg-slate-200/60 p-1 rounded-xl mb-2">
               <button
                 onClick={() => handlePowerMode('eco')}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'eco' || !config?.powerMode ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all ${config?.powerMode === 'eco' || !config?.powerMode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'}`}
                 title="Ahorra batería"
               >
                 Normal
               </button>
               <button
                 onClick={() => handlePowerMode('max')}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${config?.powerMode === 'max' ? 'bg-blue-600 shadow-sm text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                className={`flex-1 py-1.5 px-2 text-xs font-semibold rounded-lg transition-all ${config?.powerMode === 'max' ? 'bg-black text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'}`}
                 title="Máxima velocidad"
               >
                 Máximo
@@ -359,7 +367,7 @@ export default function App() {
             </div>
             <button
               onClick={openWeb}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-slate-700 border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               Abrir versión web
@@ -374,12 +382,12 @@ export default function App() {
           <div className="bg-white rounded-[1.75rem] p-6 shadow-sm border border-slate-100 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                {isPaused ? <Pause className="w-7 h-7 text-amber-500 fill-amber-500" /> : <Cloud className="w-7 h-7 text-green-600" />}
-                <h2 className="text-2xl font-medium text-slate-800">
+                {isPaused ? <Pause className="w-7 h-7 text-amber-500 fill-amber-500" /> : <Cloud className="w-7 h-7 text-slate-900" />}
+                <h2 className="text-2xl font-semibold text-slate-900">
                   {isPaused ? 'En Pausa' : isProcessing ? 'Procesando...' : 'Actualizado'}
                 </h2>
               </div>
-              <button onClick={togglePause} className={`p-2 rounded-full transition-colors ${isPaused ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={isPaused ? "Reanudar" : "Pausar"}>
+              <button onClick={togglePause} className={`p-2 rounded-full transition-colors ${isPaused ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`} title={isPaused ? "Reanudar" : "Pausar"}>
                 {isPaused ? <Play className="w-5 h-5 fill-current" /> : <Pause className="w-5 h-5 fill-current" />}
               </button>
             </div>
@@ -400,10 +408,10 @@ export default function App() {
                 {/* Progreso General */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                       Progreso General
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">
+                    <span className="text-xs text-slate-500 font-medium">
                       {activeTab === 'gallery'
                         ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
                         : Math.round((((progress.facesCompleted || 0)) * 100) / progress.total)}%
@@ -411,7 +419,7 @@ export default function App() {
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                      className="bg-black h-2 rounded-full transition-all duration-500"
                       style={{
                         width: `${activeTab === 'gallery'
                           ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
@@ -427,34 +435,34 @@ export default function App() {
                     {/* Fase 1: Miniaturas */}
                     <div>
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Image className="w-3.5 h-3.5 text-indigo-500" />
-                        <span className="text-[10px] font-medium text-slate-600 truncate">1. Miniaturas</span>
+                        <Image className="w-3.5 h-3.5 text-slate-700" />
+                        <span className="text-[10px] font-medium text-slate-700 truncate">1. Miniaturas</span>
                         <span className="text-[10px] text-slate-400 ml-auto">{progress.thumbCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.thumbCompleted || 0) * 100) / progress.total)}%` }} />
+                        <div className="bg-slate-800 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.thumbCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                     {/* Fase 2: Embeddings */}
                     <div>
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Brain className="w-3.5 h-3.5 text-purple-500" />
-                        <span className="text-[10px] font-medium text-slate-600 truncate">2. Análisis IA</span>
+                        <Brain className="w-3.5 h-3.5 text-slate-700" />
+                        <span className="text-[10px] font-medium text-slate-700 truncate">2. Análisis IA</span>
                         <span className="text-[10px] text-slate-400 ml-auto">{progress.embedCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.embedCompleted || 0) * 100) / progress.total)}%` }} />
+                        <div className="bg-slate-700 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.embedCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                     {/* Fase 3: Rostros */}
                     <div>
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Users className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-[10px] font-medium text-slate-600 truncate">3. Rostros</span>
+                        <Users className="w-3.5 h-3.5 text-slate-700" />
+                        <span className="text-[10px] font-medium text-slate-700 truncate">3. Rostros</span>
                         <span className="text-[10px] text-slate-400 ml-auto">{progress.facesCompleted || 0}/{progress.total}</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.facesCompleted || 0) * 100) / progress.total)}%` }} />
+                        <div className="bg-slate-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.round(((progress.facesCompleted || 0) * 100) / progress.total)}%` }} />
                       </div>
                     </div>
                   </div>
@@ -489,7 +497,7 @@ export default function App() {
                       {log.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
                       {log.type === 'error' && <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
                       {log.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
-                      {log.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+                      {log.type === 'info' && <Info className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />}
                       <span className={`break-words ${log.type === 'error' ? 'text-red-600 font-semibold' :
                         log.type === 'success' ? 'text-emerald-700 font-medium' :
                           log.type === 'warning' ? 'text-amber-700 font-medium' :
@@ -523,8 +531,8 @@ export default function App() {
                 onClick={() => handleUnlinkFolder(false)}
                 className="flex items-center gap-3 w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <Cloud className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                  <Cloud className="w-4 h-4 text-slate-900" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-800">Solo dejar de sincronizar</p>

@@ -1,21 +1,21 @@
 {
-  "name": "desktop-client",
+  "name": "aurora",
   "private": true,
   "version": "0.0.0",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/patch_dev_electron.js && vite",
     "build": "tsc -b && vite build && node -e \"const fs = require('fs'); const f = 'dist/index.html'; fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/crossorigin/g, ''));\" && electron-builder",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "build": {
-    "appId": "com.cloudpersonal.sync",
-    "productName": "Cloud Sync",
+    "appId": "com.aurora.app",
+    "productName": "AURORA",
     "mac": {
       "target": "dmg",
       "icon": "build/icon.png",
-      "artifactName": "CloudSync-mac.${ext}"
+      "artifactName": "AURORA-mac.${ext}"
     },
     "win": {
       "target": [
@@ -23,7 +23,7 @@
         "portable"
       ],
       "icon": "build/icon.png",
-      "artifactName": "CloudSync-win.${ext}"
+      "artifactName": "AURORA-win.${ext}"
     },
     "directories": {
       "output": "release"

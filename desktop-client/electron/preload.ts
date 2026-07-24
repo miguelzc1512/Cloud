@@ -1,7 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  isMac: process.platform === 'darwin',
+  isWindows: process.platform === 'win32',
+  platform: process.platform,
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
+  maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
   getConfig: () => ipcRenderer.invoke('get-config'),
   setPowerMode: (mode: 'eco' | 'max') => ipcRenderer.invoke('set-power-mode', mode),

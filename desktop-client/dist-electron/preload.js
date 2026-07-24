@@ -1,7 +1,11 @@
 let electron = require("electron");
 //#region electron/preload.ts
 electron.contextBridge.exposeInMainWorld("electronAPI", {
+	isMac: process.platform === "darwin",
+	isWindows: process.platform === "win32",
+	platform: process.platform,
 	minimizeWindow: () => electron.ipcRenderer.send("window-minimize"),
+	maximizeWindow: () => electron.ipcRenderer.send("window-maximize"),
 	closeWindow: () => electron.ipcRenderer.send("window-close"),
 	getConfig: () => electron.ipcRenderer.invoke("get-config"),
 	setPowerMode: (mode) => electron.ipcRenderer.invoke("set-power-mode", mode),
