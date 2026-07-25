@@ -162,6 +162,14 @@ db.exec(`
     PRIMARY KEY (albumId, personId),
     FOREIGN KEY (albumId) REFERENCES albums(id) ON DELETE CASCADE
   );
+
+  CREATE INDEX IF NOT EXISTS idx_files_timeline ON files (isDeleted, takenAt DESC);
+  CREATE INDEX IF NOT EXISTS idx_files_favorite ON files (isDeleted, isFavorite);
+  CREATE INDEX IF NOT EXISTS idx_file_faces_person ON file_faces (personId, fileId);
+`);
+
+docDb.exec(`
+  CREATE INDEX IF NOT EXISTS idx_docs_timeline ON docs (isDeleted, createdAt DESC);
 `);
 
 try {
@@ -409,6 +417,9 @@ app.get('/api/media/:id/:type', async (req: Request, res: Response): Promise<voi
   try {
     const file = stmts.getFileById.get(id) as any;
     if (!file) { res.status(404).json({ error: 'File not found' }); return; }
+
+    // Set aggressive HTTP cache headers for media and thumbnails
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
 
     // 1. Miniatura (800px)
     if (type === 'thumbnail') {

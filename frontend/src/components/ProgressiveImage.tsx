@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState } from 'react';
 import { BlurhashCanvas } from 'react-blurhash';
 
 interface ProgressiveImageProps {
@@ -12,61 +12,19 @@ interface ProgressiveImageProps {
   objectFit?: 'cover' | 'contain';
 }
 
-export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
+export const ProgressiveImage: React.FC<ProgressiveImageProps> = React.memo(({
   src,
   blurhash,
-  thumbnailSrc,
-  width = '100%',
-  height = '100%',
   className = '',
   alt = '',
   objectFit
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isThumbLoaded, setIsThumbLoaded] = useState(false);
-  const [wasCached, setWasCached] = useState(false);
-
-  useLayoutEffect(() => {
-    let isMounted = true;
-    
-    const img = new Image();
-    img.src = src;
-    
-    if (img.complete) {
-      setIsLoaded(true);
-      setWasCached(true);
-    } else {
-      setIsLoaded(false);
-      img.onload = () => {
-        if (isMounted) setIsLoaded(true);
-      };
-    }
-
-    let thumb: HTMLImageElement | null = null;
-    if (thumbnailSrc) {
-      thumb = new Image();
-      thumb.src = thumbnailSrc;
-      if (thumb.complete) {
-        setIsThumbLoaded(true);
-      } else {
-        setIsThumbLoaded(false);
-        thumb.onload = () => {
-          if (isMounted) setIsThumbLoaded(true);
-        };
-      }
-    }
-
-    return () => {
-      isMounted = false;
-      img.src = 'data:,';
-      if (thumb) thumb.src = 'data:,';
-    };
-  }, [src, thumbnailSrc]);
 
   return (
     <>
-      {/* Blurhash Placeholder - Se expandirá al ancestro relative (PhotoItem) */}
-      {blurhash && !isLoaded && !isThumbLoaded && (
+      {/* Blurhash Placeholder */}
+      {blurhash && !isLoaded && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, overflow: 'hidden' }}>
           <BlurhashCanvas
             hash={blurhash}
@@ -78,35 +36,21 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
         </div>
       )}
 
-      {/* Layer 2: Thumbnail Placeholder (carga instantánea desde caché) */}
-      {thumbnailSrc && (
-        <img
-          src={thumbnailSrc}
-          alt={alt}
-          className={className}
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 2,
-            ...(objectFit ? { objectFit, width: '100%', height: '100%' } : {})
-          }}
-        />
-      )}
-      
-      {/* The Actual Image (Layer 3) */}
+      {/* Optimized Single Native Lazy Image */}
       <img
-        src={isLoaded ? src : undefined}
+        src={src}
         alt={alt}
         loading="lazy"
+        onLoad={() => setIsLoaded(true)}
         className={className}
         style={{
-          opacity: isLoaded ? 1 : 0,
-          transition: wasCached ? 'none' : 'opacity 0.3s ease-in-out',
-          zIndex: 3,
+          opacity: isLoaded || !blurhash ? 1 : 0,
+          transition: 'opacity 0.2s ease-in-out',
+          zIndex: 2,
           position: 'relative',
           ...(objectFit ? { objectFit, width: '100%', height: '100%' } : {})
         }}
       />
     </>
   );
-};
+});

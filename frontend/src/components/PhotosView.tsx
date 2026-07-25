@@ -1,6 +1,6 @@
 import { useState, useCallback, memo, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil, ChevronLeft, ChevronRight, ZoomOut, Maximize, Download } from 'lucide-react';
+import { X, Image as ImageIcon, Trash2, CheckCircle2, Circle, ArrowLeft, Share2, ZoomIn, Info, Star, MoreVertical, Calendar, Camera, UploadCloud, Cloud, MapPin, Pencil, ChevronLeft, ChevronRight, ZoomOut, Maximize, Download, Play } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import TimelineScrollbar from './TimelineScrollbar';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -129,19 +129,24 @@ const PhotoItem = memo(({ file, isSelected, isSelectingMode, onToggle }: PhotoIt
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10 pointer-events-none" />
       {isSelected && <div className="absolute inset-0 bg-blue-500/10 z-10 pointer-events-none" />}
       
-      {file.isDeleted === 1 && file.deletedAt && (
+      {Boolean(file.isDeleted) && file.deletedAt && (
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md z-20 pointer-events-none shadow-sm">
           {Math.max(0, 60 - Math.floor((new Date().getTime() - new Date(file.deletedAt).getTime()) / (1000 * 60 * 60 * 24)))} días
         </div>
       )}
       
       {file.mimeType?.startsWith('video/') ? (
-        <video
-          src={`/api/media/${file.id}/web#t=0.1`}
-          className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
-          muted
-          playsInline
-        />
+        <div className="relative w-full h-full">
+          <ProgressiveImage
+            src={`/api/media/${file.id}/thumbnail`}
+            blurhash={file.blurhash}
+            className={`h-full w-auto min-w-full object-cover transition-none ${isSelected ? '[clip-path:inset(12px_round_12px)]' : ''}`}
+            alt={file.originalName}
+          />
+          <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-white p-1.5 rounded-full z-20 pointer-events-none shadow-sm flex items-center justify-center">
+            <Play className="w-3 h-3 fill-white text-white translate-x-[0.5px]" />
+          </div>
+        </div>
       ) : (
         <ProgressiveImage
           src={`/api/media/${file.id}/thumbnail`}
