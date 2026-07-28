@@ -68,29 +68,68 @@ docker compose up -d --build
 
 ---
 
-### 💾 Cómo dar acceso a Docker a discos locales (ej. D:\ o C:\) para "Solo Indexar"
+### 💾 Arquitectura de Discos Recomendada (M.2 NVMe + SSD + HDD)
 
-Si deseas usar la función **"Solo Indexar (No subir)"** con carpetas guardadas en discos secundarios (como `D:\` o `C:\`), debes dar acceso a Docker a esa unidad editando `docker-compose.yml`:
+Para lograr la **máxima velocidad (scroll fluido a 120 FPS sin demoras)** y al mismo tiempo optimizar el espacio y la vida útil de tus discos, recomendamos organizar tus almacenamiento en 3 niveles:
 
-1. Abre `docker-compose.yml` y añade tu disco en los `volumes` de `backend-api` y `backend-worker`:
-   ```yaml
-   backend-api:
-     ...
-     volumes:
-       - ./storage:/app/storage
-       - D:\:/host_d     # Monta el disco D:\ como /host_d en Docker
+1. **🚀 Disco M.2 NVMe (Disco C: / Sistema Operativo)**:  
+   - Guarda el código del proyecto y la carpeta `storage/` (base de datos SQLite `nube.db`, embeddings de IA y miniaturas WebP).  
+   - *Beneficio*: Las búsquedas por IA, detección de rostros y la carga de imágenes al hacer scroll volarás a velocidad máxima (>3,000 MB/s).
+2. **⚡ Disco SSD SATA (Fotos y Vídeos Originales)**:  
+   - Guarda tu biblioteca principal de fotos y vídeos de alta resolución (archivos maestro).  
+   - *Beneficio*: Abre fotos pesadas al instante a pantalla completa sin saturar el almacenamiento del disco de tu sistema.
+3. **📦 Disco HDD de Laptop (Spinning Disk)**:  
+   - Úsalo para la papelera de reciclaje y copias de seguridad de la base de datos.  
+   - *Beneficio*: Aprovechas almacenamiento económico para archivos fríos/temporales sin perder velocidad.
 
-   backend-worker:
-     ...
-     volumes:
-       - ./storage:/app/storage
-       - D:\:/host_d     # Monta el disco D:\ en el worker también
-   ```
-2. Reinicia los contenedores de Docker:
-   ```bash
-   docker compose up -d --build
-   ```
-3. ¡Listo! Al seleccionar cualquier carpeta de `D:\Fotos\...` desde el cliente de escritorio, el sistema la indexará directamente sin duplicar espacio.
+---
+
+### 🖥️ Cómo mapear discos en Docker (En tu PC o en otra computadora)
+
+Si cambias de computadora o tienes tus fotos en diferentes letras de unidad (ej. `D:\`, `E:\`, `F:\` en Windows, o `/Volumes/...` en Mac), edita la sección `volumes` en `docker-compose.yml`:
+
+```yaml
+  backend-api:
+    build: ./backend
+    image: cloud-backend:latest
+    container_name: cloud-backend-api
+    command: npm start
+    ports:
+      - "${BACKEND_PORT:-3002}:3001"
+    volumes:
+      - ./storage:/app/storage       # 1. Base de datos y thumbnails en M.2 (Velocidad máxima)
+      - D:/Fotos_SSD:/fotos_ssd       # 2. Tu disco SSD con las fotos originales (Ejemplo en Windows)
+      - E:/Backup_HDD:/backup_hdd     # 3. Tu disco HDD para respaldos/papelera
+      # En Mac/Linux usarías rutas absolutas:
+      # - /Volumes/FotosSSD:/fotos_ssd
+
+  backend-worker:
+    image: cloud-backend:latest
+    container_name: cloud-backend-worker
+    command: npm run start:worker
+    environment:
+      - REDIS_HOST=redis
+      - API_HOST=backend-api
+      - STORAGE_PATH=/app/storage
+      - WORKER_CONCURRENCY=4
+    volumes:
+      - ./storage:/app/storage
+      - D:/Fotos_SSD:/fotos_ssd       # Mismo mapeo en el worker
+      - E:/Backup_HDD:/backup_hdd
+```
+
+Tras editar los discos, aplica los cambios ejecutando:
+```bash
+docker compose up -d
+```
+
+---
+
+### 📷 Conversión de Fotos Apple HEIC a JPG y Preservación de Metadatos
+
+- **Conversión Automática**: Al subir o indexar fotos en formato `.HEIC` / `.HEIF` de iPhone/Apple, el sistema las convierte automáticamente a un formato `.JPG` compatible con todos los navegadores.
+- **Ubicación de guardado**: El archivo `.JPG` convertido se guarda en la **MISMA carpeta** junto con la foto original (por ejemplo en `D:/Fotos_SSD/vacaciones/foto.jpg`).
+- **Preservación de Metadatos EXIF**: Los metadatos originales (**fecha tomada, coordenadas GPS para el mapa, modelo de cámara y orientación**) son extraídos del archivo HEIC original **antes** de la conversión y almacenados en SQLite para que no pierdas ningún dato.
 
 ---
 

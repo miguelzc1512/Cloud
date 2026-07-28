@@ -13,8 +13,9 @@ if errorlevel 1 (
 
 echo.
 echo ===================================================
-echo   ¡Nube iniciada en Docker!
-echo   Página web: http://localhost
+echo   ¡Nube iniciada correctamente!
+echo   Acceso Web Local:  http://localhost
+echo   Acceso Web en Red: http://<Tu-IP-Local> (Puerto 80 o configurado en WEB_PORT)
 echo   Iniciando Cliente de Escritorio...
 echo ===================================================
 echo.

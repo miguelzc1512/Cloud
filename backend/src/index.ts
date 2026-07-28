@@ -270,8 +270,12 @@ const multerStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const contentType = req.body.contentType || 'gallery';
     const isMedia = (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) && contentType !== 'drive';
-    const subfolder = isMedia ? 'fotos' : 'archivos';
-    const targetDir = path.join(absoluteStoragePath, subfolder);
+    let targetDir: string;
+    if (isMedia) {
+      targetDir = fs.existsSync('/host_e/Fotos') ? '/host_e/Fotos/Sincronizadas' : path.join(absoluteStoragePath, 'fotos');
+    } else {
+      targetDir = path.join(absoluteStoragePath, 'archivos');
+    }
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
@@ -421,7 +425,7 @@ app.get('/api/media/:id/:type', async (req: Request, res: Response): Promise<voi
     // Set aggressive HTTP cache headers for media and thumbnails
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
 
-    // 1. Miniatura (800px)
+    // 1. Miniatura liviana WebP para la cuadrícula (Grid)
     if (type === 'thumbnail') {
       const thumbName = file.thumbnailName || `thumbnails/thumb-${file.savedName}.webp`;
       let thumbPath = path.join(absoluteStoragePath, thumbName);
@@ -432,10 +436,14 @@ app.get('/api/media/:id/:type', async (req: Request, res: Response): Promise<voi
         res.sendFile(thumbPath);
         return;
       }
+      // Si la miniatura está en proceso en segundo plano, responder 404 para no cargar la foto completa de 20MB en la cuadrícula
+      res.status(404).json({ error: 'Miniatura en proceso...' });
+      return;
     }
 
-    // 2. Comprobar si existe la versión JPG convertida de HEIC en fotos/
-    const convertedJpgPath = path.join(absoluteStoragePath, 'fotos', `${file.id}.jpg`);
+    // 2. Comprobar si existe la versión JPG convertida de HEIC en la carpeta dedicada del SSD
+    const dedicatedBaseDir = fs.existsSync('/host_e/Fotos') ? '/host_e/Fotos/HEIC_Convertidas' : path.join(absoluteStoragePath, 'HEIC_Convertidas');
+    const convertedJpgPath = path.join(dedicatedBaseDir, `${file.id}.jpg`);
     if (fs.existsSync(convertedJpgPath)) {
       res.contentType('image/jpeg').sendFile(convertedJpgPath);
       return;
@@ -453,12 +461,22 @@ app.get('/api/media/:id/:type', async (req: Request, res: Response): Promise<voi
       // Si el archivo es HEIC y se solicita para mostrar en web u original:
       if (isHeic) {
         try {
-          const heicConvert = require('heic-convert');
           const inputBuf = fs.readFileSync(filePath);
-          const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.92 });
+          let outputBuf: Buffer;
+          const isAlreadyJpeg = inputBuf[0] === 0xFF && inputBuf[1] === 0xD8;
+          if (isAlreadyJpeg) {
+            outputBuf = inputBuf;
+          } else {
+            try {
+              const heicConvert = require('heic-convert');
+              outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.92 });
+            } catch (heicErr: any) {
+              console.warn('[Media] heic-convert falló, intentando con Sharp:', heicErr.message);
+              outputBuf = await sharp(inputBuf).jpeg({ quality: 92 }).toBuffer();
+            }
+          }
           
-          const fotosDir = path.join(absoluteStoragePath, 'fotos');
-          if (!fs.existsSync(fotosDir)) fs.mkdirSync(fotosDir, { recursive: true });
+          if (!fs.existsSync(dedicatedBaseDir)) fs.mkdirSync(dedicatedBaseDir, { recursive: true });
           
           fs.writeFileSync(convertedJpgPath, outputBuf);
           res.contentType('image/jpeg').sendFile(convertedJpgPath);
@@ -538,11 +556,66 @@ app.get('/api/stream', (req: Request, res: Response) => {
   req.on('close', () => sseClients.delete(res));
 });
 
+async function getBackendProgressStats() {
+  try {
+    const total = (db.prepare(`SELECT COUNT(*) as c FROM files WHERE isDeleted = 0`).get() as any).c || 0;
+    const completed = (db.prepare(`SELECT COUNT(*) as c FROM files WHERE isDeleted = 0 AND status = 'READY'`).get() as any).c || 0;
+    const thumbCompleted = (db.prepare(`SELECT COUNT(*) as c FROM files WHERE isDeleted = 0 AND thumbnailName IS NOT NULL`).get() as any).c || 0;
+    const embedCompleted = (db.prepare(`SELECT COUNT(*) as c FROM files WHERE isDeleted = 0 AND embedding IS NOT NULL`).get() as any).c || 0;
+    const facesCompleted = (db.prepare(`SELECT COUNT(*) as c FROM files WHERE isDeleted = 0 AND faces IS NOT NULL`).get() as any).c || 0;
+
+    let waitingCount = 0;
+    let activeCount = 0;
+    try {
+      waitingCount = await imageQueue.getWaitingCount();
+      activeCount = await imageQueue.getActiveCount();
+    } catch (e) {}
+
+    const remainingJobs = Math.max(0, total - completed, waitingCount + activeCount);
+    // Con concurrencia 4, procesar 1 foto toma ~0.25s en promedio
+    const estimatedSeconds = Math.ceil(remainingJobs * 0.25);
+
+    let etaFormatted = 'Completado';
+    if (remainingJobs > 0) {
+      if (estimatedSeconds < 60) {
+        etaFormatted = `~${estimatedSeconds} seg`;
+      } else {
+        const mins = Math.floor(estimatedSeconds / 60);
+        const secs = estimatedSeconds % 60;
+        etaFormatted = `~${mins}m ${secs}s`;
+      }
+    }
+
+    return {
+      total,
+      completed,
+      thumbCompleted,
+      embedCompleted,
+      facesCompleted,
+      remainingJobs,
+      estimatedSeconds,
+      etaFormatted,
+      percent: total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 100
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+app.get('/api/progress-stats', async (_req: Request, res: Response) => {
+  const stats = await getBackendProgressStats();
+  res.json(stats || { total: 0, completed: 0 });
+});
+
 // POST /api/worker-event (recibe eventos del Worker para reenviarlos a los clientes SSE)
-app.post('/api/worker-event', (req: Request, res: Response) => {
+app.post('/api/worker-event', async (req: Request, res: Response) => {
   const { fileId, step, label, originalName, contentType } = req.body;
   if (fileId && step) {
     broadcastSSE('worker_step', { fileId, step, label, originalName, contentType: contentType || 'gallery' });
+    if (step === 'done' || step === 'faces_done' || step === 'embedding_done' || step === 'thumbnail_done') {
+      const stats = await getBackendProgressStats();
+      if (stats) broadcastSSE('progress_stats', stats);
+    }
   }
   res.json({ ok: true });
 });
@@ -971,9 +1044,16 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
 
   try {
     const walkAsync = async (dir: string, filelist: string[] = []): Promise<string[]> => {
+      const base = path.basename(dir).toLowerCase();
+      if (['heic_convertidas', 'thumbnails', 'fotos_convertidas', '$recycle.bin', '.trash'].includes(base)) {
+        return filelist;
+      }
       try {
         const files = await fs.promises.readdir(dir);
         for (const file of files) {
+          if (file.startsWith('.') || ['heic_convertidas', 'thumbnails', 'fotos_convertidas', '$recycle.bin', '.trash'].includes(file.toLowerCase())) {
+            continue;
+          }
           const filepath = path.join(dir, file);
           try {
             const stat = await fs.promises.stat(filepath);
@@ -1021,6 +1101,8 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
     const docMetas: any[] = [];
     const docJobs: any[] = [];
 
+    const existingPathStmt = db.prepare(`SELECT id FROM files WHERE absolutePath = ?`);
+
     for (const filePath of supportedFiles) {
       const ext = path.extname(filePath).toLowerCase();
       const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext) && contentType !== 'drive';
@@ -1031,6 +1113,9 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
       const savedName = fileId + ext;
 
       if (isMedia) {
+        const existing = existingPathStmt.get(filePath);
+        if (existing) continue; // YA REGISTRADO ESTE ARCHIVO EXACTO - OMITIR RE-ESCANEO
+
         let mimeType = 'application/octet-stream';
         if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
         else if (ext === '.png') mimeType = 'image/png';
@@ -1125,6 +1210,146 @@ app.post('/api/scan-local', async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     console.error('Scan error:', error);
     res.status(500).json({ error: 'Failed to scan directory' });
+  }
+});
+// POST /api/reset-db (Permite limpiar SQLite para re-indexar desde cero)
+app.post('/api/reset-db', (_req: Request, res: Response) => {
+  try {
+    db.prepare(`DELETE FROM file_faces`).run();
+    db.prepare(`DELETE FROM people`).run();
+    db.prepare(`DELETE FROM album_files`).run();
+    db.prepare(`DELETE FROM album_people`).run();
+    db.prepare(`DELETE FROM albums`).run();
+    db.prepare(`DELETE FROM files`).run();
+    docDb.prepare(`DELETE FROM docs`).run();
+    docDb.prepare(`DELETE FROM doc_clusters`).run();
+    res.json({ success: true, message: 'Base de datos reiniciada limpiamente.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Error reiniciando base de datos: ' + err.message });
+  }
+});
+
+// POST /api/bulk-index (Procesamiento por lotes de hasta 500 archivos en 1 sola transacción)
+app.post('/api/bulk-index', async (req: Request, res: Response): Promise<void> => {
+  const { files, contentType = 'gallery' } = req.body;
+  if (!Array.isArray(files) || files.length === 0) {
+    res.status(400).json({ error: 'No files provided for bulk indexing' });
+    return;
+  }
+
+  try {
+    const mediaMetas: any[] = [];
+    const photoJobs: any[] = [];
+    const videoJobs: any[] = [];
+    const docMetas: any[] = [];
+    const docJobs: any[] = [];
+
+    const existingPathStmt = db.prepare(`SELECT id FROM files WHERE absolutePath = ?`);
+
+    for (const rawPath of files) {
+      if (!rawPath || typeof rawPath !== 'string') continue;
+      const filePath = rawPath.replace(/^["']|["']$/g, '').trim();
+      if (!fs.existsSync(filePath)) continue;
+
+      const lowerPath = filePath.toLowerCase();
+      if (lowerPath.includes('heic_convertidas') || lowerPath.includes('thumbnails') || lowerPath.includes('$recycle.bin')) {
+        continue; // Omitir archivos de carpetas derivadas/convertidas
+      }
+
+      const stat = fs.statSync(filePath);
+      if (stat.isDirectory()) continue;
+
+      const ext = path.extname(filePath).toLowerCase();
+      const isMedia = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.mp4', '.mov', '.webm', '.avi'].includes(ext) && contentType !== 'drive';
+      const originalName = path.basename(filePath);
+      const fileId = Date.now().toString() + '-' + Math.random().toString(36).slice(2, 7);
+      const savedName = fileId + ext;
+
+      if (isMedia) {
+        const existing = existingPathStmt.get(filePath);
+        if (existing) continue; // YA REGISTRADO ESTE ARCHIVO EXACTO - OMITIR RE-ESCANEO
+
+        let mimeType = 'application/octet-stream';
+        if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+        else if (ext === '.png') mimeType = 'image/png';
+        else if (ext === '.webp') mimeType = 'image/webp';
+        else if (ext === '.heic') mimeType = 'image/heic';
+        else if (ext === '.mp4') mimeType = 'video/mp4';
+        else if (ext === '.mov') mimeType = 'video/quicktime';
+        else if (ext === '.webm') mimeType = 'video/webm';
+        else if (ext === '.avi') mimeType = 'video/x-msvideo';
+
+        mediaMetas.push({
+          id: fileId,
+          originalName,
+          savedName,
+          mimeType,
+          size: stat.size,
+          createdAt: new Date().toISOString(),
+          uploadSource: 'Directorio Local',
+          absolutePath: filePath
+        });
+
+        const isVideo = ['.mp4', '.mov', '.webm', '.avi'].includes(ext);
+        const job = {
+          name: 'generate-thumbnail',
+          data: { fileId, savedName, originalName, mimeType, absolutePath: filePath, contentType },
+          opts: { priority: isVideo ? 100 : 1, jobId: `thumb-${fileId}` }
+        };
+
+        if (isVideo) videoJobs.push(job);
+        else photoJobs.push(job);
+      } else {
+        let mimeType = 'application/octet-stream';
+        if (ext === '.pdf') mimeType = 'application/pdf';
+        else if (ext === '.txt' || ext === '.md' || ext === '.csv') mimeType = 'text/plain';
+
+        docMetas.push({
+          fileId,
+          originalName,
+          savedName,
+          ext: ext.substring(1) || 'file',
+          mimeType,
+          size: stat.size,
+          absolutePath: filePath,
+          clusterId: null,
+          createdAt: new Date().toISOString()
+        });
+
+        docJobs.push({
+          name: 'process-doc',
+          data: { id: fileId, absolutePath: filePath },
+          opts: { jobId: fileId }
+        });
+      }
+    }
+
+    if (mediaMetas.length > 0) {
+      const insertMediaTx = db.transaction((metas: any[]) => {
+        for (const m of metas) stmts.insertFile.run(m);
+      });
+      insertMediaTx(mediaMetas);
+      await imageQueue.addBulk([...photoJobs, ...videoJobs]);
+    }
+
+    if (docMetas.length > 0) {
+      const insertDocsTx = docDb.transaction((metas: any[]) => {
+        const stmt = docDb.prepare(`
+          INSERT INTO docs (id, name, savedName, extension, mimeType, size, absolutePath, clusterId, createdAt, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PROCESSING')
+        `);
+        for (const d of metas) {
+          stmt.run(d.fileId, d.originalName, d.savedName, d.ext, d.mimeType, d.size, d.absolutePath, d.clusterId, d.createdAt);
+        }
+      });
+      insertDocsTx(docMetas);
+      await docQueue.addBulk(docJobs);
+    }
+
+    res.json({ success: true, count: mediaMetas.length + docMetas.length });
+  } catch (error: any) {
+    console.error('Bulk index error:', error);
+    res.status(500).json({ error: 'Failed bulk index' });
   }
 });
 

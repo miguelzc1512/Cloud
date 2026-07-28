@@ -16,6 +16,9 @@ type ProgressState = {
   currentFile: string;
   stepInfo: StepInfo | null;
   isBatch?: boolean;
+  etaText?: string;
+  remaining?: number;
+  percent?: number;
 };
 
 type LogEntry = {
@@ -137,6 +140,20 @@ export default function App() {
         } else {
           addLog('info', `[${data.step.toUpperCase()}] ${data.originalName || ''} - ${data.label}`, data.contentType);
         }
+      } else if (event === 'progress_stats') {
+        setProg((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            total: data.total || prev.total,
+            thumbCompleted: data.thumbCompleted !== undefined ? data.thumbCompleted : prev.thumbCompleted,
+            embedCompleted: data.embedCompleted !== undefined ? data.embedCompleted : prev.embedCompleted,
+            facesCompleted: data.facesCompleted !== undefined ? data.facesCompleted : prev.facesCompleted,
+            etaText: data.etaFormatted,
+            remaining: data.remainingJobs,
+            percent: data.percent
+          };
+        });
       } else if (event === 'scan_done') {
         addLog('success', `Carpetas analizadas. ${data.total || 0} archivos en cola...`, data.contentType);
       } else if (event === 'log') {
@@ -147,14 +164,16 @@ export default function App() {
     let timeoutId: any;
     const unsubscribe = (window as any).electronAPI.onSyncStatus((_: any, data: any) => {
       if (data.status === 'paused' || data.status === 'idle') {
-        setIsPaused(data.status === 'paused');
+        const newlyPaused = data.status === 'paused';
+        setIsPaused(prev => {
+          if (newlyPaused && !prev) {
+            setGallerySyncStatus(null);
+            setDriveSyncStatus(null);
+            addLog('warning', 'Sincronización pausada.', 'gallery');
+          }
+          return newlyPaused;
+        });
         setPendingFiles(data.pendingFiles || []);
-        if (data.status === 'paused') {
-          setGallerySyncStatus(null);
-          setDriveSyncStatus(null);
-          addLog('warning', 'Sincronización pausada.', 'gallery');
-          addLog('warning', 'Sincronización pausada.', 'drive');
-        }
       } else {
         const isDrive = data.contentType === 'drive';
         if (isDrive) setDriveSyncStatus(data);
@@ -411,19 +430,26 @@ export default function App() {
                     <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                       Progreso General
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      {activeTab === 'gallery'
-                        ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
-                        : Math.round((((progress.facesCompleted || 0)) * 100) / progress.total)}%
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {progress.etaText && progress.etaText !== 'Completado' && (
+                        <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                          ⏳ ETA: {progress.etaText}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-500 font-medium">
+                        {progress.percent !== undefined
+                          ? progress.percent
+                          : Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))}%
+                      </span>
+                    </div>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-black h-2 rounded-full transition-all duration-500"
                       style={{
-                        width: `${activeTab === 'gallery'
-                          ? Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))
-                          : Math.round((((progress.facesCompleted || 0)) * 100) / progress.total)}%`
+                        width: `${progress.percent !== undefined
+                          ? progress.percent
+                          : Math.round((((progress.thumbCompleted || 0) + (progress.embedCompleted || 0) + (progress.facesCompleted || 0)) * 100) / (progress.total * 3))}%`
                       }}
                     />
                   </div>

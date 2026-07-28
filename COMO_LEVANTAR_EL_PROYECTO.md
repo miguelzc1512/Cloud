@@ -75,3 +75,35 @@ Si necesitas generar los instaladores de escritorio (Windows o Mac):
    npm run build
    ```
 *(Si corres esto en Mac, generará un `.dmg`. Si lo corres en Windows, generará un `.exe`. Estarán en la carpeta `desktop-client/release/`).*
+
+---
+
+### 🌐 Ver la plataforma desde cualquier lugar (Red Local o Dominio Web)
+
+#### 1. En la misma Red Local (WiFi / Oficina)
+Puedes acceder directamente desde cualquier celular, tablet o PC en la misma red ingresando a tu IP local:
+`http://<IP-DE-TU-PC>` (ejemplo: `http://192.168.1.50`).
+
+#### 2. Cambiar el Puerto del Visor Web
+Por defecto la app escucha en el puerto `80`. Si deseas cambiar el puerto (ejemplo a `8080` o `3000`), crea un archivo `.env` en la raíz del proyecto con:
+```env
+WEB_PORT=8080
+```
+Y ejecuta `docker compose up -d`. La web estará disponible en `http://localhost:8080` o `http://<IP-DE-TU-PC>:8080`.
+
+#### 3. Acceso desde Internet / Asignar a un Dominio Web
+- **Opción A (Recomendada y Segura - Cloudflare Tunnel)**:
+  Sin abrir puertos en el router, ejecuta:
+  ```bash
+  npx cloudflared tunnel --url http://localhost:80
+  ```
+  Obtendrás una URL HTTPS pública (o puedes vincular tu propio dominio registrado como `nube.midominio.com`).
+
+- **Opción B (Prueba Rápida con Ngrok)**:
+  ```bash
+  npx ngrok http 80
+  ```
+
+- **Opción C (Redirección de Puertos Router / VPS)**:
+  Reenvía el puerto `80` (o `WEB_PORT`) en tu router hacia la IP local de tu computadora.
+

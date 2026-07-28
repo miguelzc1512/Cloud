@@ -16602,7 +16602,7 @@ function startWatching(folder) {
 	if (watchers[folder.path]) return;
 	console.log(`Starting to watch: ${folder.path} [${folder.mode}]`);
 	const watcher = chokidar_default.watch(folder.path, {
-		ignored: /(^|[\/\\])\../,
+		ignored: /(^|[\/\\])(\..|HEIC_Convertidas|thumbnails|\$RECYCLE\.BIN)/i,
 		persistent: true,
 		ignoreInitial: true
 	});
@@ -16683,13 +16683,15 @@ async function indexFile(filePath, contentType = "gallery") {
 	} catch (error) {
 		const errMsg = error.response?.data?.error || error.message || "Error de conexión";
 		console.error(`Failed to index ${filePath}:`, errMsg);
-		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
-			path: filePath,
-			mode: "index",
-			contentType
-		});
-		isSyncPaused = true;
-		notifySyncStatus();
+		if (!error.response || error.code === "ECONNREFUSED" || error.code === "ENOTFOUND" || error.code === "ETIMEDOUT") {
+			if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
+				path: filePath,
+				mode: "index",
+				contentType
+			});
+			isSyncPaused = true;
+			notifySyncStatus();
+		}
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "log",
@@ -16757,13 +16759,15 @@ async function uploadFile(filePath, contentType = "gallery") {
 	} catch (error) {
 		const errMsg = error.response?.data?.error || error.message || "Error de conexión";
 		console.error(`Failed to upload ${filePath}:`, errMsg);
-		if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
-			path: filePath,
-			mode: "sync",
-			contentType
-		});
-		isSyncPaused = true;
-		notifySyncStatus();
+		if (!error.response || error.code === "ECONNREFUSED" || error.code === "ENOTFOUND" || error.code === "ETIMEDOUT") {
+			if (!pendingUploads.find((p) => p.path === filePath)) pendingUploads.push({
+				path: filePath,
+				mode: "sync",
+				contentType
+			});
+			isSyncPaused = true;
+			notifySyncStatus();
+		}
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "log",
@@ -16981,13 +16985,48 @@ electron.ipcMain.handle("pick-folder", async () => {
 	if (!result.canceled && result.filePaths.length > 0) return result.filePaths[0];
 	return null;
 });
+async function processUploadPool(files, contentType = "gallery") {
+	const CONCURRENCY = 4;
+	let active = 0;
+	let index = 0;
+	return new Promise((resolve) => {
+		if (files.length === 0) return resolve();
+		const next = () => {
+			if (index >= files.length && active === 0) return resolve();
+			while (active < CONCURRENCY && index < files.length) {
+				const file = files[index++];
+				if (isSyncPaused) {
+					if (!pendingUploads.find((p) => p.path === file)) {
+						pendingUploads.push({
+							path: file,
+							mode: "sync",
+							contentType
+						});
+						saveState();
+					}
+					continue;
+				}
+				active++;
+				uploadFile(file, contentType).catch((e) => console.error(`Error uploading ${file}:`, e)).finally(() => {
+					active--;
+					next();
+				});
+			}
+		};
+		next();
+	});
+}
 async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 	const filesToUpload = [];
 	function scan(dir) {
 		try {
 			const entries = fs.readdirSync(dir, { withFileTypes: true });
 			for (const entry of entries) {
-				if (entry.name.startsWith(".")) continue;
+				if (entry.name.startsWith(".") || [
+					"heic_convertidas",
+					"thumbnails",
+					"$recycle.bin"
+				].includes(entry.name.toLowerCase())) continue;
 				const fullPath = node_path.join(dir, entry.name);
 				if (entry.isDirectory()) scan(fullPath);
 				else {
@@ -17034,13 +17073,7 @@ async function processExistingSyncFiles(folderPath, contentType = "gallery") {
 				}
 			});
 		});
-		for (const file of filesToUpload) if (isSyncPaused) {
-			if (!pendingUploads.find((p) => p.path === file)) pendingUploads.push({
-				path: file,
-				mode: "sync",
-				contentType
-			});
-		} else await uploadFile(file, contentType);
+		await processUploadPool(filesToUpload, contentType);
 		electron.BrowserWindow.getAllWindows().forEach((win) => {
 			win.webContents.send("sse-event", {
 				event: "scan_done",

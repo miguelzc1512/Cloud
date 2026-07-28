@@ -60,7 +60,7 @@ function startWatching(folder: { path: string, mode: 'index' | 'sync' }) {
 
   console.log(`Starting to watch: ${folder.path} [${folder.mode}]`);
   const watcher = chokidar.watch(folder.path, {
-    ignored: /(^|[\/\\])\../, // ignorar archivos ocultos
+    ignored: /(^|[\/\\])(\..|HEIC_Convertidas|thumbnails|\$RECYCLE\.BIN)/i,
     persistent: true,
     ignoreInitial: true
   });
@@ -123,9 +123,12 @@ async function indexFile(filePath: string, contentType: 'gallery' | 'drive' = 'g
   } catch (error: any) {
     const errMsg = error.response?.data?.error || error.message || 'Error de conexión';
     console.error(`Failed to index ${filePath}:`, errMsg);
-    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'index', contentType });
-    isSyncPaused = true;
-    notifySyncStatus();
+    const isNetworkError = !error.response || error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT';
+    if (isNetworkError) {
+      if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'index', contentType });
+      isSyncPaused = true;
+      notifySyncStatus();
+    }
     BrowserWindow.getAllWindows().forEach(win => {
       win.webContents.send('sse-event', {
         event: 'log',
@@ -179,9 +182,12 @@ async function uploadFile(filePath: string, contentType: 'gallery' | 'drive' = '
   } catch (error: any) {
     const errMsg = error.response?.data?.error || error.message || 'Error de conexión';
     console.error(`Failed to upload ${filePath}:`, errMsg);
-    if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'sync', contentType });
-    isSyncPaused = true;
-    notifySyncStatus();
+    const isNetworkError = !error.response || error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT';
+    if (isNetworkError) {
+      if (!pendingUploads.find(p => p.path === filePath)) pendingUploads.push({ path: filePath, mode: 'sync', contentType });
+      isSyncPaused = true;
+      notifySyncStatus();
+    }
     BrowserWindow.getAllWindows().forEach(win => {
       win.webContents.send('sse-event', {
         event: 'log',
@@ -460,6 +466,43 @@ ipcMain.handle('pick-folder', async () => {
   return null;
 });
 
+async function processUploadPool(files: string[], contentType: 'gallery' | 'drive' = 'gallery') {
+  const CONCURRENCY = 4;
+  let active = 0;
+  let index = 0;
+
+  return new Promise<void>((resolve) => {
+    if (files.length === 0) return resolve();
+
+    const next = () => {
+      if (index >= files.length && active === 0) {
+        return resolve();
+      }
+
+      while (active < CONCURRENCY && index < files.length) {
+        const file = files[index++];
+        if (isSyncPaused) {
+          if (!pendingUploads.find(p => p.path === file)) {
+            pendingUploads.push({ path: file, mode: 'sync', contentType } as any);
+            saveState();
+          }
+          continue;
+        }
+
+        active++;
+        uploadFile(file, contentType)
+          .catch((e) => console.error(`Error uploading ${file}:`, e))
+          .finally(() => {
+            active--;
+            next();
+          });
+      }
+    };
+
+    next();
+  });
+}
+
 async function processExistingSyncFiles(folderPath: string, contentType: 'gallery' | 'drive' = 'gallery') {
   const filesToUpload: string[] = [];
   
@@ -467,7 +510,7 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.name.startsWith('.')) continue;
+        if (entry.name.startsWith('.') || ['heic_convertidas', 'thumbnails', '$recycle.bin'].includes(entry.name.toLowerCase())) continue;
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           scan(fullPath);
@@ -493,13 +536,7 @@ async function processExistingSyncFiles(folderPath: string, contentType: 'galler
       win.webContents.send('sse-event', { event: 'scan_start', data: { total: filesToUpload.length, contentType } });
     });
 
-    for (const file of filesToUpload) {
-      if (isSyncPaused) {
-        if (!pendingUploads.find(p => p.path === file)) pendingUploads.push({ path: file, mode: 'sync', contentType });
-      } else {
-        await uploadFile(file, contentType);
-      }
-    }
+    await processUploadPool(filesToUpload, contentType);
     
     BrowserWindow.getAllWindows().forEach(win => {
       win.webContents.send('sse-event', { event: 'scan_done', data: { total: filesToUpload.length, contentType } });

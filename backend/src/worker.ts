@@ -55,6 +55,47 @@ db.pragma('temp_store = MEMORY');
 // ─── AI Models (Singleton for the worker) ─────────────────────────────
 let visionPipeline: any = null;
 
+async function startBackfillEmbeddings() {
+  setTimeout(async () => {
+    try {
+      const missing = db.prepare(`
+        SELECT id, originalName, thumbnailName
+        FROM files
+        WHERE isDeleted = 0 AND thumbnailName IS NOT NULL AND embedding IS NULL
+      `).all() as any[];
+
+      if (missing.length === 0) return;
+      console.log(`[Worker Backfill] Iniciando generación de embeddings para ${missing.length} archivos pendientes...`);
+
+      const stmt = db.prepare(`UPDATE files SET embedding = @embedding WHERE id = @id`);
+      let processed = 0;
+      for (const f of missing) {
+        if (!visionPipeline) break;
+        try {
+          const thumbPath = path.join(absoluteStoragePath, f.thumbnailName);
+          if (fs.existsSync(thumbPath)) {
+            const output = await visionPipeline(thumbPath);
+            if (output && output.data) {
+              const embeddingStr = JSON.stringify(Array.from(output.data));
+              stmt.run({ id: f.id, embedding: embeddingStr });
+              processed++;
+              if (processed % 100 === 0 || processed === missing.length) {
+                console.log(`[Worker Backfill] Progreso: ${processed}/${missing.length} embeddings procesados.`);
+              }
+            }
+          }
+        } catch (e: any) {
+          // Continuar con el siguiente si falla uno
+        }
+        await new Promise(r => setTimeout(r, 10));
+      }
+      console.log(`[Worker Backfill] Finalizado. ${processed} embeddings generados con éxito.`);
+    } catch (err: any) {
+      console.error('[Worker Backfill] Error en proceso de backfill:', err.message);
+    }
+  }, 5000);
+}
+
 async function initModels() {
   console.log('[Worker] Loading AI Models...');
   try {
@@ -62,6 +103,7 @@ async function initModels() {
     env.allowRemoteModels = true;
     visionPipeline = await pipeline('image-feature-extraction', 'Xenova/clip-vit-base-patch32');
     console.log('[Worker] AI Models loaded successfully.');
+    startBackfillEmbeddings();
   } catch (e) {
     console.error('[Worker] Error loading models:', e);
   }
@@ -164,27 +206,81 @@ const worker = new Worker('image-processing', async job => {
       console.log(`[Worker] Empezando a procesar miniatura ${originalName} (${fileId})`);
       
       try {
+        let takenAt = null;
+        let latitude = null;
+        let longitude = null;
+        try {
+          const exifData = await exifr.parse(filePath);
+          if (exifData) {
+            if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
+            else if (exifData.CreateDate) takenAt = new Date(exifData.CreateDate).toISOString();
+            if (exifData.latitude !== undefined) latitude = exifData.latitude;
+            if (exifData.longitude !== undefined) longitude = exifData.longitude;
+          }
+        } catch(e) {}
+
         if (originalName.toLowerCase().endsWith('.heic') || mimeType === 'image/heic') {
           try {
             emitWorkerStep(fileId, 'thumbnail', 'Convirtiendo HEIC a JPG...', originalName, contentType);
-            const heicConvert = require('heic-convert');
             const inputBuf = fs.readFileSync(filePath);
-            const outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.90 });
-            
-            // Si el archivo está guardado dentro del storage (es una subida directa o sync), reemplazamos el HEIC por el JPG
-            const fotosDir = path.join(absoluteStoragePath, 'fotos');
-            const targetJpgName = `${fileId}.jpg`;
-            const targetJpgPath = path.join(fotosDir, targetJpgName);
-            
-            fs.writeFileSync(targetJpgPath, outputBuf);
-            
-            // Si existía un archivo HEIC viejo en storage, lo eliminamos para no duplicar espacio
-            if (fs.existsSync(filePath) && filePath !== targetJpgPath && filePath.includes(absoluteStoragePath)) {
-              try { fs.unlinkSync(filePath); } catch(e) {}
+            let outputBuf: Buffer;
+            const isAlreadyJpeg = inputBuf[0] === 0xFF && inputBuf[1] === 0xD8;
+
+            if (isAlreadyJpeg) {
+              outputBuf = inputBuf;
+            } else {
+              try {
+                const heicConvert = require('heic-convert');
+                outputBuf = await heicConvert({ buffer: inputBuf, format: 'JPEG', quality: 0.92 });
+              } catch (heicErr: any) {
+                console.warn(`[Worker] heic-convert no pudo procesar ${originalName}, intentando con Sharp:`, heicErr.message);
+                outputBuf = await sharp(inputBuf).jpeg({ quality: 92 }).toBuffer();
+              }
             }
+
+            // Guardar la versión JPG en la carpeta dedicada HEIC_Convertidas dentro del SSD
+            const parentDir = path.dirname(filePath);
+            const baseName = path.parse(filePath).name;
+
+            let dedicatedBaseDir: string;
+            if (filePath.includes('/host_e/Fotos') || filePath.toLowerCase().includes('e:/fotos') || filePath.toLowerCase().includes('e:\\fotos')) {
+              dedicatedBaseDir = filePath.includes('/host_e') ? '/host_e/Fotos/HEIC_Convertidas' : 'E:\\Fotos\\HEIC_Convertidas';
+            } else if (filePath.startsWith('/host_e')) {
+              dedicatedBaseDir = '/host_e/HEIC_Convertidas';
+            } else {
+              dedicatedBaseDir = path.join(absoluteStoragePath, 'HEIC_Convertidas');
+            }
+
+            let relFolder = '';
+            if (filePath.startsWith('/host_e')) {
+              const relFromHost = path.relative('/host_e', parentDir);
+              if (relFromHost.startsWith('Fotos/') || relFromHost.startsWith('Fotos\\')) {
+                relFolder = relFromHost.substring(6);
+              } else if (relFromHost === 'Fotos') {
+                relFolder = '';
+              } else {
+                relFolder = relFromHost;
+              }
+            } else if (filePath.match(/^[a-zA-Z]:/)) {
+              const driveRoot = filePath.slice(0, 3);
+              const relFromDrive = path.relative(path.join(driveRoot, 'Fotos'), parentDir);
+              relFolder = relFromDrive;
+            }
+
+            const targetJpgDir = relFolder ? path.join(dedicatedBaseDir, relFolder) : dedicatedBaseDir;
+            if (!fs.existsSync(targetJpgDir)) {
+              fs.mkdirSync(targetJpgDir, { recursive: true });
+            }
+
+            const targetJpgPath = path.join(targetJpgDir, `${baseName}.jpg`);
+            fs.writeFileSync(targetJpgPath, outputBuf);
+            console.log(`[Worker] HEIC convertido guardado en SSD dedicado: ${targetJpgPath}`);
+
+            let targetJpgSavedName = targetJpgPath;
             
-            // Actualizar la base de datos con el nuevo nombre de archivo JPG
-            db.prepare(`UPDATE files SET savedName = ?, mimeType = 'image/jpeg' WHERE id = ?`).run(targetJpgName, fileId);
+            db.prepare(`UPDATE files SET savedName = ?, mimeType = 'image/jpeg', absolutePath = ? WHERE id = ?`)
+              .run(targetJpgSavedName, targetJpgPath, fileId);
+
             filePath = targetJpgPath;
           } catch (e: any) {
             console.error(`[Worker] Error convirtiendo HEIC para ${originalName}:`, e.message);
@@ -212,18 +308,6 @@ const worker = new Worker('image-processing', async job => {
           .toBuffer({ resolveWithObject: true });
         
         const blurhashStr = encode(new Uint8ClampedArray(rawData), rawInfo.width, rawInfo.height, 4, 4);
-
-        let takenAt = null;
-        let latitude = null;
-        let longitude = null;
-        try {
-          const exifData = await exifr.parse(filePath);
-          if (exifData) {
-            if (exifData.DateTimeOriginal) takenAt = new Date(exifData.DateTimeOriginal).toISOString();
-            if (exifData.latitude !== undefined) latitude = exifData.latitude;
-            if (exifData.longitude !== undefined) longitude = exifData.longitude;
-          }
-        } catch(e) {}
 
         updateFileThumbnailStmt.run({
           id: fileId,
@@ -253,25 +337,36 @@ const worker = new Worker('image-processing', async job => {
 
     } else if (job.name === 'generate-embedding') {
       console.log(`[Worker] Generando embedding para ${originalName} (${fileId})`);
-      
-      if (originalName.toLowerCase().endsWith('.heic') || mimeType === 'image/heic') {
-        const convertedJpg = path.join(absoluteStoragePath, 'fotos', `${fileId}.jpg`);
-        if (fs.existsSync(convertedJpg)) {
-          filePath = convertedJpg;
-        }
-      }
 
       emitWorkerStep(fileId, 'embedding', 'Analizando contenido con IA...', originalName, contentType);
       let embeddingStr = null;
       if (visionPipeline) {
         try {
-           const clipBuffer = await sharp(filePath)
-             .resize(224, 224, { fit: 'cover' })
-             .toBuffer();
-           const output = await visionPipeline(clipBuffer);
-           embeddingStr = JSON.stringify(Array.from(output.data));
-        } catch (e) {
-           console.error('[Worker] Falló embedding para', originalName);
+          const fileRec = db.prepare('SELECT thumbnailName, savedName FROM files WHERE id = ?').get(fileId) as any;
+          let targetImagePath: string | null = null;
+
+          if (fileRec?.thumbnailName) {
+            const thumbPath = path.join(absoluteStoragePath, fileRec.thumbnailName);
+            if (fs.existsSync(thumbPath)) targetImagePath = thumbPath;
+          }
+
+          if (!targetImagePath) {
+            if (filePath && fs.existsSync(filePath)) {
+              targetImagePath = filePath;
+            } else if (fileRec?.savedName) {
+              const savedPath = path.join(absoluteStoragePath, fileRec.savedName);
+              if (fs.existsSync(savedPath)) targetImagePath = savedPath;
+            }
+          }
+
+          if (targetImagePath) {
+            const output = await visionPipeline(targetImagePath);
+            if (output && output.data) {
+              embeddingStr = JSON.stringify(Array.from(output.data));
+            }
+          }
+        } catch (e: any) {
+          console.error(`[Worker] Falló embedding para ${originalName}:`, e?.message || e);
         }
       }
 
@@ -350,7 +445,9 @@ const worker = new Worker('image-processing', async job => {
   }
 }, { 
   connection: redisConnection as any,
-  concurrency: activeConcurrency
+  concurrency: activeConcurrency,
+  lockDuration: 120000,
+  stalledInterval: 30000
 });
 
 worker.on('failed', (job, err) => {

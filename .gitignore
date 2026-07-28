@@ -6,4 +6,4 @@ asar-out/
 dump.rdb
 backend/nube.db-shm
 backend/nube.db-wal
-
+.env
